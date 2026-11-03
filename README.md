@@ -13,7 +13,7 @@ Single-page workout log for Tyson's mornings at Anytime Fitness Avon (1124 N SR 
 - Back-dated logging: pick any past day from the 7-day strip or the date field. Future dates are not loggable.
 - Phases unlock after each completed week (3 counted lift days, Mon–Sun): Phase 2 adds exercises, Phase 3 swaps in squats, lunges and flys.
 - Bodyweight core finisher (crunches, lying leg raises, bench knee tucks) on Pull and Legs days.
-- Swap any machine for a dumbbell / barbell / cable fallback. A swap on the Train screen is for that workout only; the Program tab sets defaults for future workouts.
+- Swap any machine for a dumbbell / barbell / cable fallback from the exercise's ··· menu (that workout only); the Program tab sets defaults for future workouts. The same menu holds "Can't go higher", Add a set (up to 5), Exercise details and Collapse.
 
 ## How records work
 
@@ -30,4 +30,4 @@ Single-page workout log for Tyson's mornings at Anytime Fitness Avon (1124 N SR 
 
 ## Tests
 
-`tests/test.js` (Playwright; serve a doctype-wrapped copy of `index.html` on http://127.0.0.1:8765 and run `node tests/test.js`) covers draft stability, classification, blank-vs-zero, progression, chronology, phase isolation, week/DST/year boundaries, layouts and a fake-db sync/failure scenario. 119 checks.
+`tests/test.js` (Playwright; serve a doctype-wrapped copy of `index.html` on http://127.0.0.1:8765 and run `node tests/test.js`) covers draft stability, classification, blank-vs-zero, progression, chronology, phase isolation, week/DST/year boundaries, layouts and a fake-db sync/failure scenario. 148 checks, plus `scratch review.js` state screenshots (menu open, 5 sets, long names, validation, save failed, 125% text, short viewport).
