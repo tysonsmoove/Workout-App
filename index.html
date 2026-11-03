@@ -1,0 +1,524 @@
+<title>Morning Laps</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+/* Layout: one phone-width column. Top bar = date + week meter; tabs; the Train tab is the log form for one date. */
+:root {
+  --bg: #EEF0F2;        /* concrete */
+  --card: #FFFFFF;
+  --fg: #15181C;
+  --muted: #5C646E;
+  --line: #D5DAE0;
+  --soft: #E4E7EB;
+  --accent: #C8322B;    /* brick */
+  --accent-ink: #FFFFFF;
+  --good: #1E8E5A;
+  --good-soft: #DCF2E6;
+  --warn: #B7791F;
+  --warn-soft: #F6ECD4;
+  --display: "Barlow Condensed", "Arial Narrow", Impact, sans-serif;
+  --body: "Barlow", "Helvetica Neue", Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #101316; --card: #1A1E23; --fg: #F0F2F4; --muted: #98A1AB; --line: #2A3038; --soft: #232931;
+    --accent: #E04A3F; --accent-ink: #FFFFFF; --good: #3DBB7E; --good-soft: #15352A; --warn: #E0A33A; --warn-soft: #3A2E14;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #101316; --card: #1A1E23; --fg: #F0F2F4; --muted: #98A1AB; --line: #2A3038; --soft: #232931;
+  --accent: #E04A3F; --accent-ink: #FFFFFF; --good: #3DBB7E; --good-soft: #15352A; --warn: #E0A33A; --warn-soft: #3A2E14;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 16px; line-height: 1.4; margin: 0; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.wrap { max-width: 560px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 12px 40px; }
+h1, h2, h3 { font-family: var(--display); margin: 0; line-height: 1.05; text-wrap: balance; }
+h1 { font-size: 34px; font-weight: 700; letter-spacing: .01em; text-transform: uppercase; }
+h2 { font-size: 24px; font-weight: 700; text-transform: uppercase; letter-spacing: .02em; }
+h3 { font-size: 19px; font-weight: 600; }
+.eyebrow { font-family: var(--display); font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); }
+.muted { color: var(--muted); }
+.num { font-variant-numeric: tabular-nums; }
+.top { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; padding-bottom: 10px; }
+.meter { text-align: right; }
+.meter .big { font-family: var(--display); font-size: 30px; font-weight: 700; line-height: 1; }
+.pips { display: flex; gap: 4px; justify-content: flex-end; margin-top: 4px; }
+.pip { width: 14px; height: 6px; border-radius: 2px; background: var(--soft); }
+.pip.on { background: var(--good); }
+nav.tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; background: var(--soft); border-radius: 10px; padding: 4px; position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; }
+nav.tabs a { text-decoration: none; color: var(--muted); font-family: var(--display); font-weight: 600; font-size: 16px; text-transform: uppercase; letter-spacing: .06em; text-align: center; padding: 8px 4px; border-radius: 8px; }
+nav.tabs a.on { background: var(--card); color: var(--fg); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+nav.tabs a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+main { display: grid; gap: 14px; padding-top: 14px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+.card.hero { border-left: 5px solid var(--accent); }
+.banner { background: var(--warn-soft); color: var(--fg); border-radius: 10px; padding: 10px 12px; font-size: 14px; }
+.banner.good { background: var(--good-soft); }
+.row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.between { justify-content: space-between; }
+.stack { display: grid; gap: 10px; }
+button { font: inherit; font-family: var(--body); font-weight: 600; cursor: pointer; border-radius: 9px; border: 1px solid var(--line); background: var(--card); color: var(--fg); padding: 10px 14px; min-height: 44px; }
+button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-family: var(--display); font-size: 19px; text-transform: uppercase; letter-spacing: .05em; width: 100%; }
+button.small { min-height: 34px; padding: 5px 10px; font-size: 13px; font-weight: 500; }
+button.on { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+button:disabled { opacity: .5; cursor: default; }
+.seg { display: flex; gap: 4px; background: var(--soft); border-radius: 10px; padding: 4px; flex-wrap: wrap; }
+.seg button { flex: 1 1 auto; border: 0; background: transparent; min-height: 40px; padding: 6px 8px; font-size: 14px; color: var(--muted); }
+.seg button.on { background: var(--card); color: var(--fg); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+input[type=number], input[type=date], input[type=text], select { font: inherit; font-size: 17px; color: var(--fg); background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 9px 10px; min-height: 44px; width: 100%; font-variant-numeric: tabular-nums; }
+input[type=number] { text-align: center; }
+label.f { display: grid; gap: 4px; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; font-weight: 600; }
+.ex { border-top: 1px solid var(--line); padding-top: 12px; margin-top: 12px; display: grid; gap: 8px; }
+.ex:first-of-type { border-top: 0; padding-top: 0; margin-top: 0; }
+.chip { display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--soft); color: var(--muted); white-space: nowrap; }
+.chip.good { background: var(--good-soft); color: var(--good); }
+.chip.warn { background: var(--warn-soft); color: var(--warn); }
+.chip.accent { background: var(--accent); color: var(--accent-ink); }
+.sets { display: grid; grid-template-columns: 1.2fr repeat(3, 1fr); gap: 6px; align-items: end; }
+.sets.bw { grid-template-columns: repeat(3, 1fr); }
+.suggest { font-size: 15px; }
+.suggest b { color: var(--accent); }
+.hist { display: grid; gap: 8px; }
+.hrow { display: grid; grid-template-columns: 92px 1fr auto; gap: 10px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); }
+.hrow:first-child { border-top: 0; }
+.hdate { font-family: var(--display); font-weight: 700; font-size: 18px; line-height: 1; }
+.hdate small { display: block; font-family: var(--body); font-weight: 500; font-size: 12px; color: var(--muted); margin-top: 2px; }
+.datebar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.datebar button { padding: 6px 2px; min-height: 52px; display: grid; gap: 2px; justify-items: center; font-weight: 500; font-size: 12px; color: var(--muted); border-color: transparent; background: var(--soft); }
+.datebar button b { font-family: var(--display); font-size: 18px; color: var(--fg); }
+.datebar button.sel { border-color: var(--accent); background: var(--card); }
+.datebar button .dot { width: 6px; height: 6px; border-radius: 50%; background: transparent; }
+.datebar button .dot.on { background: var(--good); }
+.datebar button .dot.cardio { background: var(--warn); }
+.plan { display: grid; gap: 6px; }
+.plan li { list-style: none; display: flex; justify-content: space-between; gap: 8px; padding: 6px 0; border-top: 1px solid var(--line); font-size: 15px; }
+.plan li:first-child { border-top: 0; }
+.plan ul { padding: 0; margin: 0; }
+.sched { display: grid; grid-template-columns: 64px 1fr; gap: 4px 10px; font-size: 15px; }
+.sched .t { font-family: var(--display); font-weight: 700; font-size: 17px; }
+.toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--fg); color: var(--bg); padding: 10px 16px; border-radius: 999px; font-weight: 600; z-index: 20; }
+details summary { cursor: pointer; font-weight: 600; }
+p { margin: 0; }
+.tiny { font-size: 13px; }
+@media (prefers-reduced-motion: no-preference) { button { transition: background .12s, color .12s; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="eyebrow" id="todayLine">Loading</div>
+      <h1>Morning Laps</h1>
+    </div>
+    <div class="meter">
+      <div class="eyebrow">This week</div>
+      <div class="big num" id="weekCount">0/5</div>
+      <div class="pips" id="weekPips"></div>
+    </div>
+  </header>
+  <nav class="tabs" id="tabs">
+    <a href="#train" data-tab="train" class="on">Train</a>
+    <a href="#program" data-tab="program">Program</a>
+    <a href="#history" data-tab="history">History</a>
+  </nav>
+  <main id="main"></main>
+</div>
+<div id="toast" class="toast" hidden></div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ---------- Program ---------- */
+  // Equipment confirmed on the Avon Anytime Fitness listing: treadmills, barbells, dumbbells, squat racks,
+  // kettlebells, medicine balls, resistance bands, plyo boxes. Selectorized machines and the cable station
+  // are standard at Anytime Fitness clubs; every machine move has a dumbbell/barbell fallback via Swap.
+  const EX = {
+    chestpress:  { name: 'Chest press machine', equip: 'Machine', sets: 3, lo: 8, hi: 12, inc: 5, start: 70, alt: 'dbbench' },
+    dbbench:     { name: 'Dumbbell bench press', equip: 'Dumbbells + bench', sets: 3, lo: 8, hi: 12, inc: 5, start: 30, per: 'each hand', alt: 'chestpress' },
+    shoulderpress:{ name: 'Shoulder press machine', equip: 'Machine', sets: 3, lo: 8, hi: 12, inc: 5, start: 50, alt: 'dbshoulder' },
+    dbshoulder:  { name: 'Seated dumbbell shoulder press', equip: 'Dumbbells + bench', sets: 3, lo: 8, hi: 12, inc: 5, start: 20, per: 'each hand', alt: 'shoulderpress' },
+    pushdown:    { name: 'Cable triceps pushdown', equip: 'Cable station', sets: 3, lo: 10, hi: 15, inc: 5, start: 40, alt: 'dbtri' },
+    dbtri:       { name: 'Dumbbell overhead triceps extension', equip: 'One dumbbell', sets: 3, lo: 10, hi: 15, inc: 5, start: 25, alt: 'pushdown' },
+    inclinedb:   { name: 'Incline dumbbell press', equip: 'Dumbbells + incline bench', sets: 3, lo: 8, hi: 12, inc: 5, start: 25, per: 'each hand', alt: 'pecdeck' },
+    pecdeck:     { name: 'Pec deck / chest fly machine', equip: 'Machine', sets: 3, lo: 10, hi: 15, inc: 5, start: 60, alt: 'inclinedb' },
+    latraise:    { name: 'Dumbbell lateral raise', equip: 'Dumbbells', sets: 3, lo: 12, hi: 15, inc: 2.5, start: 10, per: 'each hand', alt: 'cablelat' },
+    cablelat:    { name: 'Cable lateral raise', equip: 'Cable station', sets: 3, lo: 12, hi: 15, inc: 2.5, start: 10, alt: 'latraise' },
+    latpull:     { name: 'Lat pulldown machine', equip: 'Machine', sets: 3, lo: 8, hi: 12, inc: 5, start: 80, alt: 'assistpull' },
+    assistpull:  { name: 'Assisted pull-up machine', equip: 'Machine (weight = assist, lower is harder)', sets: 3, lo: 8, hi: 12, inc: -5, start: 80, alt: 'latpull' },
+    seatedrow:   { name: 'Seated cable row', equip: 'Cable row station', sets: 3, lo: 8, hi: 12, inc: 5, start: 80, alt: 'dbrow' },
+    dbrow:       { name: 'One-arm dumbbell row', equip: 'Dumbbell + bench', sets: 3, lo: 8, hi: 12, inc: 5, start: 30, per: 'each hand', alt: 'seatedrow' },
+    dbcurl:      { name: 'Dumbbell biceps curl', equip: 'Dumbbells', sets: 3, lo: 10, hi: 12, inc: 2.5, start: 20, per: 'each hand', alt: 'cablecurl' },
+    cablecurl:   { name: 'Cable biceps curl', equip: 'Cable station', sets: 3, lo: 10, hi: 12, inc: 5, start: 40, alt: 'dbcurl' },
+    hammer:      { name: 'Hammer curl', equip: 'Dumbbells', sets: 3, lo: 10, hi: 12, inc: 2.5, start: 20, per: 'each hand', alt: 'dbcurl' },
+    facepull:    { name: 'Cable face pull', equip: 'Cable station + rope', sets: 3, lo: 12, hi: 15, inc: 5, start: 30, alt: 'reardelt' },
+    reardelt:    { name: 'Dumbbell rear-delt fly', equip: 'Dumbbells', sets: 3, lo: 12, hi: 15, inc: 2.5, start: 10, per: 'each hand', alt: 'facepull' },
+    legpress:    { name: 'Leg press machine', equip: 'Machine', sets: 3, lo: 10, hi: 12, inc: 10, start: 140, alt: 'goblet' },
+    goblet:      { name: 'Goblet squat', equip: 'Kettlebell or dumbbell', sets: 3, lo: 10, hi: 12, inc: 5, start: 35, alt: 'legpress' },
+    legext:      { name: 'Leg extension machine', equip: 'Machine', sets: 3, lo: 10, hi: 15, inc: 5, start: 70, alt: 'splitsquat' },
+    splitsquat:  { name: 'Dumbbell split squat', equip: 'Dumbbells', sets: 3, lo: 10, hi: 12, inc: 5, start: 20, per: 'each hand', alt: 'legext' },
+    legcurl:     { name: 'Leg curl machine', equip: 'Machine (seated or lying)', sets: 3, lo: 10, hi: 15, inc: 5, start: 60, alt: 'dbrdl' },
+    dbrdl:       { name: 'Dumbbell Romanian deadlift', equip: 'Dumbbells', sets: 3, lo: 10, hi: 12, inc: 5, start: 30, per: 'each hand', alt: 'legcurl' },
+    calf:        { name: 'Standing calf raise', equip: 'Calf machine or step + dumbbell', sets: 3, lo: 12, hi: 15, inc: 10, start: 90, alt: 'goblet' },
+    squat:       { name: 'Barbell back squat', equip: 'Squat rack', sets: 3, lo: 6, hi: 10, inc: 10, start: 95, alt: 'legpress' },
+    lunge:       { name: 'Walking lunges', equip: 'Dumbbells', sets: 3, lo: 10, hi: 12, inc: 5, start: 15, per: 'each hand', alt: 'splitsquat' },
+    crunch:      { name: 'Crunches', equip: 'Mat', sets: 3, lo: 15, hi: 20, bw: true },
+    legraise:    { name: 'Lying leg raises', equip: 'Mat', sets: 3, lo: 10, hi: 15, bw: true },
+    benchtuck:   { name: 'Bench knee tucks', equip: 'Flat bench', sets: 3, lo: 10, hi: 15, bw: true, note: 'Sit on the end of the bench, legs hanging, lean back and pull knees to chest.' }
+  };
+  const CORE = ['crunch', 'legraise', 'benchtuck'];
+  const DAYS = {
+    push: { name: 'Push', sub: 'Chest, shoulders, triceps',
+      phases: { 1: ['chestpress', 'shoulderpress', 'pushdown'], 2: ['chestpress', 'inclinedb', 'shoulderpress', 'latraise', 'pushdown'], 3: ['inclinedb', 'pecdeck', 'shoulderpress', 'latraise', 'pushdown'] } },
+    pull: { name: 'Pull', sub: 'Back, biceps, core',
+      phases: { 1: ['latpull', 'seatedrow', 'dbcurl'].concat(CORE), 2: ['latpull', 'seatedrow', 'facepull', 'dbcurl'].concat(CORE), 3: ['latpull', 'seatedrow', 'facepull', 'hammer', 'dbcurl'].concat(CORE) } },
+    legs: { name: 'Legs', sub: 'Quads, hamstrings, calves, core',
+      phases: { 1: ['legpress', 'legext', 'legcurl'].concat(CORE), 2: ['legpress', 'dbrdl', 'legext', 'legcurl', 'calf'].concat(CORE), 3: ['squat', 'dbrdl', 'lunge', 'legcurl', 'calf'].concat(CORE) } }
+  };
+  const ROTATION = ['push', 'pull', 'legs'];
+  const TREAD_MIN = { 1: 20, 2: 25, 3: 30 };
+  const GOAL = 5;
+
+  /* ---------- Dates ---------- */
+  const pad = n => String(n).padStart(2, '0');
+  const iso = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  const fromIso = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+  const todayIso = () => iso(new Date());
+  const addDays = (s, n) => { const d = fromIso(s); d.setDate(d.getDate() + n); return iso(d); };
+  const weekStart = s => { const d = fromIso(s); const wd = (d.getDay() + 6) % 7; d.setDate(d.getDate() - wd); return iso(d); }; // Monday
+  const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const nice = s => { const d = fromIso(s); return DOW[d.getDay()] + ' ' + MON[d.getMonth()] + ' ' + d.getDate(); };
+  const rel = s => { const t = todayIso(); return s === t ? 'Today' : s === addDays(t, -1) ? 'Yesterday' : nice(s); };
+
+  /* ---------- State ---------- */
+  const state = {
+    sessions: {},       // date -> session doc
+    settings: { startDate: null, maxed: {}, swaps: {}, goal: GOAL },
+    selDate: todayIso(),
+    override: null,     // kind override for the selected date form
+    tab: 'train',
+    storage: 'loading', // loading | db | local | nodb
+    stale: false
+  };
+  let db = null;
+  const writeQ = {};  // per-doc write chain
+
+  function queueWrite(key, fn) {
+    writeQ[key] = (writeQ[key] || Promise.resolve()).then(fn, fn);
+    return writeQ[key];
+  }
+
+  /* ---------- Storage ---------- */
+  function localLoad() {
+    try {
+      const s = JSON.parse(localStorage.getItem('ml.sessions') || '{}');
+      const st = JSON.parse(localStorage.getItem('ml.settings') || 'null');
+      state.sessions = s; if (st) state.settings = Object.assign(state.settings, st);
+    } catch (e) { /* storage unavailable */ }
+  }
+  function localSave() {
+    try {
+      localStorage.setItem('ml.sessions', JSON.stringify(state.sessions));
+      localStorage.setItem('ml.settings', JSON.stringify(state.settings));
+    } catch (e) { /* ignore */ }
+  }
+  async function saveSession(date, doc) {
+    state.sessions[date] = doc; render();
+    if (db) {
+      try { await queueWrite('s/' + date, () => db.doc('sessions/' + date).set(doc)); toast('Saved ' + rel(date)); }
+      catch (e) { toast('Could not save: ' + (e && e.code || 'error')); }
+    } else { localSave(); toast('Saved on this phone'); }
+  }
+  async function deleteSession(date) {
+    delete state.sessions[date]; render();
+    if (db) { try { await queueWrite('s/' + date, () => db.doc('sessions/' + date).delete()); toast('Removed'); } catch (e) { toast('Could not delete'); } }
+    else { localSave(); toast('Removed'); }
+  }
+  async function saveSettings(patch) {
+    state.settings = Object.assign({}, state.settings, patch); render();
+    if (db) { try { await queueWrite('settings', () => db.doc('settings/program').set(state.settings)); } catch (e) { toast('Could not save settings'); } }
+    else localSave();
+  }
+
+  async function connect() {
+    let resolved = false;
+    const timer = setTimeout(() => { if (!resolved) { state.stale = true; render(); } }, 10000);
+    db = await (window.claude && window.claude.use ? window.claude.use('db') : Promise.resolve(null));
+    if (!db) { state.storage = 'local'; localLoad(); clearTimeout(timer); render(); return; }
+    let gotS = false, gotP = false;
+    const done = () => { if (gotS && gotP && !resolved) { resolved = true; clearTimeout(timer); state.stale = false; state.storage = 'db'; render(); } };
+    db.collection('sessions').onSnapshot(snap => {
+      const m = {}; snap.docs.forEach(d => { if (d.exists) m[d.id] = d.data(); }); state.sessions = m;
+      if (!snap.metadata.fromCache) gotS = true; done(); render();
+    }, err => { state.storage = 'nodb'; clearTimeout(timer); render(); });
+    db.doc('settings/program').onSnapshot(snap => {
+      if (snap.exists) state.settings = Object.assign({ maxed: {}, swaps: {}, goal: GOAL }, snap.data());
+      if (!snap.metadata.fromCache) gotP = true; done(); render();
+    }, err => { /* settings optional */ gotP = true; done(); });
+  }
+
+  /* ---------- Derived ---------- */
+  const strengthSessions = () => Object.values(state.sessions).filter(s => s.kind === 'strength').sort((a, b) => a.date < b.date ? -1 : 1);
+  function startDate() {
+    if (state.settings.startDate) return state.settings.startDate;
+    const all = Object.keys(state.sessions).sort();
+    return all[0] || todayIso();
+  }
+  function completedWeeks(asOf) {
+    // Mon-Sun weeks fully elapsed before asOf, counting from program start, with >= 3 strength sessions.
+    let n = 0; let ws = weekStart(startDate()); const thisWs = weekStart(asOf);
+    while (ws < thisWs) {
+      const we = addDays(ws, 6);
+      const c = strengthSessions().filter(s => s.date >= ws && s.date <= we).length;
+      if (c >= 3) n++;
+      ws = addDays(ws, 7);
+    }
+    return n;
+  }
+  const phaseFor = asOf => Math.min(3, 1 + completedWeeks(asOf));
+  function nextDayKey(beforeDate) {
+    const prev = strengthSessions().filter(s => s.date < beforeDate).pop();
+    if (!prev || !DAYS[prev.day]) return ROTATION[0];
+    return ROTATION[(ROTATION.indexOf(prev.day) + 1) % ROTATION.length];
+  }
+  function weekStats(asOf) {
+    const ws = weekStart(asOf), we = addDays(ws, 6);
+    const list = Object.values(state.sessions).filter(s => s.date >= ws && s.date <= we && s.kind !== 'rest');
+    const strength = list.filter(s => s.kind === 'strength').length;
+    return { done: list.length, strength, goal: state.settings.goal || GOAL };
+  }
+  function resolveKey(k) { // apply swap
+    const sw = state.settings.swaps || {};
+    return sw[k] && EX[sw[k]] ? sw[k] : k;
+  }
+  function lastLog(key, beforeDate) {
+    const list = strengthSessions().filter(s => s.date < beforeDate && s.ex && s.ex[key] && s.ex[key].reps && s.ex[key].reps.some(r => r > 0));
+    return list.length ? Object.assign({ date: list[list.length - 1].date }, list[list.length - 1].ex[key]) : null;
+  }
+  function suggest(key, date) {
+    const ex = EX[key]; const last = lastLog(key, date); const maxed = !!(state.settings.maxed || {})[key];
+    if (ex.bw) {
+      if (!last) return { reps: ex.lo, text: 'Start with ' + ex.sets + ' sets of ' + ex.lo + '. Work toward ' + ex.hi + '.' };
+      const min = Math.min.apply(null, last.reps.filter(r => r > 0));
+      const target = min >= ex.hi ? ex.hi + 5 : Math.min(ex.hi, min + 2);
+      return { reps: target, text: 'Last: ' + last.reps.join(', ') + '. Aim for ' + target + ' per set.' };
+    }
+    if (!last) return { w: ex.start, text: 'First time. Try <b>' + ex.start + ' lb</b>' + (ex.per ? ' ' + ex.per : '') + ' and adjust until ' + ex.hi + ' clean reps is hard but doable.' };
+    const reps = last.reps.filter(r => r > 0);
+    const allHi = reps.length >= ex.sets && reps.every(r => r >= ex.hi);
+    const anyLow = reps.some(r => r < ex.lo);
+    const lastTxt = 'Last ' + rel(last.date) + ': ' + last.w + ' lb × ' + last.reps.join(', ') + '.';
+    if (maxed) {
+      const nextReps = Math.max.apply(null, reps) + 1;
+      return { w: last.w, text: lastTxt + ' Holding weight. <b>Add 1 rep per set</b> (' + nextReps + ') or a 4th set, 3-second lowering.' };
+    }
+    if (allHi) return { w: last.w + ex.inc, text: lastTxt + ' All sets hit ' + ex.hi + '. <b>Go up to ' + (last.w + ex.inc) + ' lb.</b>' };
+    if (anyLow) return { w: Math.max(5, last.w - Math.abs(ex.inc)), text: lastTxt + ' Fell under ' + ex.lo + '. <b>Drop to ' + Math.max(5, last.w - Math.abs(ex.inc)) + ' lb</b> and own it.' };
+    return { w: last.w, text: lastTxt + ' <b>Stay at ' + last.w + ' lb</b>, push every set to ' + ex.hi + '.' };
+  }
+
+  /* ---------- Render ---------- */
+  const $ = sel => document.querySelector(sel);
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  let toastT;
+  function toast(msg) { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, 1800); }
+
+  function render() {
+    const t = todayIso();
+    $('#todayLine').textContent = nice(t) + ' · Avon Anytime Fitness';
+    const ws = weekStats(t);
+    $('#weekCount').textContent = ws.done + '/' + ws.goal;
+    $('#weekPips').innerHTML = Array.from({ length: ws.goal }, (_, i) => '<span class="pip' + (i < ws.done ? ' on' : '') + '"></span>').join('');
+    document.querySelectorAll('#tabs a').forEach(a => a.classList.toggle('on', a.dataset.tab === state.tab));
+    const main = $('#main');
+    let html = '';
+    if (state.storage === 'local') html += '<div class="banner">Saving on this phone only. Open the page signed in to claude.ai to sync across devices.</div>';
+    if (state.storage === 'nodb') html += '<div class="banner">Your log can\'t be reached right now. Changes may not save.</div>';
+    if (state.stale) html += '<div class="banner">Still loading your log. What you see may be out of date.</div>';
+    html += state.tab === 'train' ? renderTrain() : state.tab === 'program' ? renderProgram() : renderHistory();
+    main.innerHTML = html;
+    bind();
+  }
+
+  function renderDatebar() {
+    const t = todayIso(); let out = '<div class="datebar">';
+    for (let i = 6; i >= 0; i--) {
+      const d = addDays(t, -i); const s = state.sessions[d]; const dd = fromIso(d);
+      out += '<button type="button" data-date="' + d + '" class="' + (d === state.selDate ? 'sel' : '') + '"><span>' + DOW[dd.getDay()] + '</span><b>' + dd.getDate() + '</b><span class="dot ' + (s ? (s.kind === 'strength' ? 'on' : s.kind === 'cardio' ? 'cardio' : '') : '') + '"></span></button>';
+    }
+    return out + '</div>';
+  }
+
+  function renderTrain() {
+    const date = state.selDate; const existing = state.sessions[date];
+    const phase = phaseFor(date);
+    const kind = state.override || (existing ? (existing.kind === 'strength' ? existing.day : existing.kind) : nextDayKey(date));
+    const isStrength = !!DAYS[kind];
+    let h = '<section class="card">' +
+      '<div class="row between"><div><div class="eyebrow">Logging for</div><h2>' + rel(date) + '</h2></div>' +
+      '<label class="f">Other day<input type="date" id="datePick" value="' + date + '" max="' + todayIso() + '"></label></div>' +
+      '<div style="margin-top:10px">' + renderDatebar() + '</div></section>';
+
+    h += '<section class="card hero"><div class="row between"><div class="eyebrow">' + (existing ? 'Logged · tap to edit' : state.override ? 'Your pick' : 'Next up in your rotation') + '</div><span class="chip">Week ' + (completedWeeks(date) + 1) + ' · Phase ' + phase + '</span></div>';
+    h += '<div class="seg" id="kindSeg" style="margin-top:10px">' + ROTATION.map(k => '<button type="button" data-kind="' + k + '" class="' + (kind === k ? 'on' : '') + '">' + DAYS[k].name + '</button>').join('') +
+      '<button type="button" data-kind="cardio" class="' + (kind === 'cardio' ? 'on' : '') + '">Treadmill only</button><button type="button" data-kind="rest" class="' + (kind === 'rest' ? 'on' : '') + '">Rest</button></div>';
+
+    if (kind === 'rest') {
+      h += '<p class="muted" style="margin-top:12px">Rest day. Rotation doesn\'t move; your next session is still <b>' + DAYS[nextDayKey(date)].name + '</b>.</p>' +
+        '<div style="margin-top:12px"><button type="button" class="primary" id="saveBtn">Log rest day</button></div></section>';
+      return h;
+    }
+
+    // Treadmill block
+    const tm = existing && existing.treadmill || {};
+    h += '<form id="logForm" autocomplete="off"><div class="ex"><div class="row between"><h3>Treadmill · Apple Fitness+</h3><span class="chip">' + TREAD_MIN[phase] + ' min target</span></div>' +
+      '<p class="tiny muted">Pick any Fitness+ treadmill workout. Phase ' + phase + ' target is ' + TREAD_MIN[phase] + ' minutes' + (phase === 3 ? ', or intervals' : '') + '.</p>' +
+      '<div class="sets" style="grid-template-columns:1fr 2fr"><label class="f">Minutes<input type="number" id="tmMin" min="0" step="1" inputmode="numeric" value="' + (tm.minutes != null ? tm.minutes : '') + '" placeholder="' + TREAD_MIN[phase] + '"></label>' +
+      '<label class="f">Workout (optional)<input type="text" id="tmTitle" value="' + esc(tm.title || '') + '" placeholder="e.g. 20 min Hike with Jamie-Ray"></label></div></div>';
+
+    if (isStrength) {
+      const day = DAYS[kind];
+      h += '<div class="ex"><div class="row between"><h3>' + day.name + ' day</h3><span class="muted tiny">' + day.sub + '</span></div></div>';
+      day.phases[phase].forEach(baseKey => {
+        const key = resolveKey(baseKey); const ex = EX[key]; const sg = suggest(key, date);
+        const prev = existing && existing.ex && existing.ex[key] || {};
+        const maxed = !!(state.settings.maxed || {})[key];
+        h += '<div class="ex" data-ex="' + key + '"><div class="row between"><div><h3>' + esc(ex.name) + '</h3><span class="tiny muted">' + esc(ex.equip) + ' · ' + ex.sets + ' × ' + ex.lo + '–' + ex.hi + (ex.per ? ' · ' + ex.per : '') + '</span></div>' +
+          (maxed ? '<span class="chip warn">Holding weight</span>' : '') + '</div>';
+        if (ex.note) h += '<p class="tiny muted">' + esc(ex.note) + '</p>';
+        h += '<p class="suggest">' + sg.text + '</p>';
+        if (ex.bw) {
+          h += '<div class="sets bw">' + [0, 1, 2].map(i => '<label class="f">Set ' + (i + 1) + '<input type="number" inputmode="numeric" min="0" id="r-' + key + '-' + i + '" value="' + (prev.reps && prev.reps[i] != null ? prev.reps[i] : '') + '" placeholder="' + sg.reps + '"></label>').join('') + '</div>';
+        } else {
+          h += '<div class="sets"><label class="f">Weight lb<input type="number" inputmode="decimal" min="0" step="2.5" id="w-' + key + '" value="' + (prev.w != null ? prev.w : sg.w) + '"></label>' +
+            [0, 1, 2].map(i => '<label class="f">Set ' + (i + 1) + '<input type="number" inputmode="numeric" min="0" id="r-' + key + '-' + i + '" value="' + (prev.reps && prev.reps[i] != null ? prev.reps[i] : '') + '" placeholder="' + ex.hi + '"></label>').join('') + '</div>';
+          h += '<div class="row"><button type="button" class="small ' + (maxed ? 'on' : '') + '" data-max="' + key + '">' + (maxed ? 'Holding weight · tap to resume adding' : 'Can\'t go higher') + '</button>';
+          if (ex.alt && EX[ex.alt]) h += '<button type="button" class="small" data-swap="' + baseKey + '" data-to="' + (key === baseKey ? ex.alt : baseKey) + '">Swap for ' + esc(EX[key === baseKey ? ex.alt : baseKey].name) + '</button>';
+          h += '</div>';
+        }
+        h += '</div>';
+      });
+    }
+    h += '<div class="ex"><label class="f">Notes<input type="text" id="notes" value="' + esc(existing && existing.notes || '') + '" placeholder="How did it feel?"></label></div>';
+    h += '<div class="row" style="margin-top:14px"><button type="submit" class="primary" id="saveBtn">' + (existing ? 'Update ' + rel(date) : 'Save ' + rel(date)) + '</button></div>';
+    if (existing) h += '<div class="row" style="margin-top:8px;justify-content:center"><button type="button" class="small" id="delBtn">Remove this entry</button></div>';
+    h += '</form></section>';
+
+    h += '<section class="card"><div class="eyebrow">Morning plan · be at IMS by 9</div><div class="sched" style="margin-top:8px">' +
+      '<span class="t num">10:30</span><span>Lights out. Bag packed, Fitness+ workout picked.</span>' +
+      '<span class="t num">6:00</span><span>Up. Water, small bite, drive to Avon.</span>' +
+      '<span class="t num">6:30</span><span>Treadmill ' + TREAD_MIN[phase] + ' min, then ' + (isStrength ? DAYS[kind].name + ' day' : 'lift') + ' (about 30 min).</span>' +
+      '<span class="t num">7:35</span><span>Shower at the gym or home. Out the door by 8:25.</span></div>' +
+      '<p class="tiny muted" style="margin-top:8px">Missed a morning? Nothing shifts. Tomorrow is still the next day in the rotation.</p></section>';
+    return h;
+  }
+
+  function renderProgram() {
+    const t = todayIso(); const phase = phaseFor(t); const cw = completedWeeks(t); const ws = weekStats(t);
+    let h = '<section class="card hero"><div class="eyebrow">How the rotation works</div><h2>Push → Pull → Legs, repeat</h2>' +
+      '<p style="margin-top:8px">Days aren\'t tied to weekdays. Whatever you did last, the next lift is the next one in the line. Skip a morning and nothing goes out of sync. Every session opens with a Fitness+ treadmill workout. Aim for 5 mornings a week: 3 lifts, the rest treadmill-only.</p></section>';
+    h += '<section class="card"><div class="row between"><div><div class="eyebrow">Progress</div><h3>Week ' + (cw + 1) + ' · Phase ' + phase + (phase === 3 ? ' (full)' : '') + '</h3></div><span class="chip ' + (ws.strength >= 3 ? 'good' : '') + '">' + ws.strength + '/3 lifts this week</span></div>' +
+      '<p class="tiny muted" style="margin-top:8px">A week counts when it has 3 logged lift days (Mon–Sun). Each completed week unlocks the next phase: Phase 2 adds exercises, Phase 3 swaps in squats, lunges and flys. Phase 3 is the full program; after that, progress is weight on the bar.</p></section>';
+    ROTATION.forEach(k => {
+      const d = DAYS[k];
+      h += '<section class="card"><div class="row between"><h3>' + d.name + ' day</h3><span class="muted tiny">' + d.sub + '</span></div><div class="plan"><ul>';
+      h += '<li><span>Treadmill (Apple Fitness+)</span><span class="muted num">' + TREAD_MIN[phase] + ' min</span></li>';
+      d.phases[phase].forEach(bk => {
+        const key = resolveKey(bk); const ex = EX[key];
+        h += '<li><span>' + esc(ex.name) + (key !== bk ? ' <span class="chip">swapped</span>' : '') + '<br><span class="tiny muted">' + esc(ex.equip) + '</span></span><span class="muted num">' + ex.sets + ' × ' + ex.lo + '–' + ex.hi + '</span></li>';
+      });
+      h += '</ul></div>';
+      if (phase < 3) {
+        const next = d.phases[phase + 1].filter(x => !d.phases[phase].includes(x));
+        if (next.length) h += '<p class="tiny muted" style="margin-top:8px">Unlocks in Phase ' + (phase + 1) + ': ' + next.map(x => EX[x].name).join(', ') + '.</p>';
+      }
+      h += '</section>';
+    });
+    h += '<section class="card"><h3>Swaps</h3><p class="tiny muted" style="margin-top:4px">If Avon doesn\'t have a machine, or it\'s taken, swap it. The swap sticks until you swap back.</p><div class="plan" style="margin-top:8px"><ul>';
+    Object.keys(EX).filter(k => EX[k].alt && !EX[k].bw && ROTATION.some(r => Object.values(DAYS[r].phases).some(p => p.includes(k)))).forEach(k => {
+      const cur = resolveKey(k);
+      h += '<li><span>' + esc(EX[k].name) + (cur !== k ? ' → <b>' + esc(EX[cur].name) + '</b>' : '') + '</span><button type="button" class="small" data-swap="' + k + '" data-to="' + (cur === k ? EX[k].alt : k) + '">' + (cur === k ? 'Use ' + esc(EX[EX[k].alt].name) : 'Undo') + '</button></li>';
+    });
+    h += '</ul></div></section>';
+    h += '<section class="card"><h3>Weight rules</h3><ul class="tiny" style="margin:6px 0 0 18px;padding:0;display:grid;gap:4px">' +
+      '<li>All 3 sets hit the top of the rep range: next time goes up (5 lb machines and dumbbells, 10 lb leg press and squat).</li>' +
+      '<li>In range but not at the top: same weight, chase the top number.</li>' +
+      '<li>Any set under the bottom: drop one step.</li>' +
+      '<li>Tap <b>Can\'t go higher</b> on a lift and it holds the weight and asks for one more rep per set, a 4th set, or a slower 3-second lowering instead.</li></ul>' +
+      '<div class="row" style="margin-top:10px"><label class="f" style="flex:1">Weekly goal (sessions)<input type="number" id="goalIn" min="3" max="7" value="' + (state.settings.goal || GOAL) + '"></label></div></section>';
+    return h;
+  }
+
+  function renderHistory() {
+    const list = Object.values(state.sessions).sort((a, b) => a.date < b.date ? 1 : -1);
+    let h = '<section class="card"><div class="row between"><h2>History</h2><span class="chip">' + list.length + ' logged</span></div>';
+    if (!list.length) h += '<p class="muted" style="margin-top:10px">Nothing logged yet. Your first morning shows up here.</p>';
+    h += '<div class="hist" style="margin-top:8px">';
+    list.forEach(s => {
+      let what = s.kind === 'rest' ? 'Rest' : s.kind === 'cardio' ? 'Treadmill' : DAYS[s.day] ? DAYS[s.day].name + ' day' : 'Lift';
+      const bits = [];
+      if (s.treadmill && s.treadmill.minutes) bits.push(s.treadmill.minutes + ' min treadmill' + (s.treadmill.title ? ' · ' + s.treadmill.title : ''));
+      if (s.ex) Object.keys(s.ex).forEach(k => { const e = s.ex[k]; if (EX[k] && e.reps && e.reps.some(r => r > 0)) bits.push(EX[k].name + (e.w != null ? ' ' + e.w + '×' : ' ') + e.reps.filter(r => r > 0).join('/')); });
+      if (s.notes) bits.push('“' + s.notes + '”');
+      h += '<div class="hrow"><div class="hdate num">' + nice(s.date).replace(/^(\w+) /, '$1<br>') + '</div><div><b>' + what + '</b>' + (s.phase ? ' <span class="chip">P' + s.phase + '</span>' : '') + '<div class="tiny muted">' + esc(bits.join(' · ') || '—') + '</div></div><button type="button" class="small" data-edit="' + s.date + '">Edit</button></div>';
+    });
+    return h + '</div></section>';
+  }
+
+  /* ---------- Events ---------- */
+  function bind() {
+    const dp = $('#datePick'); if (dp) dp.addEventListener('change', e => { if (e.target.value && e.target.value <= todayIso()) { state.selDate = e.target.value; state.override = null; render(); } });
+    document.querySelectorAll('[data-date]').forEach(b => b.addEventListener('click', () => { state.selDate = b.dataset.date; state.override = null; render(); }));
+    document.querySelectorAll('#kindSeg [data-kind]').forEach(b => b.addEventListener('click', () => { state.override = b.dataset.kind; render(); }));
+    document.querySelectorAll('[data-max]').forEach(b => b.addEventListener('click', () => { const m = Object.assign({}, state.settings.maxed || {}); if (m[b.dataset.max]) delete m[b.dataset.max]; else m[b.dataset.max] = true; saveSettings({ maxed: m }); }));
+    document.querySelectorAll('[data-swap]').forEach(b => b.addEventListener('click', () => { const sw = Object.assign({}, state.settings.swaps || {}); if (b.dataset.to === b.dataset.swap) delete sw[b.dataset.swap]; else sw[b.dataset.swap] = b.dataset.to; saveSettings({ swaps: sw }); }));
+    document.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => { state.selDate = b.dataset.edit; state.override = null; location.hash = 'train'; }));
+    const goal = $('#goalIn'); if (goal) goal.addEventListener('change', e => { const v = Math.max(3, Math.min(7, Number(e.target.value) || GOAL)); saveSettings({ goal: v }); });
+    const form = $('#logForm'); if (form) form.addEventListener('submit', e => { e.preventDefault(); saveForm(); });
+    const sb = $('#saveBtn'); if (sb && !form) sb.addEventListener('click', saveForm); // rest day
+    const del = $('#delBtn'); if (del) del.addEventListener('click', () => { if (del.dataset.armed) deleteSession(state.selDate); else { del.dataset.armed = '1'; del.textContent = 'Tap again to remove'; } });
+  }
+
+  function saveForm() {
+    const date = state.selDate; const existing = state.sessions[date];
+    const kind = state.override || (existing ? (existing.kind === 'strength' ? existing.day : existing.kind) : nextDayKey(date));
+    const phase = phaseFor(date);
+    const doc = { date, phase, savedAt: new Date().toISOString() };
+    if (kind === 'rest') { doc.kind = 'rest'; }
+    else {
+      const min = Number(($('#tmMin') || {}).value); const title = (($('#tmTitle') || {}).value || '').trim();
+      if (min > 0 || title) doc.treadmill = { minutes: min > 0 ? min : 0, title };
+      doc.notes = (($('#notes') || {}).value || '').trim();
+      if (DAYS[kind]) {
+        doc.kind = 'strength'; doc.day = kind; doc.ex = {};
+        document.querySelectorAll('[data-ex]').forEach(el => {
+          const key = el.dataset.ex; const ex = EX[key];
+          const reps = [0, 1, 2].map(i => Number((document.getElementById('r-' + key + '-' + i) || {}).value) || 0);
+          const w = ex.bw ? null : Number((document.getElementById('w-' + key) || {}).value) || 0;
+          if (reps.some(r => r > 0)) doc.ex[key] = ex.bw ? { reps } : { w, reps };
+        });
+        if (!Object.keys(doc.ex).length && !doc.treadmill) { toast('Enter at least one set or treadmill minutes'); return; }
+      } else {
+        doc.kind = 'cardio';
+        if (!doc.treadmill) { toast('Enter treadmill minutes'); return; }
+      }
+    }
+    if (!state.settings.startDate) saveSettings({ startDate: date < todayIso() ? date : todayIso() });
+    state.override = null;
+    saveSession(date, doc);
+  }
+
+  function route() {
+    const h = (location.hash || '#train').slice(1);
+    state.tab = ['train', 'program', 'history'].includes(h) ? h : 'train';
+    render();
+  }
+  window.addEventListener('hashchange', route);
+  route();
+  connect();
+})();
+</script>
