@@ -69,7 +69,7 @@ const AVATARS = ['', '🏁', '🏎️', '🔥', '⚡', '💪', '🌸', '🌷', '
 
 /* ---------- State ---------- */
 const blankSettings = () => ({ startDate: null, maxed: {}, swaps: {}, goal: GOAL });
-const blankData = () => ({ profile: null, sessions: {}, settings: blankSettings(), food: {} });
+const blankData = () => ({ profile: null, sessions: {}, settings: blankSettings(), food: {}, health: {} });
 const state = {
   pid: null,
   data: { tyson: blankData(), jacquie: blankData() },
@@ -179,6 +179,8 @@ const PATH = {
   settings: pid => pid === 'tyson' ? 'settings/program' : 'profiles/' + pid + '/settings/program',
   foodCol: pid => 'profiles/' + pid + '/food',
   food: (pid, d) => 'profiles/' + pid + '/food/' + d,
+  healthCol: pid => 'profiles/' + pid + '/health',
+  health: (pid, d) => 'profiles/' + pid + '/health/' + d,
   profile: pid => 'profiles/' + pid
 };
 function slot(path) { // where a document lives in state: { map, key } or { obj, field }
@@ -190,6 +192,7 @@ function slot(path) { // where a document lives in state: { map, key } or { obj,
     if (s.length === 2) return { obj: D, field: 'profile' };
     if (s[2] === 'sessions' && s.length === 4) return { map: D.sessions, key: s[3] };
     if (s[2] === 'food' && s.length === 4) return { map: D.food, key: s[3] };
+    if (s[2] === 'health' && s.length === 4) return { map: D.health, key: s[3] };
     if (s[2] === 'settings' && s[3] === 'program') return { obj: D, field: 'settings', dflt: blankSettings };
   }
   if (s[0] === 'foods' && s.length === 2) return { map: state.customFoods, key: s[1] };
@@ -208,7 +211,7 @@ function replaceCol(colPath, entries) {
   if (colPath === 'sessions') { host = state.data.tyson; field = 'sessions'; }
   else if (colPath === 'foods') { host = state; field = 'customFoods'; }
   else if (colPath === 'results') { host = state; field = 'results'; }
-  else if (s[0] === 'profiles' && state.data[s[1]] && (s[2] === 'sessions' || s[2] === 'food')) { host = state.data[s[1]]; field = s[2]; }
+  else if (s[0] === 'profiles' && state.data[s[1]] && (s[2] === 'sessions' || s[2] === 'food' || s[2] === 'health')) { host = state.data[s[1]]; field = s[2]; }
   if (!host) return;
   const m = {}; entries.forEach(e => { m[e[0]] = e[1]; }); host[field] = m; bump();
 }
@@ -307,6 +310,6 @@ async function connect() {
       if (!snap.metadata.fromCache) got(path); render();
     }, () => got(path));
   };
-  PIDS.forEach(pid => { subCol(PATH.sessions(pid)); subCol(PATH.foodCol(pid)); subDoc(PATH.settings(pid)); subDoc(PATH.profile(pid)); });
+  PIDS.forEach(pid => { subCol(PATH.sessions(pid)); subCol(PATH.foodCol(pid)); subCol(PATH.healthCol(pid)); subDoc(PATH.settings(pid)); subDoc(PATH.profile(pid)); });
   subCol('foods'); subCol('results'); subDoc('comp/settings');
 }

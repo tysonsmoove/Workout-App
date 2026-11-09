@@ -24,6 +24,7 @@ function dateHead(label, mode) {
   return '<div class="head"><div><div class="eyebrow">' + label + '</div><h2>' + rel(date) + (rel(date) !== nice(date) ? ' <span class="muted" style="font-size:.9375rem;letter-spacing:0;text-transform:none;font-family:var(--body);font-weight:500">' + nice(date) + '</span>' : '') + '</h2></div>' +
     '<input type="date" id="datePick" aria-label="Pick another day" value="' + date + '" max="' + todayIso() + '"></div>' + renderDatebar(mode);
 }
+const hkLineHTML = date => { const t = healthLine(me(), date); return t ? '<p class="tiny muted" id="hkLine" style="margin-top:-4px">' + esc(t) + '</p>' : ''; };
 function statusText(date) {
   const rec = state.sessions[date]; const d = state.drafts[date]; const st = state.status[date];
   if (st && st.s === 'saving') return 'Saving…';
@@ -51,8 +52,8 @@ function renderTrain() {
   let h = '<section class="card sess">' + dateHead('Logging for') +
     '<div class="seg" id="kindSeg" aria-label="Workout type">' + ROTATION.map(k => '<button type="button" data-kind="' + k + '" class="' + (kind === k ? 'on' : '') + '" aria-pressed="' + (kind === k) + '">' + DAYS[k].name + '</button>').join('') +
     '<button type="button" data-kind="cardio" class="' + (kind === 'cardio' ? 'on' : '') + '" aria-pressed="' + (kind === 'cardio') + '">Treadmill</button><button type="button" data-kind="rest" class="' + (kind === 'rest' ? 'on' : '') + '" aria-pressed="' + (kind === 'rest') + '">Rest</button></div>' +
-    '<div class="status"><span id="statusLine">' + esc(statusText(date)) + '</span><span>·</span><span>Phase ' + phase + '</span></div>' +
-    '<p class="tiny muted" id="whyLine" style="margin-top:-4px">' + esc(why) + '</p>';
+    '<div class="status"><span id="statusLine">' + esc(statusText(date)) + '</span><span>·</span><span>Phase ' + phase + '</span>' + healthButton() + '</div>' +
+    '<p class="tiny muted" id="whyLine" style="margin-top:-4px">' + esc(why) + '</p>' + hkLineHTML(date);
   if (d && d.recovered && draftHasContent(d)) h += '<div class="banner"><span>Unsaved draft from ' + tzTime.format(new Date(d.updatedAt)) + ' restored. Not saved until you tap Save.</span><div class="row"><button type="button" class="small" id="discardDraft">Discard draft</button></div></div>';
   if (n && n.ambiguous) h += '<div class="banner">Saved as a ' + (DAYS[rec.day] ? DAYS[rec.day].name : 'lift') + ' day by the earlier version but has no lifting sets. It counts as ' + (n.kind === 'cardio' ? 'treadmill only' : 'no activity') + '. Add sets or re-save to confirm.</div>';
   if (n && n.kind === 'activity') h += '<div class="banner">This day has pick-your-own activities logged (' + n.allMin + ' min). Saving a lift here replaces them.</div>';
@@ -189,7 +190,7 @@ function renderMove() {
   if (n && n.kind === 'rest') status = 'Rest day logged';
   else if (program) status = 'Lifting-program entry · counts as an active day';
   else if (acts.length) status = n.allMin + ' min logged · ' + (di.active ? 'counts as an active day' : (mm - di.minutes) + ' more min of movement to count');
-  let h = '<section class="card sess">' + dateHead('Logging for') + '<div class="status"><span id="statusLine">' + esc(status) + '</span></div>';
+  let h = '<section class="card sess">' + dateHead('Logging for') + '<div class="status"><span id="statusLine">' + esc(status) + '</span>' + healthButton() + '</div>' + hkLineHTML(date);
   if (program) h += '<div class="banner">This day was logged on the lifting program. Switch workout style under Me to edit it, or use History to remove it.</div>';
   h += '</section>';
   if (acts.length || (n && n.kind === 'rest')) {

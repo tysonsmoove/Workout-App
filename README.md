@@ -16,6 +16,7 @@ A phone-first fitness tracker for two people, Tyson and Jacquie: workouts, nutri
 | `src/20-activities.js` | Pick-your-own menu of gentle activities |
 | `src/30-score.js` | Weekly score, coaching tips, competition history, badges |
 | `src/40-nutrition.js` | Calorie and water targets, food log, food search, Nutrition Facts label |
+| `src/45-health.js`, `src/72-ui-health.js` | Apple Health import: parser for text pasted from a Shortcut, and the paste box |
 | `src/50-fx.js` | Overlays, confetti, celebrations |
 | `src/60…80-ui-*.js` | Screens: Train, Fuel, Compete, Me |
 | `src/90-main.js` | Render loop, events, routing, boot |
@@ -59,6 +60,10 @@ Badges are derived from the logs and recorded on the profile the day they are ea
 
 - **Logging.** Search, pick a portion and quantity, see the Nutrition Facts label, add to a meal. Logged items store their own nutrient values, so rebuilding the database never changes history. Quick add and saved custom foods cover anything not in the list.
 
+## Apple Health and Apple Watch
+
+A web page cannot read Apple Health. A Shortcut on the iPhone copies the day's Exercise Minutes, steps, active calories, water and weight as text, and the user pastes it into the app. The steps to build the Shortcut are in `docs/apple-health-shortcut.md` and inside the app under Me. Imports are idempotent: Exercise Minutes become one entry holding only the minutes not already logged by hand.
+
 ## Storage
 
 One path-addressed document store, backed by the artifact database when signed in with write access, otherwise by this browser's localStorage.
@@ -69,6 +74,7 @@ One path-addressed document store, backed by the artifact database when signed i
 | `profiles/<pid>` | Profile |
 | `profiles/<pid>/sessions/<date>` | Other profile's workout log |
 | `profiles/<pid>/food/<date>` | Food items and water for a day |
+| `profiles/<pid>/health/<date>` | Steps, exercise minutes, active calories and distance imported from Apple Health |
 | `profiles/<pid>/settings/program` | Lifting settings for a non-Tyson profile |
 | `foods/<id>` | Custom foods, shared |
 | `results/<monday>` | Final weekly results |
@@ -84,5 +90,5 @@ Serve a doctype-wrapped copy of `index.html` with `foods.json` beside it on `htt
 
 ```
 node tests/test.js       # lifting program: drafts, classification, blank sets, progression, dates, layouts, sync (148 checks)
-node tests/app.test.js   # profiles, looks, pick-your-own, nutrition, competition, badges, storage paths, sync, layouts (130 checks)
+node tests/app.test.js   # profiles, looks, pick-your-own, nutrition, competition, badges, storage paths, Apple Health import, sync, layouts (156 checks)
 ```

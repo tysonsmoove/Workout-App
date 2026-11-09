@@ -102,10 +102,14 @@ document.addEventListener('click', e => {
 const ovRoot = $('#ov');
 function onOvInput(e) {
   const el = e.target, o = state.ov; if (!o || !el.dataset || !el.dataset.ovf) return;
-  o[el.dataset.ovf] = el.value;
-  if (o.type === 'food' && el.dataset.ovf === 'q') { clearTimeout(foodT); foodT = setTimeout(fillFoodResults, 90); }
-  else if (o.type === 'fooditem') refreshFoodItem();
-  else if (o.type === 'act' && el.dataset.ovf === 'min') { const b = $('#actLog'), min = Math.round(Number(el.value)); if (b) { b.disabled = !(min > 0); b.textContent = (o.id ? 'Update ' : 'Log ') + (min > 0 ? min + ' min' : ''); } }
+  const key = el.dataset.ovf, typed = e.type === 'input';
+  o[key] = el.value;
+  // Lists are only redrawn while typing. A field also fires "change" when it loses focus, which happens in the
+  // middle of a tap on a result; redrawing then would replace the thing being tapped and swallow the tap.
+  if (o.type === 'food' && key === 'q') { if (typed) { clearTimeout(foodT); foodT = setTimeout(fillFoodResults, 90); } }
+  else if (o.type === 'health') { if (typed) refreshHealthPreview(); }
+  else if (o.type === 'fooditem') refreshFoodItem(); // patches the label and button text in place
+  else if (o.type === 'act' && key === 'min') { const b = $('#actLog'), min = Math.round(Number(el.value)); if (b) { b.disabled = !(min > 0); b.textContent = (o.id ? 'Update ' : 'Log ') + (min > 0 ? min + ' min' : ''); } }
 }
 ovRoot.addEventListener('input', onOvInput);
 ovRoot.addEventListener('change', onOvInput);
@@ -194,7 +198,7 @@ function route() {
   render();
   if (changed && !jump) window.scrollTo(0, 0);
 }
-window.MorningLaps = { state, P, weekScore, coach, goalsFor, badgesFor, searchFoods, loadFoods, dayTotals, compWeeks, foodCount: () => foodDb.list ? foodDb.list.length : 0 };
+window.MorningLaps = { state, P, weekScore, coach, goalsFor, badgesFor, searchFoods, loadFoods, dayTotals, compWeeks, parseHealthPaste, foodCount: () => foodDb.list ? foodDb.list.length : 0 };
 (function boot() {
   const saved = lsGet('ml.me', null);
   state.pid = PIDS.includes(saved) ? saved : null;

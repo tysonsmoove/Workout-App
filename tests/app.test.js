@@ -147,7 +147,12 @@ const logAct = async (page, k, opts = {}) => {
   check('G search: chicken breast', (await rank('chicken breast'))[0].toLowerCase().startsWith('chicken breast'), (await rank('chicken breast')).join(' | '));
   check('G search: brand item', (await rank('big mac')).some(n => /big mac/i.test(n)));
   check('G search: plural and word order', (await rank('eggs scrambled')).some(n => /egg.*scrambled/i.test(n)) && (await rank('tomatoes')).some(n => /^tomato/i.test(n)));
-  await page.click('.results .fooditem:has-text("Banana, raw")'); await page.waitForSelector('#factsBox .facts');
+  { // a slow tap: finger down blurs the search box, then a pause longer than the search debounce before lifting
+    const box = await (await page.$('.results .fooditem:has-text("Banana, raw")')).boundingBox();
+    await page.mouse.move(box.x + 40, box.y + 12); await page.mouse.down(); await page.waitForTimeout(260); await page.mouse.up();
+  }
+  await page.waitForSelector('#factsBox .facts', { timeout: 4000 }).catch(() => {});
+  check('G a slow tap on a search result still opens it', await has(page, '#factsBox .facts'));
   check('G facts label for one banana', (await txt(page, '#factsBox .cal b')) === '122' && (await txt(page, '#factsBox')).includes('Potassium'));
   await fill(page, '#fQty', 2);
   check('G quantity scales the label and the button', (await txt(page, '#factsBox .cal b')) === '244' && (await txt(page, '#foodAdd')) === 'Add to Lunch · 244 cal');
@@ -290,6 +295,65 @@ const logAct = async (page, k, opts = {}) => {
   ({ ctx, page } = await newPage(browser, { me: 'jacquie', reducedMotion: 'reduce' }));
   await logAct(page, 'walkeasy');
   check('L reduced motion: logging works and no confetti is drawn', (await score(page, 'jacquie')).total === 22 && await page.evaluate(() => document.getElementById('fx').width === 300));
+  await ctx.close();
+
+  // ---------- M: Apple Health import ----------
+  ({ ctx, page } = await newPage(browser, { me: 'jacquie' }));
+  const parse = t => page.evaluate(x => window.MorningLaps.parseHealthPaste(x), t);
+  const PASTE = 'Morning Laps\ndate: 2026-11-03\nexercise: 42.000000\nsteps: 8,421\nactive: 512.3 kcal\nwater: 64 fl oz\nweight: 148.5 lb\n';
+  const p1 = await parse(PASTE);
+  check('M parser reads a full paste', p1.date === '2026-11-03' && JSON.stringify(p1.vals) === JSON.stringify({ exercise: 42, steps: 8421, active: 512, water: 64, weight: 148.5 }) && p1.unknown.length === 0, JSON.stringify(p1));
+  const p2 = await parse('water: 1.5 L\nweight: 70 kg\ndistance: 5 km\nexercise: 1 hr');
+  check('M parser converts metric and hour units', p2.vals.water === 51 && p2.vals.weight === 154.3 && p2.vals.distance === 3.1 && p2.vals.exercise === 60, JSON.stringify(p2.vals));
+  const p3 = await parse('water:\n8\n16\n12\nsteps: 1,200\n800');
+  check('M parser adds up several samples of a total', p3.vals.water === 36 && p3.vals.steps === 2000, JSON.stringify(p3.vals));
+  check('M parser reads other date styles', (await parse('date: Nov 3, 2026\nsteps: 5')).date === '2026-11-03' && (await parse('date: 11/3/26\nsteps: 5')).date === '2026-11-03' && (await parse('date: 3 November 2026\nsteps: 5')).date === '2026-11-03');
+  const p4 = await parse('hello world\nweight:\nsteps: 100\nweight: 5');
+  check('M parser skips blanks, noise and impossible values', p4.vals.steps === 100 && p4.vals.weight === undefined && p4.unknown.length === 2, JSON.stringify(p4));
+  await logAct(page, 'walkeasy');
+  await page.click('.sess [data-a="health"]'); await page.waitForSelector('#hkText');
+  check('M import sheet names whose log it fills, and waits for a paste', (await txt(page, '.ov-head')).includes('Into Jacquie') && await page.$eval('#hkGo', b => b.disabled));
+  await fill(page, '#hkText', PASTE);
+  const prev = await txt(page, '#hkPreview');
+  check('M preview shows only the minutes not already logged by hand', prev.includes('Watch exercise: 42 min') && prev.includes('You logged 15 min by hand, so 27 more are added') && prev.includes('For Tue Nov 3'), prev);
+  check('M preview lists water, weight and totals', prev.includes('Water: 64 oz') && prev.includes('Weight: 148.5 lb') && prev.includes('8,421 steps') && (await txt(page, '#hkGo')) === 'Import for today');
+  await shot(page, 'health-import.png');
+  await page.click('#hkGo'); const tm = await toastWith(page, 'Imported for today');
+  check('M import reports what it saved', tm.includes('27 min of movement') && tm.includes('64 oz of water') && tm.includes('weight 148.5 lb') && tm.includes('activity totals'), tm);
+  const hrec = await kv(page, 'profiles/jacquie/sessions/2026-11-03');
+  check('M movement lands as one Watch entry beside the manual one', hrec.acts.length === 2 && hrec.acts.find(a => a.id === 'hk-exercise').min === 27 && await txt(page, '#minCount') === '42');
+  check('M water, weigh-in and totals are stored', (await kv(page, 'profiles/jacquie/food/2026-11-03')).water === 64 && (await kv(page, 'profiles/jacquie')).weighIns['2026-11-03'] === 148.5 && (await kv(page, 'profiles/jacquie/health/2026-11-03')).steps === 8421);
+  check('M the day shows the Health totals', (await txt(page, '#hkLine')).includes('8,421 steps') && (await txt(page, '#hkLine')).includes('42 exercise min'));
+  await page.click('.sess [data-a="health"]'); await fill(page, '#hkText', PASTE);
+  check('M pasting the same day again changes nothing', (await txt(page, '#hkPreview')).includes('Already imported') && (await txt(page, '#hkPreview')).includes('Already logged'));
+  await page.click('#hkGo'); await page.waitForSelector('#ov', { state: 'hidden' });
+  check('M no duplicate after a second import', (await kv(page, 'profiles/jacquie/sessions/2026-11-03')).acts.length === 2 && await txt(page, '#minCount') === '42');
+  await logAct(page, 'walkpark');
+  await page.click('.sess [data-a="health"]'); await fill(page, '#hkText', PASTE.replace('water: 64 fl oz', 'water: 80 fl oz'));
+  check('M once hand-logged minutes cover the Watch total, the import offers to drop its own', (await txt(page, '#hkPreview')).includes('Now covered by the 45 min you logged by hand'));
+  await page.click('[data-a="hk-toggle"][data-k="water"]');
+  check('M a row can be switched off', await page.$eval('[data-a="hk-toggle"][data-k="water"]', b => b.getAttribute('aria-pressed') === 'false') && await val(page, '#hkText') !== '');
+  await page.click('#hkGo'); await page.waitForSelector('#ov', { state: 'hidden' });
+  const hrec2 = await kv(page, 'profiles/jacquie/sessions/2026-11-03');
+  check('M imported minutes are removed, not double counted; skipped water is untouched', !hrec2.acts.some(a => a.id === 'hk-exercise') && await txt(page, '#minCount') === '45' && (await kv(page, 'profiles/jacquie/food/2026-11-03')).water === 64);
+  await page.click('.sess [data-a="health"]'); await fill(page, '#hkText', 'date: 2026-11-05\nsteps: 10');
+  check('M a future date is refused', (await txt(page, '#hkPreview')).includes('has not happened yet') && await page.$eval('#hkGo', b => b.disabled));
+  await fill(page, '#hkText', 'just some words');
+  check('M unrecognizable text is refused with a reason', (await txt(page, '#hkPreview')).includes('Nothing here looks like Health numbers') && await page.$eval('#hkGo', b => b.disabled));
+  await fill(page, '#hkText', 'date: 2026-11-02\nexercise: 12\nsteps: 3000'); await page.click('#hkGo'); await page.waitForSelector('#ov', { state: 'hidden' });
+  check('M a paste for another day goes to that day and shows it', (await txt(page, '.sess h2')).startsWith('Yesterday') && (await kv(page, 'profiles/jacquie/sessions/2026-11-02')).acts[0].min === 12 && await txt(page, '#actCount') === '2/3');
+  await switchTo(page, 'tyson'); await go(page, 'train'); await pickDate(page, '2026-11-03');
+  await page.click('.sess [data-a="health"]'); await fill(page, '#hkText', 'date: 2026-11-03\nexercise: 50\nsteps: 9000\nweight: 199');
+  check('M on the lifting program Exercise Minutes are shown, not logged', (await txt(page, '#hkPreview')).includes('still logged by hand') && !(await has(page, '[data-a="hk-toggle"][data-k="move"]')));
+  await page.click('#hkGo'); await page.waitForSelector('#ov', { state: 'hidden' });
+  check('M Tyson gets totals and a weigh-in, and no workout entry is invented', (await txt(page, '#hkLine')).includes('9,000 steps') && (await kv(page, 'profiles/tyson')).weighIns['2026-11-03'] === 199 && await page.evaluate(() => !localStorage.getItem('ml.sessions') || !JSON.parse(localStorage.getItem('ml.sessions'))['2026-11-03']));
+  await go(page, 'me');
+  check('M shortcut steps are in the app', (await txt(page, '#healthCard')).includes('Find Health Samples') && (await txt(page, '#healthCard')).includes('yyyy-MM-dd'));
+  await go(page, 'fuel'); check('M Fuel tab has the import button too', await has(page, '.sess [data-a="health"]'));
+  await ctx.close();
+  ({ ctx, page } = await newPage(browser, { me: 'jacquie', width: 375, height: 667 }));
+  await page.click('.sess [data-a="health"]'); await fill(page, '#hkText', PASTE);
+  check('M import sheet fits a small phone', await page.evaluate(() => { const r = document.querySelector('.ov').getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth + 1 && r.bottom <= innerHeight + 1 && document.documentElement.scrollWidth <= document.documentElement.clientWidth; }));
   await ctx.close();
 
   // ---------- K: layouts ----------

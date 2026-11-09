@@ -9,7 +9,7 @@ const portionText = p => p.label + (p.grams && !/\d\s?g$/.test(p.label) ? ' (' +
 function renderFuel() {
   const pid = me(), date = state.selDate, g = goalsFor(pid), t = dayTotals(pid, date), day = foodDay(pid, date);
   const left = g.kcal - t.kcal, over = t.kcal > g.hi, inRange = t.count > 0 && t.kcal >= g.lo && t.kcal <= g.hi, water = Math.round(t.water);
-  let h = '<section class="card sess">' + dateHead('Food and water for', 'fuel') + '</section>';
+  let h = '<section class="card sess">' + dateHead('Food and water for', 'fuel') + '<div class="status"><span>' + (t.count ? t.count + ' item' + (t.count === 1 ? '' : 's') + ' logged' : 'Nothing logged yet') + '</span>' + healthButton() + '</div></section>';
   if (!g.ready) h += '<div class="banner accent"><span>These targets are placeholders: 2,000 calories and ' + g.waterOz + ' oz of water. Add your numbers, or your doctor\'s, to get your own.</span><div class="row"><button type="button" class="small" data-a="go-body">Set my targets</button></div></div>';
   h += '<section class="card stack"><div class="rings">' +
     '<div class="ringbox">' + ringSVG(t.kcal / g.kcal, over ? 'over' : '') + '<div class="ringtxt"><b id="kcalLeft">' + commas(Math.abs(left)) + '</b><span>' + (left >= 0 ? 'calories left' : 'over target') + '</span></div><div class="tiny muted num">' + commas(t.kcal) + ' of ' + commas(g.kcal) + '</div></div>' +

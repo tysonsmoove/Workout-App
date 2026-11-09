@@ -65,6 +65,9 @@ function renderMe() {
     (wd.length >= 2 ? '<p class="tiny muted num">' + (function () { const ch = Math.round((wi[wd[wd.length - 1]] - wi[wd[0]]) * 10) / 10; return (ch === 0 ? 'No change' : (ch < 0 ? 'Down ' : 'Up ') + Math.abs(ch) + ' lb') + ' since ' + shortDate(wd[0]) + '.'; })() + '</p>' : '<p class="tiny muted">Log a weight now and then. Same scale, same time of day, once a week is plenty.</p>') +
     '<div class="row" style="flex-wrap:nowrap;align-items:flex-end"><label class="f grow">Today\'s weight lb<input type="number" data-form="weigh" data-k="lb" inputmode="decimal" min="60" max="700" value="' + esc((state.forms.weigh || {}).lb || '') + '" placeholder="–"></label><button type="button" class="small" data-a="weigh-save" style="min-height:44px">Log</button></div></section>';
 
+  h += '<section class="card stack" id="healthCard"><h3>Apple Health and Apple Watch</h3><p class="tiny muted">A web page cannot read Apple Health directly. A one-tap shortcut on your iPhone copies the day\'s Exercise Minutes, steps, active calories, water and weight, and you paste them in.</p>' +
+    '<div class="row"><button type="button" class="small" data-a="health">Import from Health</button></div>' +
+    '<details class="plain"><summary>Set up the shortcut, once per iPhone</summary><div style="margin-top:8px">' + shortcutStepsHTML() + '</div></details></section>';
   h += '<section class="card stack"><h3>Workout style</h3>' + seg('plan-set', 'plan', p.plan, { program: 'Lifting program', choice: 'Pick-your-own' }) +
     '<p class="tiny muted">' + (p.plan === 'program' ? 'Push, Pull, Legs rotation with weight suggestions. Weekly goal: ' + moveGoal(pid) + ' activity days, ' + LIFT_GOAL + ' of them lifts.' : 'Choose from a gentle menu each day. Weekly goal: ' + moveGoal(pid) + ' active days of ' + minMin(pid) + ' minutes or more. Adjust it under Train, Plan.') + ' Switching keeps everything already logged.</p></section>';
 

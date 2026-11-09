@@ -313,6 +313,17 @@ details.hi > summary::-webkit-details-marker { display: none; }
 .sched .t { font-family: var(--display); font-weight: 700; font-size: 1.0625rem; }
 ul.rules { margin: 6px 0 0 18px; padding: 0; display: grid; gap: 4px; font-size: .8125rem; }
 
+/* Apple Health import */
+textarea { resize: vertical; min-height: 132px; font-size: 1rem; line-height: 1.4; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+ol.steps { margin: 0; padding-left: 20px; display: grid; gap: 8px; font-size: .875rem; }
+ol.steps code, pre.code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; background: var(--soft); border-radius: 5px; padding: 1px 5px; font-size: .8125rem; }
+pre.code { padding: 8px 10px; margin: 6px 0; overflow-x: auto; line-height: 1.5; }
+.hkrow { display: grid; grid-template-columns: 34px 1fr; gap: 10px; align-items: start; padding: 8px 0; border-top: 1px solid var(--line); }
+.hkrow:first-of-type { border-top: 0; }
+.tick { width: 34px; height: 34px; min-height: 34px; padding: 0; border-radius: 8px; font-weight: 700; display: grid; place-items: center; }
+.tick.on { background: var(--good); border-color: var(--good); color: #fff; }
+.tick.off { border: 1px dashed var(--line); color: var(--muted); }
+
 /* overlays */
 .ov-root { position: fixed; inset: 0; z-index: 30; display: flex; align-items: flex-end; justify-content: center; background: rgba(8, 10, 14, .55); padding-top: calc(28px + env(safe-area-inset-top, 0px)); }
 .ov { background: var(--card); color: var(--fg); width: 100%; max-width: 560px; max-height: 100%; overflow-y: auto; overscroll-behavior: contain; border-radius: 18px 18px 0 0; display: grid; gap: 12px; align-content: start;
@@ -437,7 +448,7 @@ const AVATARS = ['', '🏁', '🏎️', '🔥', '⚡', '💪', '🌸', '🌷', '
 
 /* ---------- State ---------- */
 const blankSettings = () => ({ startDate: null, maxed: {}, swaps: {}, goal: GOAL });
-const blankData = () => ({ profile: null, sessions: {}, settings: blankSettings(), food: {} });
+const blankData = () => ({ profile: null, sessions: {}, settings: blankSettings(), food: {}, health: {} });
 const state = {
   pid: null,
   data: { tyson: blankData(), jacquie: blankData() },
@@ -547,6 +558,8 @@ const PATH = {
   settings: pid => pid === 'tyson' ? 'settings/program' : 'profiles/' + pid + '/settings/program',
   foodCol: pid => 'profiles/' + pid + '/food',
   food: (pid, d) => 'profiles/' + pid + '/food/' + d,
+  healthCol: pid => 'profiles/' + pid + '/health',
+  health: (pid, d) => 'profiles/' + pid + '/health/' + d,
   profile: pid => 'profiles/' + pid
 };
 function slot(path) { // where a document lives in state: { map, key } or { obj, field }
@@ -558,6 +571,7 @@ function slot(path) { // where a document lives in state: { map, key } or { obj,
     if (s.length === 2) return { obj: D, field: 'profile' };
     if (s[2] === 'sessions' && s.length === 4) return { map: D.sessions, key: s[3] };
     if (s[2] === 'food' && s.length === 4) return { map: D.food, key: s[3] };
+    if (s[2] === 'health' && s.length === 4) return { map: D.health, key: s[3] };
     if (s[2] === 'settings' && s[3] === 'program') return { obj: D, field: 'settings', dflt: blankSettings };
   }
   if (s[0] === 'foods' && s.length === 2) return { map: state.customFoods, key: s[1] };
@@ -576,7 +590,7 @@ function replaceCol(colPath, entries) {
   if (colPath === 'sessions') { host = state.data.tyson; field = 'sessions'; }
   else if (colPath === 'foods') { host = state; field = 'customFoods'; }
   else if (colPath === 'results') { host = state; field = 'results'; }
-  else if (s[0] === 'profiles' && state.data[s[1]] && (s[2] === 'sessions' || s[2] === 'food')) { host = state.data[s[1]]; field = s[2]; }
+  else if (s[0] === 'profiles' && state.data[s[1]] && (s[2] === 'sessions' || s[2] === 'food' || s[2] === 'health')) { host = state.data[s[1]]; field = s[2]; }
   if (!host) return;
   const m = {}; entries.forEach(e => { m[e[0]] = e[1]; }); host[field] = m; bump();
 }
@@ -675,7 +689,7 @@ async function connect() {
       if (!snap.metadata.fromCache) got(path); render();
     }, () => got(path));
   };
-  PIDS.forEach(pid => { subCol(PATH.sessions(pid)); subCol(PATH.foodCol(pid)); subDoc(PATH.settings(pid)); subDoc(PATH.profile(pid)); });
+  PIDS.forEach(pid => { subCol(PATH.sessions(pid)); subCol(PATH.foodCol(pid)); subCol(PATH.healthCol(pid)); subDoc(PATH.settings(pid)); subDoc(PATH.profile(pid)); });
   subCol('foods'); subCol('results'); subDoc('comp/settings');
 }
 
@@ -1382,6 +1396,143 @@ function factsHTML(n, serving) {
     '<div class="fnote">* Percent Daily Values are based on a 2,000 calorie diet. A dash means the source lists no value.</div></div>';
 }
 
+/* ---- 45-health.js ---- */
+/* ---------- Apple Health import: text copied by a Shortcut, pasted into the app ---------- */
+// A web page cannot read Apple Health. A Shortcut on the iPhone can, and copies a few lines like
+//   date: 2026-11-09
+//   exercise: 42
+//   steps: 8421
+//   active: 512
+//   water: 64
+//   weight: 198.4
+// Any subset, in any order, with or without units. Apple's built-in actions expose daily totals
+// (Exercise Minutes, Steps, ...) but not the list of workouts, so movement comes from Exercise Minutes.
+const HK_ACT_ID = 'hk-exercise';
+const HK_KEYS = {
+  date: 'date', day: 'date',
+  exercise: 'exercise', exerciseminutes: 'exercise', exercisemin: 'exercise', exercisemins: 'exercise', exercisetime: 'exercise', minutesexercised: 'exercise',
+  steps: 'steps', step: 'steps', stepcount: 'steps',
+  active: 'active', activecalories: 'active', activeenergy: 'active', activecal: 'active', activecals: 'active', calories: 'active',
+  distance: 'distance', walkingrunningdistance: 'distance', walkingdistance: 'distance', miles: 'distance',
+  water: 'water', weight: 'weight', bodymass: 'weight', bodyweight: 'weight'
+};
+const HK_RANGE = { exercise: [0, 1440], steps: [0, 200000], active: [0, 20000], distance: [0, 200], water: [0, 700], weight: [60, 700] };
+const HK_NUM = /-?\d[\d,]*(?:\.\d+)?/;
+function hkNumber(s) { // the first number on the line, tolerant of thousands separators and a decimal comma
+  const m = HK_NUM.exec(s); if (!m) return null;
+  let t = m[0];
+  if (/^-?\d+,\d{1,2}$/.test(t)) t = t.replace(',', '.'); else t = t.replace(/,/g, '');
+  const n = Number(t); return isFinite(n) ? n : null;
+}
+function hkConvert(key, n, unitText) { // to the app's units: minutes, kcal, miles, fl oz, lb
+  const u = ' ' + unitText.toLowerCase() + ' ';
+  if (key === 'water') { if (/\bml\b|millilit/.test(u)) return n / 29.5735; if (/\bl\b|\blit/.test(u)) return n * 33.814; if (/cup/.test(u)) return n * 8; return n; }
+  if (key === 'weight') { if (/\bkg\b|kilog/.test(u)) return n * 2.20462; if (/\bst\b|stone/.test(u)) return n * 14; return n; }
+  if (key === 'distance') { if (/\bkm\b|kilom/.test(u)) return n * 0.621371; if (/\bm\b|\bmeters?\b|\bmetres?\b/.test(u)) return n / 1609.344; return n; }
+  if (key === 'active') { if (/\bkj\b|kilojoule/.test(u)) return n / 4.184; return n; }
+  if (key === 'exercise') { if (/\bhrs?\b|\bh\b|hour/.test(u)) return n * 60; if (/\bsec|\bs\b/.test(u)) return n / 60; return n; }
+  return n;
+}
+function hkDate(s) {
+  const mk = (y, mo, d) => { const v = String(y).padStart(4, '0') + '-' + String(mo).padStart(2, '0') + '-' + String(d).padStart(2, '0'); return validIso(v) ? v : null; };
+  const mon = w => { const i = MON.map(x => x.toLowerCase()).indexOf(String(w).slice(0, 3).toLowerCase()); return i < 0 ? null : i + 1; };
+  let m;
+  if ((m = /(\d{4})-(\d{1,2})-(\d{1,2})/.exec(s))) return mk(m[1], m[2], m[3]);
+  if ((m = /(\d{1,2})\/(\d{1,2})\/(\d{4}|\d{2})\b/.exec(s))) return mk(m[3].length === 2 ? '20' + m[3] : m[3], m[1], m[2]);
+  if ((m = /([A-Za-z]{3,})\.?\s+(\d{1,2}),?\s+(\d{4})/.exec(s)) && mon(m[1])) return mk(m[3], mon(m[1]), m[2]);
+  if ((m = /(\d{1,2})\s+([A-Za-z]{3,})\.?,?\s+(\d{4})/.exec(s)) && mon(m[2])) return mk(m[3], mon(m[2]), m[1]);
+  return null;
+}
+function parseHealthPaste(text) {
+  const out = { date: null, dateRaw: '', vals: {}, unknown: [], lines: 0 };
+  let cur = null;
+  String(text || '').split(/\r?\n/).forEach(raw => {
+    const line = raw.trim(); if (!line) return;
+    out.lines++;
+    const c = line.indexOf(':'); let key = null, rest = line;
+    if (c > 0) { const k = HK_KEYS[line.slice(0, c).toLowerCase().replace(/[^a-z]/g, '')]; if (k) { key = k; rest = line.slice(c + 1).trim(); cur = k; } }
+    if (!key) { // no known label: another sample for the label above, or something else entirely
+      if (cur && cur !== 'date' && c < 0 && hkNumber(line) != null) key = cur;
+      else { cur = null; if (!/^morning laps/i.test(line)) out.unknown.push(line.slice(0, 60)); return; }
+    }
+    if (key === 'date') { out.dateRaw = rest; out.date = hkDate(rest); if (rest && !out.date) out.unknown.push(line.slice(0, 60)); return; }
+    if (!rest) return; // an empty value: Health had nothing for that type today
+    const n = hkNumber(rest); if (n == null) { out.unknown.push(line.slice(0, 60)); return; }
+    const v = hkConvert(key, n, rest.replace(HK_NUM, ' '));
+    if (key === 'weight') { if (out.vals.weight == null) out.vals.weight = v; } // several weigh-ins: the first listed (latest) wins
+    else out.vals[key] = (out.vals[key] || 0) + v;                               // several samples of a total: add them up
+  });
+  Object.keys(out.vals).forEach(k => {
+    const v = k === 'weight' || k === 'distance' ? Math.round(out.vals[k] * 10) / 10 : Math.round(out.vals[k]), r = HK_RANGE[k];
+    if (v >= r[0] && v <= r[1]) out.vals[k] = v; else { delete out.vals[k]; out.unknown.push(k + ': ' + v + ' is outside what the app accepts'); }
+  });
+  return out;
+}
+const healthDay = (pid, date) => state.data[pid].health[date] || null;
+function healthStatsText(v) {
+  const bits = [];
+  if (isNum(v.steps)) bits.push(commas(v.steps) + ' steps');
+  if (isNum(v.exercise)) bits.push(v.exercise + ' exercise min');
+  if (isNum(v.active)) bits.push(commas(v.active) + ' active cal');
+  if (isNum(v.distance)) bits.push(v.distance + ' mi');
+  return bits.join(' · ');
+}
+// What a paste would change for this profile. Rows with can:true are choices; the rest explain why nothing changes.
+function healthPlan(pid, parsed, fallbackDate) {
+  const date = parsed.date || fallbackDate, v = parsed.vals, rows = [], p = P(pid), t = todayIso();
+  if (!Object.keys(v).length) return { date, rows, err: parsed.lines ? 'Nothing here looks like Health numbers. Run the shortcut again, then paste.' : null };
+  if (date > t) return { date, rows, err: 'This is dated ' + nice(date) + ', which has not happened yet.' };
+  if (v.exercise != null) {
+    const title = 'Watch exercise: ' + v.exercise + ' min';
+    if (p.plan !== 'choice') rows.push({ k: 'move', can: false, title, sub: 'Shown with your day. Treadmill minutes and lifts are still logged by hand.' });
+    else {
+      const rec = state.data[pid].sessions[date], n = rec ? normalize(rec) : null;
+      if (n && (n.kind === 'strength' || n.kind === 'cardio')) rows.push({ k: 'move', can: false, title, sub: 'This day holds a lifting-program entry, so no minutes are added.' });
+      else {
+        const acts = n ? n.acts : [], had = acts.find(a => a.id === HK_ACT_ID) || null;
+        const manual = sum(acts.filter(a => a.id !== HK_ACT_ID && a.mv !== false), a => a.min), extra = Math.max(0, v.exercise - manual);
+        if (extra > 0 && (!had || had.min !== extra)) rows.push({ k: 'move', can: true, extra, title, sub: manual ? 'You logged ' + manual + ' min by hand, so ' + extra + ' more are added.' : 'Adds ' + extra + ' min of movement to the day.' });
+        else if (extra === 0 && had) rows.push({ k: 'move', can: true, extra: 0, title, sub: 'Now covered by the ' + manual + ' min you logged by hand. Removes the ' + had.min + ' imported earlier.' });
+        else rows.push({ k: 'move', can: false, title, sub: extra > 0 ? 'Already imported.' : manual ? 'Already covered by the ' + manual + ' min you logged by hand.' : 'No exercise minutes yet today.' });
+      }
+    }
+  }
+  if (v.water != null) {
+    const cur = dayTotals(pid, date).water || 0, title = 'Water: ' + v.water + ' oz';
+    rows.push(v.water > cur ? { k: 'water', can: true, title, sub: cur ? 'The app has ' + Math.round(cur) + ' oz. Raises the day to ' + v.water + '.' : 'Sets the day to ' + v.water + ' oz.' }
+      : { k: 'water', can: false, title, sub: v.water ? 'The app already has ' + Math.round(cur) + ' oz.' : 'No water logged in Health today.' });
+  }
+  if (v.weight != null) {
+    const cur = p.weighIns[date], title = 'Weight: ' + v.weight + ' lb';
+    rows.push(cur !== v.weight ? { k: 'weight', can: true, title, sub: 'Logs a weigh-in for ' + nice(date) + (cur ? ', replacing ' + cur + ' lb.' : '.') } : { k: 'weight', can: false, title, sub: 'Already logged.' });
+  }
+  const stats = healthStatsText(v);
+  if (stats) rows.push({ k: 'stats', can: false, title: stats, sub: 'Saved with the day.' });
+  return { date, rows, err: null, stats: !!stats };
+}
+async function applyHealthImport(pid, plan, parsed, use) {
+  const date = plan.date, v = parsed.vals, now = new Date().toISOString(), did = [];
+  for (const row of plan.rows) {
+    if (!row.can || use[row.k] === false) continue;
+    if (row.k === 'move') {
+      const ok = row.extra > 0 ? await logActivity(date, { id: HK_ACT_ID, a: 'other', name: 'Apple Watch exercise', min: row.extra, feel: null, hurt: false, note: 'From Apple Health', mv: true, src: 'health', at: now }) : await removeActivity(date, HK_ACT_ID);
+      if (ok) did.push(row.extra > 0 ? row.extra + ' min of movement' : 'movement updated');
+    } else if (row.k === 'water') {
+      const path = PATH.food(pid, date), cur = getDoc(path) || { v: 1, date, items: [], water: 0 };
+      if (await write(path, Object.assign({}, cur, { water: v.water, updatedAt: now }))) did.push(v.water + ' oz of water');
+    } else if (row.k === 'weight') {
+      const patch = { weighIns: {} }; patch.weighIns[date] = v.weight;
+      if (await saveProfile(pid, patch)) did.push('weight ' + v.weight + ' lb');
+    }
+  }
+  if (plan.stats) {
+    const path = PATH.health(pid, date), doc = Object.assign({ v: 1, date }, getDoc(path), { importedAt: now });
+    ['steps', 'exercise', 'active', 'distance'].forEach(k => { if (v[k] != null) doc[k] = v[k]; });
+    if (await write(path, doc)) did.push('activity totals');
+  }
+  return did;
+}
+
 /* ---- 50-fx.js ---- */
 /* ---------- Overlays, celebrations, and the action registry ---------- */
 const ACT = {};   // data-a="name" on any element routes its click here
@@ -1534,6 +1685,7 @@ function dateHead(label, mode) {
   return '<div class="head"><div><div class="eyebrow">' + label + '</div><h2>' + rel(date) + (rel(date) !== nice(date) ? ' <span class="muted" style="font-size:.9375rem;letter-spacing:0;text-transform:none;font-family:var(--body);font-weight:500">' + nice(date) + '</span>' : '') + '</h2></div>' +
     '<input type="date" id="datePick" aria-label="Pick another day" value="' + date + '" max="' + todayIso() + '"></div>' + renderDatebar(mode);
 }
+const hkLineHTML = date => { const t = healthLine(me(), date); return t ? '<p class="tiny muted" id="hkLine" style="margin-top:-4px">' + esc(t) + '</p>' : ''; };
 function statusText(date) {
   const rec = state.sessions[date]; const d = state.drafts[date]; const st = state.status[date];
   if (st && st.s === 'saving') return 'Saving…';
@@ -1561,8 +1713,8 @@ function renderTrain() {
   let h = '<section class="card sess">' + dateHead('Logging for') +
     '<div class="seg" id="kindSeg" aria-label="Workout type">' + ROTATION.map(k => '<button type="button" data-kind="' + k + '" class="' + (kind === k ? 'on' : '') + '" aria-pressed="' + (kind === k) + '">' + DAYS[k].name + '</button>').join('') +
     '<button type="button" data-kind="cardio" class="' + (kind === 'cardio' ? 'on' : '') + '" aria-pressed="' + (kind === 'cardio') + '">Treadmill</button><button type="button" data-kind="rest" class="' + (kind === 'rest' ? 'on' : '') + '" aria-pressed="' + (kind === 'rest') + '">Rest</button></div>' +
-    '<div class="status"><span id="statusLine">' + esc(statusText(date)) + '</span><span>·</span><span>Phase ' + phase + '</span></div>' +
-    '<p class="tiny muted" id="whyLine" style="margin-top:-4px">' + esc(why) + '</p>';
+    '<div class="status"><span id="statusLine">' + esc(statusText(date)) + '</span><span>·</span><span>Phase ' + phase + '</span>' + healthButton() + '</div>' +
+    '<p class="tiny muted" id="whyLine" style="margin-top:-4px">' + esc(why) + '</p>' + hkLineHTML(date);
   if (d && d.recovered && draftHasContent(d)) h += '<div class="banner"><span>Unsaved draft from ' + tzTime.format(new Date(d.updatedAt)) + ' restored. Not saved until you tap Save.</span><div class="row"><button type="button" class="small" id="discardDraft">Discard draft</button></div></div>';
   if (n && n.ambiguous) h += '<div class="banner">Saved as a ' + (DAYS[rec.day] ? DAYS[rec.day].name : 'lift') + ' day by the earlier version but has no lifting sets. It counts as ' + (n.kind === 'cardio' ? 'treadmill only' : 'no activity') + '. Add sets or re-save to confirm.</div>';
   if (n && n.kind === 'activity') h += '<div class="banner">This day has pick-your-own activities logged (' + n.allMin + ' min). Saving a lift here replaces them.</div>';
@@ -1699,7 +1851,7 @@ function renderMove() {
   if (n && n.kind === 'rest') status = 'Rest day logged';
   else if (program) status = 'Lifting-program entry · counts as an active day';
   else if (acts.length) status = n.allMin + ' min logged · ' + (di.active ? 'counts as an active day' : (mm - di.minutes) + ' more min of movement to count');
-  let h = '<section class="card sess">' + dateHead('Logging for') + '<div class="status"><span id="statusLine">' + esc(status) + '</span></div>';
+  let h = '<section class="card sess">' + dateHead('Logging for') + '<div class="status"><span id="statusLine">' + esc(status) + '</span>' + healthButton() + '</div>' + hkLineHTML(date);
   if (program) h += '<div class="banner">This day was logged on the lifting program. Switch workout style under Me to edit it, or use History to remove it.</div>';
   h += '</section>';
   if (acts.length || (n && n.kind === 'rest')) {
@@ -1917,7 +2069,7 @@ const portionText = p => p.label + (p.grams && !/\d\s?g$/.test(p.label) ? ' (' +
 function renderFuel() {
   const pid = me(), date = state.selDate, g = goalsFor(pid), t = dayTotals(pid, date), day = foodDay(pid, date);
   const left = g.kcal - t.kcal, over = t.kcal > g.hi, inRange = t.count > 0 && t.kcal >= g.lo && t.kcal <= g.hi, water = Math.round(t.water);
-  let h = '<section class="card sess">' + dateHead('Food and water for', 'fuel') + '</section>';
+  let h = '<section class="card sess">' + dateHead('Food and water for', 'fuel') + '<div class="status"><span>' + (t.count ? t.count + ' item' + (t.count === 1 ? '' : 's') + ' logged' : 'Nothing logged yet') + '</span>' + healthButton() + '</div></section>';
   if (!g.ready) h += '<div class="banner accent"><span>These targets are placeholders: 2,000 calories and ' + g.waterOz + ' oz of water. Add your numbers, or your doctor\'s, to get your own.</span><div class="row"><button type="button" class="small" data-a="go-body">Set my targets</button></div></div>';
   h += '<section class="card stack"><div class="rings">' +
     '<div class="ringbox">' + ringSVG(t.kcal / g.kcal, over ? 'over' : '') + '<div class="ringtxt"><b id="kcalLeft">' + commas(Math.abs(left)) + '</b><span>' + (left >= 0 ? 'calories left' : 'over target') + '</span></div><div class="tiny muted num">' + commas(t.kcal) + ' of ' + commas(g.kcal) + '</div></div>' +
@@ -2062,6 +2214,69 @@ ACT['custom-save'] = async () => {
   toast('Saved. It now shows up in search.');
 };
 
+/* ---- 72-ui-health.js ---- */
+/* ---------- Apple Health import: the paste box and the shortcut recipe ---------- */
+const hkWhen = d => { const r = rel(d); return r === nice(d) ? r : r.toLowerCase(); };
+const healthLine = (pid, date) => { const h = healthDay(pid, date), s = h ? healthStatsText(h) : ''; return s ? 'Apple Health: ' + s : ''; };
+const healthButton = () => '<button type="button" class="quiet" data-a="health" style="margin-left:auto">Import from Health</button>';
+function shortcutStepsHTML() {
+  const find = (type, name, extra) => '<li>Add <b>Find Health Samples</b>. Set <b>Type</b> to <b>' + type + '</b>. Tap <b>Add Filter</b> and set it to <b>Start Date is today</b>. ' + extra + ' Then add <b>Set Variable</b> and name it <code>' + name + '</code>.</li>';
+  const total = 'Open the options and set <b>Group by</b> to <b>Day</b>; turn <b>Fill Missing</b> off if you see it.';
+  return '<ol class="steps">' +
+    '<li>On your iPhone open the <b>Shortcuts</b> app, tap <b>+</b>, and rename the new shortcut <b>Laps Health</b>.</li>' +
+    find('Exercise Minutes', 'exercise', total) +
+    find('Steps', 'steps', total) +
+    find('Active Calories', 'active', total + ' Some iOS versions call it Active Energy.') +
+    find('Water', 'water', total + ' Set <b>Unit</b> to fl oz.') +
+    find('Weight', 'weight', 'Leave Group by alone. Set <b>Sort by</b> to <b>Start Date</b>, <b>Order</b> to <b>Latest First</b>, turn <b>Limit</b> on and get <b>1</b> item. Set <b>Unit</b> to lb.') +
+    '<li>Add <b>Format Date</b>. Date: <b>Current Date</b>. Date Format: <b>Custom</b>. Format String: <code>yyyy-MM-dd</code></li>' +
+    '<li>Add <b>Text</b> and type these six lines. After each colon insert the matching variable from the bar above the keyboard: Formatted Date first, then your five named variables.<pre class="code">date:\nexercise:\nsteps:\nactive:\nwater:\nweight:</pre>Tap each of the five health variables once it is in place and choose <b>Value</b>, so only the number is copied.</li>' +
+    '<li>Add <b>Copy to Clipboard</b>. It should read "Copy Text to clipboard".</li>' +
+    '<li>Optional: add <b>Open URLs</b> with the link to this page, so the shortcut finishes by opening Morning Laps.</li>' +
+    '<li>Tap <b>Done</b>, then run it once. iOS asks whether Shortcuts may read each kind of Health data. Choose <b>Allow</b> each time.</li>' +
+    '<li>Come back here, tap <b>Import from Health</b>, tap the box, choose <b>Paste</b>, then <b>Import</b>.</li></ol>' +
+    '<p class="tiny muted">Any line can be left out; the app imports what it finds and shows you exactly what it understood before anything is saved. If a number is missing, open the Health app, tap your picture, then Apps, then Shortcuts, and switch on what the shortcut reads. Apple lets Shortcuts read daily totals but not the list of workouts, so movement comes from your Watch\'s Exercise Minutes. For one-tap use, add the shortcut to your Home Screen.</p>';
+}
+function refreshHealthPreview() {
+  const o = state.ov, box = $('#hkPreview'), btn = $('#hkGo'); if (!o || o.type !== 'health' || !box) return;
+  const text = String(o.text || '');
+  if (!text.trim()) { box.innerHTML = ''; if (btn) { btn.disabled = true; btn.textContent = 'Import'; } return; }
+  const pid = me(), parsed = parseHealthPaste(text), plan = healthPlan(pid, parsed, state.selDate);
+  let h = '';
+  if (plan.err) h += '<div class="banner bad">' + esc(plan.err) + '</div>';
+  else {
+    h += '<div class="eyebrow">For ' + esc(nice(plan.date)) + (parsed.date ? '' : ' · no date in the paste, so the day selected in the app') + '</div>';
+    plan.rows.forEach(r => {
+      const on = r.can && o.use[r.k] !== false;
+      h += '<div class="hkrow">' + (r.can ? '<button type="button" class="tick' + (on ? ' on' : '') + '" data-a="hk-toggle" data-k="' + r.k + '" aria-pressed="' + on + '" aria-label="' + (on ? 'Included' : 'Skipped') + ': ' + esc(r.title) + '">' + (on ? '✓' : '') + '</button>' : '<span class="tick off" aria-hidden="true">–</span>') +
+        '<div><b>' + esc(r.title) + '</b><div class="tiny muted">' + esc(r.sub) + '</div></div></div>';
+    });
+  }
+  if (parsed.unknown.length) h += '<p class="tiny muted">Not understood and skipped: ' + parsed.unknown.slice(0, 4).map(x => '“' + esc(x) + '”').join(', ') + (parsed.unknown.length > 4 ? ' and ' + (parsed.unknown.length - 4) + ' more' : '') + '.</p>';
+  box.innerHTML = h;
+  const go = !plan.err && (plan.stats || plan.rows.some(r => r.can && o.use[r.k] !== false));
+  if (btn) { btn.disabled = !go; btn.textContent = plan.err ? 'Import' : 'Import for ' + hkWhen(plan.date); }
+}
+OV.health = {
+  html: o => '<div class="ov" role="dialog" aria-modal="true" aria-label="Import from Apple Health">' + ovHead('Import from Health', 'Into ' + esc(P(me()).name) + '\'s log') +
+    '<p class="muted">Run your <b>Laps Health</b> shortcut on this iPhone, then tap the box and choose <b>Paste</b>.</p>' +
+    '<textarea id="hkText" data-ovf="text" rows="6" placeholder="Paste here" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Text copied by the shortcut">' + esc(o.text || '') + '</textarea>' +
+    '<div id="hkPreview" class="stack" aria-live="polite"></div>' +
+    '<div class="row"><button type="button" class="primary" id="hkGo" data-a="hk-import" disabled>Import</button></div>' +
+    '<details class="plain" id="hkHelp"><summary>Set up the shortcut, once per iPhone</summary><div style="margin-top:8px">' + shortcutStepsHTML() + '</div></details></div>',
+  after: () => refreshHealthPreview()
+};
+ACT.health = () => openOv({ type: 'health', text: '', use: {} });
+ACT['hk-toggle'] = el => { const o = state.ov, k = el.dataset.k; o.use[k] = o.use[k] === false; refreshHealthPreview(); };
+ACT['hk-import'] = async () => {
+  const o = state.ov, pid = me(), parsed = parseHealthPaste(o.text), plan = healthPlan(pid, parsed, state.selDate);
+  if (plan.err) { toast(plan.err, 3400); return; }
+  const did = await applyHealthImport(pid, plan, parsed, o.use);
+  state.selDate = plan.date; persistDrafts();
+  closeOv(); render();
+  celebrate(did.length ? 'Imported for ' + hkWhen(plan.date) + ': ' + did.join(', ') + '.' : 'Nothing new to import.', { ms: 3600 });
+};
+
 /* ---- 75-ui-compete.js ---- */
 /* ---------- Compete: the weekly race ---------- */
 function renderCompete() {
@@ -2183,6 +2398,9 @@ function renderMe() {
     (wd.length >= 2 ? '<p class="tiny muted num">' + (function () { const ch = Math.round((wi[wd[wd.length - 1]] - wi[wd[0]]) * 10) / 10; return (ch === 0 ? 'No change' : (ch < 0 ? 'Down ' : 'Up ') + Math.abs(ch) + ' lb') + ' since ' + shortDate(wd[0]) + '.'; })() + '</p>' : '<p class="tiny muted">Log a weight now and then. Same scale, same time of day, once a week is plenty.</p>') +
     '<div class="row" style="flex-wrap:nowrap;align-items:flex-end"><label class="f grow">Today\'s weight lb<input type="number" data-form="weigh" data-k="lb" inputmode="decimal" min="60" max="700" value="' + esc((state.forms.weigh || {}).lb || '') + '" placeholder="–"></label><button type="button" class="small" data-a="weigh-save" style="min-height:44px">Log</button></div></section>';
 
+  h += '<section class="card stack" id="healthCard"><h3>Apple Health and Apple Watch</h3><p class="tiny muted">A web page cannot read Apple Health directly. A one-tap shortcut on your iPhone copies the day\'s Exercise Minutes, steps, active calories, water and weight, and you paste them in.</p>' +
+    '<div class="row"><button type="button" class="small" data-a="health">Import from Health</button></div>' +
+    '<details class="plain"><summary>Set up the shortcut, once per iPhone</summary><div style="margin-top:8px">' + shortcutStepsHTML() + '</div></details></section>';
   h += '<section class="card stack"><h3>Workout style</h3>' + seg('plan-set', 'plan', p.plan, { program: 'Lifting program', choice: 'Pick-your-own' }) +
     '<p class="tiny muted">' + (p.plan === 'program' ? 'Push, Pull, Legs rotation with weight suggestions. Weekly goal: ' + moveGoal(pid) + ' activity days, ' + LIFT_GOAL + ' of them lifts.' : 'Choose from a gentle menu each day. Weekly goal: ' + moveGoal(pid) + ' active days of ' + minMin(pid) + ' minutes or more. Adjust it under Train, Plan.') + ' Switching keeps everything already logged.</p></section>';
 
@@ -2350,10 +2568,14 @@ document.addEventListener('click', e => {
 const ovRoot = $('#ov');
 function onOvInput(e) {
   const el = e.target, o = state.ov; if (!o || !el.dataset || !el.dataset.ovf) return;
-  o[el.dataset.ovf] = el.value;
-  if (o.type === 'food' && el.dataset.ovf === 'q') { clearTimeout(foodT); foodT = setTimeout(fillFoodResults, 90); }
-  else if (o.type === 'fooditem') refreshFoodItem();
-  else if (o.type === 'act' && el.dataset.ovf === 'min') { const b = $('#actLog'), min = Math.round(Number(el.value)); if (b) { b.disabled = !(min > 0); b.textContent = (o.id ? 'Update ' : 'Log ') + (min > 0 ? min + ' min' : ''); } }
+  const key = el.dataset.ovf, typed = e.type === 'input';
+  o[key] = el.value;
+  // Lists are only redrawn while typing. A field also fires "change" when it loses focus, which happens in the
+  // middle of a tap on a result; redrawing then would replace the thing being tapped and swallow the tap.
+  if (o.type === 'food' && key === 'q') { if (typed) { clearTimeout(foodT); foodT = setTimeout(fillFoodResults, 90); } }
+  else if (o.type === 'health') { if (typed) refreshHealthPreview(); }
+  else if (o.type === 'fooditem') refreshFoodItem(); // patches the label and button text in place
+  else if (o.type === 'act' && key === 'min') { const b = $('#actLog'), min = Math.round(Number(el.value)); if (b) { b.disabled = !(min > 0); b.textContent = (o.id ? 'Update ' : 'Log ') + (min > 0 ? min + ' min' : ''); } }
 }
 ovRoot.addEventListener('input', onOvInput);
 ovRoot.addEventListener('change', onOvInput);
@@ -2442,7 +2664,7 @@ function route() {
   render();
   if (changed && !jump) window.scrollTo(0, 0);
 }
-window.MorningLaps = { state, P, weekScore, coach, goalsFor, badgesFor, searchFoods, loadFoods, dayTotals, compWeeks, foodCount: () => foodDb.list ? foodDb.list.length : 0 };
+window.MorningLaps = { state, P, weekScore, coach, goalsFor, badgesFor, searchFoods, loadFoods, dayTotals, compWeeks, parseHealthPaste, foodCount: () => foodDb.list ? foodDb.list.length : 0 };
 (function boot() {
   const saved = lsGet('ml.me', null);
   state.pid = PIDS.includes(saved) ? saved : null;
