@@ -146,7 +146,8 @@ function skinVars(sk) {
     let v;
     if (c) {
       const yellow = c.h >= 38 && c.h <= 68, al = yellow ? clamp(c.l, 46, 54) : clamp(c.l, 30, 50);
-      v = { name: 'Custom', ah: c.h, as: clamp(c.s, 35, 92), al, ald: Math.min(al + 10, 60), nh: c.h, ns: clamp(Math.round(c.s * 0.35), 8, 34), nsd: 12, ink: yellow ? '#1C1400' : null };
+      // dark mode starts from a bright version of the color and is then lowered only as far as white text needs, so a very dark pick still shows up on a dark screen
+      v = { name: 'Custom', ah: c.h, as: clamp(c.s, 35, 92), al, ald: yellow ? Math.min(al + 6, 58) : 66, nh: c.h, ns: clamp(Math.round(c.s * 0.35), 8, 34), nsd: 12, ink: yellow ? '#1C1400' : null };
     } else v = Object.assign({}, SKINS[sk && sk.preset] || SKINS.brick);
     if (!v.ink) { v.al = fitLightness(v.ah, v.as, v.al, 4.5); v.ald = fitLightness(v.ah, v.as, v.ald, 4); } // white text on the accent stays readable in both themes
     return v;
