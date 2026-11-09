@@ -85,6 +85,7 @@ const state = {
   ov: null,           // the open overlay, if any
   ovQ: [],            // queued celebration overlays
   filter: { cat: 'all', quick: false, fav: false },
+  today: todayIso(),  // the calendar day the screen was last drawn for; see rollDay
   selDate: todayIso(),
   tab: 'train',
   storage: 'loading', // loading | db | local | nodb
@@ -94,8 +95,7 @@ const state = {
   canWriteKnown: false,
   localOnly: null,
   importNote: null,
-  confirmRemove: null,
-  snap: null          // last weekly scores, to tell what an action changed
+  confirmRemove: null
 };
 const me = () => state.pid || 'tyson';
 // The lifting-program code reads state.sessions / state.settings / state.drafts: always the active profile's.
@@ -231,12 +231,16 @@ function localDocs() {
 function localLoad() { const docs = localDocs(); Object.keys(docs).forEach(p => applyDoc(p, docs[p])); }
 function noteWriteError(e) { const c = e && e.code; if (c === 'not_granted' || c === 'revoked' || (c === 'invalid_argument' && !state.canWriteKnown)) state.cantWrite = true; }
 // put / del update what you see first, then store. They reject when the store refuses.
+// Nothing is written until the log has loaded: a save built on a not-yet-loaded day would overwrite what is already there.
+const NOT_READY = { code: 'not_ready', message: 'The log is still loading.' };
 async function put(path, doc) {
+  if (!state.ready) throw NOT_READY;
   applyDoc(path, doc);
   if (!db) { localPut(path, doc); return 'local'; }
   try { await queueWrite(path, () => db.doc(path).set(doc)); return 'synced'; } catch (e) { noteWriteError(e); throw e; }
 }
 async function del(path) {
+  if (!state.ready) throw NOT_READY;
   applyDoc(path, null);
   if (!db) { localPut(path, null); return; }
   try { await queueWrite(path, () => db.doc(path).delete()); } catch (e) { noteWriteError(e); throw e; }
@@ -246,6 +250,7 @@ async function write(path, doc) {
   const prev = getDoc(path);
   try { if (doc == null) await del(path); else await put(path, doc); return true; }
   catch (e) {
+    if (e && e.code === 'not_ready') { toast(state.storage === 'nodb' ? 'Your log cannot be reached right now, so nothing was saved.' : 'Still loading your log. Try again in a moment.', 3200); return false; }
     applyDoc(path, prev);
     toast(state.cantWrite ? 'This account can view the log but not save to it.' : 'Could not save. Check your connection and try again.', 3400);
     render(); return false;
@@ -259,15 +264,21 @@ async function saveProfile(pid, patch) {
   return ok;
 }
 function persistDrafts() {
-  const cutoff = addDays(todayIso(), -14);
+  const old = Date.now() - 14 * 86400000; // drafts untouched for two weeks are dropped; the workout's own date does not matter
   PIDS.forEach(pid => {
-    const d = state.draftsBy[pid]; Object.keys(d).forEach(k => { if (k < cutoff) delete d[k]; });
+    const d = state.draftsBy[pid]; Object.keys(d).forEach(k => { if (k !== state.selDate && (d[k].updatedAt || 0) < old) delete d[k]; });
     lsSet(pid === 'tyson' ? 'ml.drafts' : 'ml.drafts.' + pid, d);
   });
   lsSet('ml.ui', { selDate: state.selDate, today: todayIso() }); // selected date is restored only within the same day
 }
+// The calendar day can change while the page stays open. If the screen was on "today", it follows.
+function rollDay() {
+  const t = todayIso(); if (t === state.today) return false;
+  if (state.selDate === state.today) state.selDate = t;
+  state.today = t; return true;
+}
 function findLocalOnly() {
-  const docs = localDocs(); const only = Object.keys(docs).filter(p => /\/\d{4}-\d{2}-\d{2}$/.test(p) && p.indexOf('results/') !== 0 && slot(p) && !getDoc(p));
+  const docs = localDocs(); const only = Object.keys(docs).filter(p => (/\/\d{4}-\d{2}-\d{2}$/.test(p) || /^profiles\/[a-z]+$/.test(p) || /^foods\/[A-Za-z0-9]+$/.test(p)) && p.indexOf('results/') !== 0 && slot(p) && !getDoc(p));
   state.localOnly = only.length ? only : null;
 }
 async function importLocal() {
@@ -295,7 +306,7 @@ async function connect() {
     need.delete(key);
     if (!need.size && !resolved) { resolved = true; clearTimeout(timer); state.stale = false; state.storage = 'db'; findLocalOnly(); onReady(); }
   };
-  const fail = () => { if (!resolved) { state.storage = 'nodb'; clearTimeout(timer); render(); } };
+  const fail = () => { state.storage = 'nodb'; state.ready = false; clearTimeout(timer); render(); }; // a dead listener means stale data: stop saving on top of it
   const subCol = colPath => {
     need.add(colPath);
     db.collection(colPath).onSnapshot(snap => {
@@ -309,7 +320,7 @@ async function connect() {
       applyDoc(path, snap.exists ? snap.data() : null);
       if (path === PATH.profile(me())) applySkin();
       if (!snap.metadata.fromCache) got(path); render();
-    }, () => got(path));
+    }, fail);
   };
   PIDS.forEach(pid => { subCol(PATH.sessions(pid)); subCol(PATH.foodCol(pid)); subCol(PATH.healthCol(pid)); subDoc(PATH.settings(pid)); subDoc(PATH.profile(pid)); });
   subCol('foods'); subCol('results'); subDoc('comp/settings');

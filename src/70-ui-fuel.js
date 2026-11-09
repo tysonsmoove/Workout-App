@@ -24,17 +24,17 @@ function renderFuel() {
       items.map(it => '<button type="button" class="fooditem" data-a="food-item" data-id="' + esc(it.id) + '"><span class="fn">' + esc(it.name) + '</span><span class="fk">' + commas((it.n && it.n[0]) || 0) + '</span><span class="fq">' + esc(fmtQty(it.qty) + ' × ' + it.unit) + '</span></button>').join('') + '</div>';
   });
   h += '</section>';
-  if (t.count) h += '<details class="card plain"><summary>Nutrition facts for the whole day</summary><div style="margin-top:10px">' + factsHTML(t.n, 'Everything logged ' + (rel(date) === nice(date) ? nice(date) : rel(date).toLowerCase()) + ' · ' + t.count + ' item' + (t.count === 1 ? '' : 's')) + '</div></details>';
+  if (t.count) h += '<details class="card plain" data-dk="dayfacts"><summary>Nutrition facts for the whole day</summary><div style="margin-top:10px">' + factsHTML(t.n, 'Everything logged ' + (rel(date) === nice(date) ? nice(date) : rel(date).toLowerCase()) + ' · ' + t.count + ' item' + (t.count === 1 ? '' : 's')) + '</div></details>';
   h += '<p class="tiny muted">Food data: U.S. Department of Agriculture, FoodData Central' + (foodDb.list ? ' · ' + commas(foodDb.list.length) + ' foods' : '') + '. Brand recipes change, so check the package when it matters.</p>';
   return h;
 }
 ACT['go-body'] = () => { state.scrollTo = 'bodyCard'; if (state.tab === 'me') render(); else location.hash = 'me'; };
 ACT.water = async el => {
-  const pid = me(), date = state.selDate, oz = Number(el.dataset.oz), g = goalsFor(pid), before = dayTotals(pid, date).water;
+  const pid = me(), date = state.selDate, oz = Number(el.dataset.oz), g = goalsFor(pid), had = dayTotals(pid, date).water, before = scoreSnapshot();
   const ok = await addWater(date, oz); if (!ok) return;
   render();
-  const now = dayTotals(pid, date).water, hit = before < g.waterOz && now >= g.waterOz;
-  celebrate(hit ? 'Water goal reached: ' + Math.round(now) + ' oz.' : (oz > 0 ? '+' : '−') + Math.abs(oz) + ' oz · ' + Math.round(now) + ' of ' + g.waterOz, { force: hit, ms: 1800 });
+  const now = dayTotals(pid, date).water, hit = had < g.waterOz && now >= g.waterOz;
+  celebrate(hit ? 'Water goal reached: ' + Math.round(now) + ' oz.' : (oz > 0 ? '+' : '−') + Math.abs(oz) + ' oz · ' + Math.round(now) + ' of ' + g.waterOz, { force: hit, ms: 1800, before });
 };
 ACT['food-add'] = el => openOv({ type: 'food', meal: el.dataset.meal || mealByClock(), date: state.selDate, q: '' });
 ACT['food-item'] = el => {
@@ -73,8 +73,9 @@ ACT['food-pick'] = el => {
 };
 ACT['food-again'] = async el => {
   const o = state.ov, it = o.results && o.results[Number(el.dataset.i)]; if (!it) return;
+  const before = scoreSnapshot();
   const ok = await addFoodItem(o.date, Object.assign({}, it, { id: uid(), meal: o.meal })); if (!ok) return;
-  closeOv(); render(); celebrate('Added to ' + MEAL_NAME[o.meal] + ': ' + it.name + '.');
+  closeOv(); render(); celebrate('Added to ' + MEAL_NAME[o.meal] + ': ' + it.name + '.', { before });
 };
 function ovNutrients(o) {
   const q = Number(o.qty) > 0 ? Number(o.qty) : 0;
@@ -104,7 +105,7 @@ OV.fooditem = {
 ACT['food-back'] = () => { const b = state.ov.back; if (b) openOv(b); else closeOv(); };
 ACT['food-save'] = async () => {
   const o = state.ov, q = Number(o.qty); if (!(q > 0)) { toast('Enter how many.'); return; }
-  let ok, name;
+  const before = scoreSnapshot(); let ok, name;
   if (o.item) { name = o.item.name; ok = await changeFoodItem(o.date, o.item.id, Object.assign({}, o.item, { qty: q, meal: o.meal, n: ovNutrients(o) })); }
   else {
     const p = o.food.portions[Number(o.pi) || 0]; name = o.food.name;
@@ -112,7 +113,7 @@ ACT['food-save'] = async () => {
   }
   if (!ok) return;
   const was = o.item; closeOv(); render();
-  celebrate((was ? 'Updated: ' : 'Added to ' + MEAL_NAME[o.meal] + ': ') + name + '.');
+  celebrate((was ? 'Updated: ' : 'Added to ' + MEAL_NAME[o.meal] + ': ') + name + '.', { before });
 };
 ACT['food-del'] = async () => { const o = state.ov; const ok = await changeFoodItem(o.date, o.item.id, null); if (!ok) return; closeOv(); settle(); render(); toast('Removed'); };
 
@@ -129,9 +130,9 @@ ACT['quick-save'] = async () => {
   if (kcal == null || Number.isNaN(kcal) || kcal > 10000) { toast('Enter the calories, 0 to 10,000.'); return; }
   if ([p, c, f].some(v => Number.isNaN(v))) { toast('Protein, carbs and fat must be numbers, or blank.'); return; }
   const n = NKEYS.map(() => null); n[0] = Math.round(kcal); n[1] = p; n[2] = f; n[3] = c;
-  const name = String(o.name || '').trim() || 'Quick add';
+  const name = String(o.name || '').trim() || 'Quick add', before = scoreSnapshot();
   const ok = await addFoodItem(o.date, { id: uid(), name, meal: o.meal, qty: 1, unit: 'quick add', grams: null, src: 'Quick add', n }); if (!ok) return;
-  closeOv(); render(); celebrate('Added to ' + MEAL_NAME[o.meal] + ': ' + name + '.');
+  closeOv(); render(); celebrate('Added to ' + MEAL_NAME[o.meal] + ': ' + name + '.', { before });
 };
 OV.custom = {
   html: o => '<div class="ov" role="dialog" aria-modal="true" aria-label="Create a food">' + ovHead('Create a food', 'Saved for both of you, searchable by name') +

@@ -9,7 +9,7 @@ const ACTIVITY = { sed: [1.2, 'Mostly sitting'], light: [1.375, 'Lightly active,
 const PACE = { lose1: [-500, 'Lose about 1 lb a week'], lose05: [-250, 'Lose about ½ lb a week'], maintain: [0, 'Hold steady'], gain05: [250, 'Gain about ½ lb a week'] };
 
 function latestWeight(pid) {
-  const p = P(pid), ds = Object.keys(p.weighIns).filter(validIso).sort();
+  const p = P(pid), ds = Object.keys(p.weighIns).filter(d => validIso(d) && isNum(p.weighIns[d])).sort();
   return ds.length ? p.weighIns[ds[ds.length - 1]] : (p.body.weightLb || null);
 }
 // Calories: the Mifflin-St Jeor equation for resting energy, times an activity factor, adjusted for the chosen pace,
@@ -39,6 +39,7 @@ function goalsFor(pid) {
     }
     if (doc.waterOz > 0) { g.waterOz = Math.round(doc.waterOz); g.waterSrc = 'doctor'; }
     g.lo = Math.round(g.kcal * 0.8 / 10) * 10; g.hi = Math.round(g.kcal * 1.1 / 10) * 10;
+    if (sexed) g.lo = Math.max(g.lo, Math.min(g.kcal, b.sex === 'm' ? 1500 : 1200)); // the counted range never rewards eating under the safe minimum
     g.protein = lb > 0 ? Math.min(Math.round(lb * 0.7), Math.round(g.kcal * 0.35 / 4)) : Math.round(g.kcal * 0.2 / 4);
     g.fat = Math.round(g.kcal * 0.3 / 9);
     g.carbs = Math.max(0, Math.round((g.kcal - g.protein * 4 - g.fat * 9) / 4));
@@ -95,30 +96,33 @@ function loadFoods() {
     .catch(() => { foodDb.state = 'error'; });
   return foodDb.promise;
 }
-function queryTokens(q) {
+function queryTokens(q) { // each word: the text as typed, plus the stems it may appear under
   return q.toLowerCase().replace(/[^a-z0-9%' ]+/g, ' ').split(/\s+/).filter(Boolean).map(t => {
-    if (t.length > 4 && /ies$/.test(t)) return t.slice(0, -3);
-    if (t.length > 4 && /oes$/.test(t)) return t.slice(0, -2);
-    if (t.length > 3 && /s$/.test(t) && !/ss$/.test(t)) return t.slice(0, -1);
-    return t;
+    let alts = [t];
+    if (t.length > 4 && /ies$/.test(t)) alts = [t.slice(0, -1), t.slice(0, -3) + 'y'];   // brownies: brownie, browny. berries: berrie, berry
+    else if (t.length > 4 && /oes$/.test(t)) alts = [t.slice(0, -2)];                        // tomatoes: tomato
+    else if (t.length > 3 && /s$/.test(t) && !/ss$/.test(t)) alts = [t.slice(0, -1)];        // eggs: egg
+    return { raw: t, alts };
   });
 }
+const wordChar = ch => ch !== undefined && /[a-z0-9]/.test(ch);
 function scoreName(lc, toks) { // null when a word is missing; otherwise higher is a better match (may be negative for long names)
   let score = 0;
   for (let j = 0; j < toks.length; j++) {
-    const idx = lc.indexOf(toks[j]); if (idx < 0) return null;
-    const startOfWord = idx === 0 || ' ,(-/'.indexOf(lc[idx - 1]) >= 0;
-    score += startOfWord ? 10 : 2;
-    if (idx === 0 && j === 0) score += 15;
+    const raw = toks[j].raw, ri = lc.indexOf(raw); let best = null, at = -1;
+    if (ri >= 0 && !wordChar(lc[ri - 1]) && !wordChar(lc[ri + raw.length])) { best = 30; at = ri; }       // the whole word, exactly as typed
+    else toks[j].alts.forEach(a => { const idx = lc.indexOf(a); if (idx < 0) return; const v = wordChar(lc[idx - 1]) ? 2 : 10; if (best == null || v > best) { best = v; at = idx; } });
+    if (best == null) return null;
+    score += best; if (at === 0 && j === 0) score += 15;
   }
   return score - lc.length * 0.12;
 }
 function searchFoods(q, limit) {
   const toks = queryTokens(q); if (!toks.length) return [];
-  const hits = [];
+  const hits = [], plain = toks.map(t => t.raw).join(' ');
   Object.keys(state.customFoods).forEach(id => { const c = state.customFoods[id]; const s = scoreName(String(c.name || '').toLowerCase(), toks); if (s != null) hits.push({ s: s + 30, custom: id }); });
   if (foodDb.state === 'ready') {
-    const lc = foodDb.lc, list = foodDb.list, plain = toks.join(' ');
+    const lc = foodDb.lc, list = foodDb.list;
     for (let i = 0; i < lc.length; i++) {
       let s = scoreName(lc[i], toks); if (s == null) continue;
       if (list[i][1] === 1) s += 3;            // foods as eaten rank a little above raw ingredients

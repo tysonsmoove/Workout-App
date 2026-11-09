@@ -51,7 +51,7 @@ function parseHealthPaste(text) {
     const line = raw.trim(); if (!line) return;
     out.lines++;
     const c = line.indexOf(':'); let key = null, rest = line;
-    if (c > 0) { const k = HK_KEYS[line.slice(0, c).toLowerCase().replace(/[^a-z]/g, '')]; if (k) { key = k; rest = line.slice(c + 1).trim(); cur = k; } }
+    if (c > 0) { const label = line.slice(0, c).toLowerCase().replace(/[^a-z]/g, ''), k = Object.prototype.hasOwnProperty.call(HK_KEYS, label) ? HK_KEYS[label] : null; if (k) { key = k; rest = line.slice(c + 1).trim(); cur = k; } }
     if (!key) { // no known label: another sample for the label above, or something else entirely
       if (cur && cur !== 'date' && c < 0 && hkNumber(line) != null) key = cur;
       else { cur = null; if (!/^morning laps/i.test(line)) out.unknown.push(line.slice(0, 60)); return; }

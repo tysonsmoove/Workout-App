@@ -464,6 +464,7 @@ const state = {
   ov: null,           // the open overlay, if any
   ovQ: [],            // queued celebration overlays
   filter: { cat: 'all', quick: false, fav: false },
+  today: todayIso(),  // the calendar day the screen was last drawn for; see rollDay
   selDate: todayIso(),
   tab: 'train',
   storage: 'loading', // loading | db | local | nodb
@@ -473,8 +474,7 @@ const state = {
   canWriteKnown: false,
   localOnly: null,
   importNote: null,
-  confirmRemove: null,
-  snap: null          // last weekly scores, to tell what an action changed
+  confirmRemove: null
 };
 const me = () => state.pid || 'tyson';
 // The lifting-program code reads state.sessions / state.settings / state.drafts: always the active profile's.
@@ -610,12 +610,16 @@ function localDocs() {
 function localLoad() { const docs = localDocs(); Object.keys(docs).forEach(p => applyDoc(p, docs[p])); }
 function noteWriteError(e) { const c = e && e.code; if (c === 'not_granted' || c === 'revoked' || (c === 'invalid_argument' && !state.canWriteKnown)) state.cantWrite = true; }
 // put / del update what you see first, then store. They reject when the store refuses.
+// Nothing is written until the log has loaded: a save built on a not-yet-loaded day would overwrite what is already there.
+const NOT_READY = { code: 'not_ready', message: 'The log is still loading.' };
 async function put(path, doc) {
+  if (!state.ready) throw NOT_READY;
   applyDoc(path, doc);
   if (!db) { localPut(path, doc); return 'local'; }
   try { await queueWrite(path, () => db.doc(path).set(doc)); return 'synced'; } catch (e) { noteWriteError(e); throw e; }
 }
 async function del(path) {
+  if (!state.ready) throw NOT_READY;
   applyDoc(path, null);
   if (!db) { localPut(path, null); return; }
   try { await queueWrite(path, () => db.doc(path).delete()); } catch (e) { noteWriteError(e); throw e; }
@@ -625,6 +629,7 @@ async function write(path, doc) {
   const prev = getDoc(path);
   try { if (doc == null) await del(path); else await put(path, doc); return true; }
   catch (e) {
+    if (e && e.code === 'not_ready') { toast(state.storage === 'nodb' ? 'Your log cannot be reached right now, so nothing was saved.' : 'Still loading your log. Try again in a moment.', 3200); return false; }
     applyDoc(path, prev);
     toast(state.cantWrite ? 'This account can view the log but not save to it.' : 'Could not save. Check your connection and try again.', 3400);
     render(); return false;
@@ -638,15 +643,21 @@ async function saveProfile(pid, patch) {
   return ok;
 }
 function persistDrafts() {
-  const cutoff = addDays(todayIso(), -14);
+  const old = Date.now() - 14 * 86400000; // drafts untouched for two weeks are dropped; the workout's own date does not matter
   PIDS.forEach(pid => {
-    const d = state.draftsBy[pid]; Object.keys(d).forEach(k => { if (k < cutoff) delete d[k]; });
+    const d = state.draftsBy[pid]; Object.keys(d).forEach(k => { if (k !== state.selDate && (d[k].updatedAt || 0) < old) delete d[k]; });
     lsSet(pid === 'tyson' ? 'ml.drafts' : 'ml.drafts.' + pid, d);
   });
   lsSet('ml.ui', { selDate: state.selDate, today: todayIso() }); // selected date is restored only within the same day
 }
+// The calendar day can change while the page stays open. If the screen was on "today", it follows.
+function rollDay() {
+  const t = todayIso(); if (t === state.today) return false;
+  if (state.selDate === state.today) state.selDate = t;
+  state.today = t; return true;
+}
 function findLocalOnly() {
-  const docs = localDocs(); const only = Object.keys(docs).filter(p => /\/\d{4}-\d{2}-\d{2}$/.test(p) && p.indexOf('results/') !== 0 && slot(p) && !getDoc(p));
+  const docs = localDocs(); const only = Object.keys(docs).filter(p => (/\/\d{4}-\d{2}-\d{2}$/.test(p) || /^profiles\/[a-z]+$/.test(p) || /^foods\/[A-Za-z0-9]+$/.test(p)) && p.indexOf('results/') !== 0 && slot(p) && !getDoc(p));
   state.localOnly = only.length ? only : null;
 }
 async function importLocal() {
@@ -674,7 +685,7 @@ async function connect() {
     need.delete(key);
     if (!need.size && !resolved) { resolved = true; clearTimeout(timer); state.stale = false; state.storage = 'db'; findLocalOnly(); onReady(); }
   };
-  const fail = () => { if (!resolved) { state.storage = 'nodb'; clearTimeout(timer); render(); } };
+  const fail = () => { state.storage = 'nodb'; state.ready = false; clearTimeout(timer); render(); }; // a dead listener means stale data: stop saving on top of it
   const subCol = colPath => {
     need.add(colPath);
     db.collection(colPath).onSnapshot(snap => {
@@ -688,7 +699,7 @@ async function connect() {
       applyDoc(path, snap.exists ? snap.data() : null);
       if (path === PATH.profile(me())) applySkin();
       if (!snap.metadata.fromCache) got(path); render();
-    }, () => got(path));
+    }, fail);
   };
   PIDS.forEach(pid => { subCol(PATH.sessions(pid)); subCol(PATH.foodCol(pid)); subCol(PATH.healthCol(pid)); subDoc(PATH.settings(pid)); subDoc(PATH.profile(pid)); });
   subCol('foods'); subCol('results'); subDoc('comp/settings');
@@ -785,7 +796,7 @@ const records = () => recordsOf(me());
 /* ---------- Derived progress (active profile unless a pid is given) ---------- */
 function startDate(pid) {
   pid = pid || me(); const st = state.data[pid].settings;
-  if (st.startDate) return st.startDate;
+  if (st.startDate && validIso(st.startDate)) return st.startDate;
   const all = Object.keys(state.data[pid].sessions).sort(); return all[0] || todayIso();
 }
 function liftDays(from, to, pid) { return recordsOf(pid || me()).filter(r => r.date >= from && r.date <= to && r.n.qualifies).length; }
@@ -856,7 +867,7 @@ function model(date) { // what the form shows
   return rec ? seedFromRecord(rec) : emptyDraft();
 }
 function draft(date) { // create the draft on first edit
-  if (!state.drafts[date]) { const rec = state.sessions[date]; state.drafts[date] = rec ? seedFromRecord(rec) : emptyDraft(); }
+  if (!state.drafts[date]) { const rec = state.sessions[date]; state.drafts[date] = rec ? seedFromRecord(rec) : emptyDraft(); if (!state.ready) state.drafts[date].blind = true; }
   state.drafts[date].updatedAt = Date.now();
   return state.drafts[date];
 }
@@ -871,7 +882,7 @@ function kindFor(date, m) {
   if (rec) { const n = normalize(rec); if (n.kind === 'strength' && n.day) return n.day; if (n.kind === 'cardio' || n.kind === 'rest') return n.kind; }
   return nextDayKey(date);
 }
-function phaseOf(date) { const rec = state.sessions[date]; return rec && rec.phase ? rec.phase : phaseFor(date); }
+function phaseOf(date) { const rec = state.sessions[date], ph = rec ? Number(rec.phase) : 0; return ph >= 1 && ph <= 3 ? Math.floor(ph) : phaseFor(date); }
 function plannedFor(date, kind, m) {
   // Returns [{base, key}] in order. An existing record keeps its own planned list; swaps in the draft apply on top.
   const rec = state.sessions[date]; const n = rec ? normalize(rec) : null;
@@ -879,12 +890,15 @@ function plannedFor(date, kind, m) {
   if (n && n.kind === 'strength' && n.day === kind && n.plannedBase) bases = n.plannedBase.filter(k => EX[k]);
   else if (n && n.kind === 'strength' && n.day === kind && n.legacy) bases = Array.from(new Set((DAYS[kind].phases[phaseOf(date)] || []).concat(n.keys)));
   else bases = DAYS[kind].phases[phaseOf(date)];
-  const dflt = n && n.plannedBase ? n.swaps : (state.settings.swaps || {});
+  // a saved lift day keeps the exercises it was saved with: today's default swaps apply to new workouts only
+  const own = n && n.kind === 'strength' && n.day === kind;
+  const dflt = own ? (n.swaps || {}) : (state.settings.swaps || {});
+  const seen = {};
   return bases.map(b => {
     let key = m.swaps[b] != null ? m.swaps[b] : (dflt[b] || b);
     if (!EX[key]) key = b;
     return { base: b, key };
-  });
+  }).filter(p => seen[p.key] ? false : (seen[p.key] = true));
 }
 function setCount(key, m, date) {
   const sg = suggest(key, date);
@@ -938,14 +952,41 @@ function parseDraft(date, m) {
 
 /* ---------- Saving the lifting log ---------- */
 function setStatus(date, s, msg) { state.status[date] = { s, at: Date.now(), msg: msg || '' }; }
-async function saveRecord(date, doc) {
+async function saveRecord(date, doc) { // resolves false when nothing was attempted
+  if (!state.ready) { toast(state.storage === 'nodb' ? 'Your log cannot be reached right now. Your inputs are kept on this phone.' : 'Still loading your log. Your inputs are kept; try again in a moment.', 3400); return false; }
   const pid = me(), path = PATH.session(pid, date), drafts = state.draftsBy[pid];
   setStatus(date, 'saving'); applyDoc(path, doc); render();
   try { const how = await put(path, doc); delete drafts[date]; setStatus(date, how === 'local' ? 'local' : 'synced'); }
   catch (e) { setStatus(date, 'failed', (e && e.code) || 'error'); drafts[date] = drafts[date] || seedFromRecord(doc); }
   persistDrafts(); render();
+  return true;
+}
+// A draft started before the log finished loading could not see the day's saved record. Once it loads, fill in
+// whatever the draft left untouched, so saving the draft cannot drop sets that were already saved.
+function reconcileBlindDrafts() {
+  PIDS.forEach(pid => {
+    const ds = state.draftsBy[pid];
+    Object.keys(ds).forEach(date => {
+      const d = ds[date]; if (!d.blind) return;
+      const rec = state.data[pid].sessions[date];
+      if (rec && !Array.isArray(rec.acts)) {
+        const base = seedFromRecord(rec);
+        if (d.tm.minutes === '') d.tm.minutes = base.tm.minutes;
+        if (!d.tm.title) d.tm.title = base.tm.title;
+        if (!d.notes) d.notes = base.notes;
+        if (d.kindSel == null) d.kindSel = base.kindSel;
+        if (d.countAs == null) d.countAs = base.countAs;
+        Object.keys(base.ex).forEach(k => { if (!d.ex[k]) d.ex[k] = base.ex[k]; });
+        Object.keys(base.swaps).forEach(k => { if (d.swaps[k] == null) d.swaps[k] = base.swaps[k]; });
+        d.fromRecord = true;
+      }
+      delete d.blind;
+    });
+  });
+  persistDrafts();
 }
 async function removeRecord(date) {
+  if (!state.ready) { toast('Still loading your log. Try again in a moment.'); return; }
   const pid = me(), path = PATH.session(pid, date), had = getDoc(path);
   delete state.draftsBy[pid][date]; state.confirmRemove = null; persistDrafts();
   applyDoc(path, null); render();
@@ -954,6 +995,7 @@ async function removeRecord(date) {
   settle();
 }
 async function saveSettings(patch) {
+  if (!state.ready) { toast('Still loading your log. Try again in a moment.'); return; }
   const pid = me(), path = PATH.settings(pid), next = Object.assign({}, state.data[pid].settings, patch);
   applyDoc(path, next); render();
   try { await put(path, next); } catch (e) { toast('Could not save settings'); }
@@ -1105,17 +1147,20 @@ function coach(pid) {
       add('move', 'Treadmill only today', 'Any Fitness+ treadmill workout', 'train', c => { const x = c.days[i]; x.active = true; x.minutes += 20; x.kinds = ['treadmill']; });
     } else {
       const need = Math.max(1, minMin(pid) - d.minutes);
-      add('move', d.minutes ? need + ' more minutes of movement today' : 'Move for ' + minMin(pid) + ' minutes today', 'A walk, a stretch, anything on your list', 'train', c => { const x = c.days[i]; x.active = true; x.minutes += need; if (!x.kinds.length) x.kinds = ['__any']; });
+      // no new kind is assumed here: repeating something already done this week earns no variety bonus
+      add('move', d.minutes ? need + ' more minutes of movement today' : 'Move for ' + minMin(pid) + ' minutes today', 'A walk, a stretch, anything on your list', 'train', c => { const x = c.days[i]; x.active = true; x.minutes += need; });
     }
   }
   if (f.plan !== 'program' && !base.variety && base.kinds === 2) add('variety', 'Try something you have not done this week', 'A third kind of activity earns the variety bonus', 'train', c => { c.days[i].kinds.push('__new'); });
   if (!base.pb && f.lastMin > 0) { const need = f.lastMin - base.minutes + 1; add('pb', need + ' more active minutes this week', 'Beats last week\'s ' + f.lastMin + ' minutes', 'train', c => { c.days[i].minutes += need; }); }
   if (d.water < 1) { const need = Math.max(1, Math.ceil(g.waterOz - dayTotals(pid, t).water)); add('water', 'Drink ' + need + ' more oz of water', 'Reaches today\'s ' + g.waterOz + ' oz', 'fuel', c => { c.days[i].water = 1; }); }
-  if (d.fuel < 1) add('fuel', 'Log today\'s food and land in range', commas(g.lo) + ' to ' + commas(g.hi) + ' calories', 'fuel', c => { c.days[i].fuel = 1; });
+  const overToday = dayTotals(pid, t).kcal > g.hi; // already past the range: nothing eaten later can bring today back into it
+  if (d.fuel < 1 && !overToday) add('fuel', 'Log today\'s food and land in range', commas(g.lo) + ' to ' + commas(g.hi) + ' calories', 'fuel', c => { c.days[i].fuel = 1; });
   tips.sort((a, b) => b.gain - a.gain);
   // best case from here: every remaining day goes perfectly
   const best = cloneFacts(f);
-  best.days.forEach((x, j) => { if (j >= i) { x.active = true; if (f.plan === 'program') x.lift = true; x.minutes += 30; x.fuel = 1; x.water = 1; x.kinds.push('__k' + j); } });
+  best.days.forEach((x, j) => { if (j >= i) { x.active = true; if (f.plan === 'program') x.lift = true; x.minutes += 30; if (!(j === i && overToday)) x.fuel = 1; x.water = 1; x.kinds.push('__k' + j); } });
+  const bestMin = sum(best.days, x => x.minutes); if (bestMin <= f.lastMin) best.days[i].minutes += f.lastMin - bestMin + 1; // a perfect finish also beats last week's minutes
   const max = scoreFacts(best).total;
   // shortest list of today's actions that passes the other profile
   const other = weekScore(otherPid(pid), ws).total; let plan = null;
@@ -1129,9 +1174,10 @@ function coach(pid) {
 /* ---------- Competition history ---------- */
 function compStart() {
   if (state.comp.start && validIso(state.comp.start)) return weekStart(state.comp.start);
-  let first = todayIso();
-  PIDS.forEach(pid => { Object.keys(state.data[pid].sessions).concat(Object.keys(state.data[pid].food)).forEach(d => { if (validIso(d) && d < first) first = d; }); });
-  return weekStart(first);
+  // no start on record: the race begins the first week in which both of you logged something, so solo weeks before it never count
+  const weeksOf = pid => new Set(Object.keys(state.data[pid].sessions).concat(Object.keys(state.data[pid].food)).filter(validIso).map(weekStart));
+  const a = weeksOf('tyson'), b = weeksOf('jacquie'), both = Array.from(a).filter(w => b.has(w)).sort();
+  return both.length ? both[0] : weekStart(todayIso());
 }
 const GRACE_DAYS = 2; // a finished week stays open for late entries through Tuesday, then its result is final
 function liveWeek(ws) {
@@ -1244,7 +1290,7 @@ const ACTIVITY = { sed: [1.2, 'Mostly sitting'], light: [1.375, 'Lightly active,
 const PACE = { lose1: [-500, 'Lose about 1 lb a week'], lose05: [-250, 'Lose about ½ lb a week'], maintain: [0, 'Hold steady'], gain05: [250, 'Gain about ½ lb a week'] };
 
 function latestWeight(pid) {
-  const p = P(pid), ds = Object.keys(p.weighIns).filter(validIso).sort();
+  const p = P(pid), ds = Object.keys(p.weighIns).filter(d => validIso(d) && isNum(p.weighIns[d])).sort();
   return ds.length ? p.weighIns[ds[ds.length - 1]] : (p.body.weightLb || null);
 }
 // Calories: the Mifflin-St Jeor equation for resting energy, times an activity factor, adjusted for the chosen pace,
@@ -1274,6 +1320,7 @@ function goalsFor(pid) {
     }
     if (doc.waterOz > 0) { g.waterOz = Math.round(doc.waterOz); g.waterSrc = 'doctor'; }
     g.lo = Math.round(g.kcal * 0.8 / 10) * 10; g.hi = Math.round(g.kcal * 1.1 / 10) * 10;
+    if (sexed) g.lo = Math.max(g.lo, Math.min(g.kcal, b.sex === 'm' ? 1500 : 1200)); // the counted range never rewards eating under the safe minimum
     g.protein = lb > 0 ? Math.min(Math.round(lb * 0.7), Math.round(g.kcal * 0.35 / 4)) : Math.round(g.kcal * 0.2 / 4);
     g.fat = Math.round(g.kcal * 0.3 / 9);
     g.carbs = Math.max(0, Math.round((g.kcal - g.protein * 4 - g.fat * 9) / 4));
@@ -1330,30 +1377,33 @@ function loadFoods() {
     .catch(() => { foodDb.state = 'error'; });
   return foodDb.promise;
 }
-function queryTokens(q) {
+function queryTokens(q) { // each word: the text as typed, plus the stems it may appear under
   return q.toLowerCase().replace(/[^a-z0-9%' ]+/g, ' ').split(/\s+/).filter(Boolean).map(t => {
-    if (t.length > 4 && /ies$/.test(t)) return t.slice(0, -3);
-    if (t.length > 4 && /oes$/.test(t)) return t.slice(0, -2);
-    if (t.length > 3 && /s$/.test(t) && !/ss$/.test(t)) return t.slice(0, -1);
-    return t;
+    let alts = [t];
+    if (t.length > 4 && /ies$/.test(t)) alts = [t.slice(0, -1), t.slice(0, -3) + 'y'];   // brownies: brownie, browny. berries: berrie, berry
+    else if (t.length > 4 && /oes$/.test(t)) alts = [t.slice(0, -2)];                        // tomatoes: tomato
+    else if (t.length > 3 && /s$/.test(t) && !/ss$/.test(t)) alts = [t.slice(0, -1)];        // eggs: egg
+    return { raw: t, alts };
   });
 }
+const wordChar = ch => ch !== undefined && /[a-z0-9]/.test(ch);
 function scoreName(lc, toks) { // null when a word is missing; otherwise higher is a better match (may be negative for long names)
   let score = 0;
   for (let j = 0; j < toks.length; j++) {
-    const idx = lc.indexOf(toks[j]); if (idx < 0) return null;
-    const startOfWord = idx === 0 || ' ,(-/'.indexOf(lc[idx - 1]) >= 0;
-    score += startOfWord ? 10 : 2;
-    if (idx === 0 && j === 0) score += 15;
+    const raw = toks[j].raw, ri = lc.indexOf(raw); let best = null, at = -1;
+    if (ri >= 0 && !wordChar(lc[ri - 1]) && !wordChar(lc[ri + raw.length])) { best = 30; at = ri; }       // the whole word, exactly as typed
+    else toks[j].alts.forEach(a => { const idx = lc.indexOf(a); if (idx < 0) return; const v = wordChar(lc[idx - 1]) ? 2 : 10; if (best == null || v > best) { best = v; at = idx; } });
+    if (best == null) return null;
+    score += best; if (at === 0 && j === 0) score += 15;
   }
   return score - lc.length * 0.12;
 }
 function searchFoods(q, limit) {
   const toks = queryTokens(q); if (!toks.length) return [];
-  const hits = [];
+  const hits = [], plain = toks.map(t => t.raw).join(' ');
   Object.keys(state.customFoods).forEach(id => { const c = state.customFoods[id]; const s = scoreName(String(c.name || '').toLowerCase(), toks); if (s != null) hits.push({ s: s + 30, custom: id }); });
   if (foodDb.state === 'ready') {
-    const lc = foodDb.lc, list = foodDb.list, plain = toks.join(' ');
+    const lc = foodDb.lc, list = foodDb.list;
     for (let i = 0; i < lc.length; i++) {
       let s = scoreName(lc[i], toks); if (s == null) continue;
       if (list[i][1] === 1) s += 3;            // foods as eaten rank a little above raw ingredients
@@ -1451,7 +1501,7 @@ function parseHealthPaste(text) {
     const line = raw.trim(); if (!line) return;
     out.lines++;
     const c = line.indexOf(':'); let key = null, rest = line;
-    if (c > 0) { const k = HK_KEYS[line.slice(0, c).toLowerCase().replace(/[^a-z]/g, '')]; if (k) { key = k; rest = line.slice(c + 1).trim(); cur = k; } }
+    if (c > 0) { const label = line.slice(0, c).toLowerCase().replace(/[^a-z]/g, ''), k = Object.prototype.hasOwnProperty.call(HK_KEYS, label) ? HK_KEYS[label] : null; if (k) { key = k; rest = line.slice(c + 1).trim(); cur = k; } }
     if (!key) { // no known label: another sample for the label above, or something else entirely
       if (cur && cur !== 'date' && c < 0 && hkNumber(line) != null) key = cur;
       else { cur = null; if (!/^morning laps/i.test(line)) out.unknown.push(line.slice(0, 60)); return; }
@@ -1600,7 +1650,7 @@ function keepBadges(pid) { // write newly earned badges onto the profile, with t
   fresh.forEach(b => { badges[b.id] = todayIso(); });
   put(PATH.profile(pid), Object.assign({}, cur, { badges, updatedAt: new Date().toISOString() })).catch(() => {});
 }
-function settle() { state.snap = scoreSnapshot(); keepBadges(me()); } // after a change that should not be celebrated (an edit, a removal, a goal change)
+function settle() { keepBadges(me()); } // after a change that is not celebrated (an edit, a removal, a goal change)
 function checkBadges(pid, quiet) { // returns badges earned since this device last looked
   keepBadges(pid);
   const earned = badgesFor(pid).filter(b => b.earned), seen = lsGet('ml.badges.' + pid, null);
@@ -1609,10 +1659,11 @@ function checkBadges(pid, quiet) { // returns badges earned since this device la
   if (fresh.length) lsSet('ml.badges.' + pid, seen.concat(fresh.map(b => b.id)));
   return fresh;
 }
+// opts.before: the scores taken just before the change was made. Comparing against that moment, rather than against
+// the last thing this phone celebrated, keeps the other phone's activity in between from faking or hiding a lead change.
 function celebrate(msg, opts) {
   opts = opts || {};
-  const pid = me(), other = otherPid(pid), prev = state.snap || scoreSnapshot(), now = scoreSnapshot();
-  state.snap = now;
+  const pid = me(), other = otherPid(pid), now = scoreSnapshot(), prev = opts.before || now;
   const gained = now[pid] - prev[pid];
   if (gained > 0 || opts.force) burst({ count: gained >= 10 ? 120 : 70 });
   if (msg) toast(msg + (gained > 0 ? '  +' + gained + ' pts' : ''), opts.ms || 3000);
@@ -1627,7 +1678,7 @@ function announce() { // on opening the app: badges and last week's result this 
   if (w && w.played && lsGet('ml.seenWeek', '') < w.ws) { lsSet('ml.seenWeek', w.ws); queueOv({ type: 'weekwin', week: w }); }
 }
 function onReady() {
-  state.ready = true; settle();
+  state.ready = true; reconcileBlindDrafts(); settle();
   PIDS.forEach(pid => { if (lsGet('ml.badges.' + pid, null) == null) checkBadges(pid, true); });
   applySkin();
   if (!state.pid) openOv({ type: 'who', first: true }); else announce();
@@ -1688,6 +1739,7 @@ function dateHead(label, mode) {
 }
 const hkLineHTML = date => { const t = healthLine(me(), date); return t ? '<p class="tiny muted" id="hkLine" style="margin-top:-4px">' + esc(t) + '</p>' : ''; };
 function statusText(date) {
+  if (!state.ready) return state.storage === 'nodb' ? 'Log unreachable · inputs kept on this phone' : 'Loading your log…';
   const rec = state.sessions[date]; const d = state.drafts[date]; const st = state.status[date];
   if (st && st.s === 'saving') return 'Saving…';
   if (st && st.s === 'failed') return 'Save failed · inputs kept';
@@ -1742,7 +1794,7 @@ function renderTrain() {
   if (isLift) {
     const r = parseDraft(date, m);
     const checked = m.countAs == null ? (r.kind === 'strength' ? r.auto : false) : !!m.countAs;
-    h += '<details class="plain sessopts"' + (m.countAs != null ? ' open' : '') + '><summary>Session options</summary>' +
+    h += '<details class="plain sessopts" data-dk="sessopts"' + (m.countAs != null ? ' open' : '') + '><summary>Session options</summary>' +
       '<label class="row" style="gap:8px;flex-wrap:nowrap;align-items:flex-start;margin-top:8px;font-size:.875rem"><input type="checkbox" id="countAs" style="width:22px;height:22px;flex:none;margin:0"' + (checked ? ' checked' : '') + '><span>Count as ' + DAYS[kind].name + ' lift day' + (m.countAs == null ? ' <span class="muted">(automatic: on once ' + QUALIFY_MIN + ' lifts have a logged set)</span>' : ' <span class="muted">(set by you)</span>') + '</span></label>' +
       '<p class="tiny muted" style="margin-top:6px">A counted lift day advances the rotation and earns lift credit. Full rules on the Program tab.</p></details>';
   }
@@ -1825,7 +1877,7 @@ function saveNote(date, m) {
 }
 function renderSaveBar(date, m, rec) {
   const st = state.status[date]; const r = parseDraft(date, m); const note = saveNote(date, m);
-  const disabled = (r.kind === 'none' && r.empty && !(st && st.s === 'failed')) || (st && st.s === 'saving');
+  const disabled = !state.ready || (r.kind === 'none' && r.empty && !(st && st.s === 'failed')) || (st && st.s === 'saving');
   let h = '<div class="savebar" id="savebar">';
   if (note) h += '<p class="note ' + note.cls + '" id="savenote">' + esc(note.text) + '</p>';
   h += '<div class="bar"><span class="st" id="saveStatus">' + esc(statusText(date)) + '</span>' +
@@ -1835,7 +1887,7 @@ function renderSaveBar(date, m, rec) {
   return h;
 }
 function renderMorning(phase, kind) {
-  return '<details class="card plain"><summary>Morning plan · at IMS by 9</summary><div class="sched" style="margin-top:8px">' +
+  return '<details class="card plain" data-dk="morning"><summary>Morning plan · at IMS by 9</summary><div class="sched" style="margin-top:8px">' +
     '<span class="t num">10:30</span><span>Lights out. Bag packed, Fitness+ workout picked.</span>' +
     '<span class="t num">6:00</span><span>Up. Water, small bite, drive to Avon.</span>' +
     '<span class="t num">6:30</span><span>Treadmill ' + TREAD_MIN[phase] + ' min, then ' + (DAYS[kind] ? DAYS[kind].name + ' day' : 'lift') + ' (about 30 min).</span>' +
@@ -1919,17 +1971,18 @@ ACT['act-log'] = async () => {
   if (!(min > 0) || min > 300) { toast('Enter minutes between 1 and 300.'); return; }
   const name = o.k === 'other' ? (String(o.name || '').trim() || 'Activity') : a.name;
   const entry = { id: o.id || uid(), a: o.k, name, min, feel: o.feel || null, hurt: !!o.hurt, note: String(o.note || '').trim(), mv: a.mv !== false, at: o.at || new Date().toISOString() };
+  const before = scoreSnapshot();
   const ok = await logActivity(o.date, entry); if (!ok) return;
   closeOv(); render();
   const di = dayInfo(me(), o.date);
-  celebrate(min + ' min of ' + name.toLowerCase() + ' logged. ' + (a.mv === false ? 'Recovery counts for you, not for points.' : di.active ? 'That is an active day.' : (minMin(me()) - di.minutes) + ' more min makes it count.'), { force: di.active });
+  celebrate(min + ' min of ' + name.toLowerCase() + ' logged. ' + (a.mv === false ? 'Recovery counts for you, not for points.' : di.active ? 'That is an active day.' : (minMin(me()) - di.minutes) + ' more min makes it count.'), { force: di.active, before });
 };
 ACT['act-del'] = async () => { const o = state.ov; const ok = await removeActivity(o.date, o.id); if (!ok) return; closeOv(); settle(); render(); toast('Removed'); };
 ACT.surprise = () => { const k = surpriseActivity(me()); const a = ACTS[k]; openOv({ type: 'act', k, date: state.selDate, min: String(a.min), feel: null, hurt: false, note: '', name: '' }); burst({ count: 24, y: 0.35 }); };
 ACT.filter = el => { state.filter.cat = el.dataset.cat; render(); };
 ACT['filter-quick'] = () => { state.filter.quick = !state.filter.quick; render(); };
 ACT['filter-fav'] = () => { state.filter.fav = !state.filter.fav; render(); };
-ACT.rest = async () => { const ok = await logRest(state.selDate); if (!ok) return; render(); celebrate('Rest day logged. Recovery is part of the plan.'); };
+ACT.rest = async () => { const before = scoreSnapshot(); const ok = await logRest(state.selDate); if (!ok) return; render(); celebrate('Rest day logged. Recovery is part of the plan.', { before }); };
 ACT['rest-undo'] = async () => { await write(PATH.session(me(), state.selDate), null); settle(); render(); };
 
 /* ---------- Program tab ---------- */
@@ -2085,17 +2138,17 @@ function renderFuel() {
       items.map(it => '<button type="button" class="fooditem" data-a="food-item" data-id="' + esc(it.id) + '"><span class="fn">' + esc(it.name) + '</span><span class="fk">' + commas((it.n && it.n[0]) || 0) + '</span><span class="fq">' + esc(fmtQty(it.qty) + ' × ' + it.unit) + '</span></button>').join('') + '</div>';
   });
   h += '</section>';
-  if (t.count) h += '<details class="card plain"><summary>Nutrition facts for the whole day</summary><div style="margin-top:10px">' + factsHTML(t.n, 'Everything logged ' + (rel(date) === nice(date) ? nice(date) : rel(date).toLowerCase()) + ' · ' + t.count + ' item' + (t.count === 1 ? '' : 's')) + '</div></details>';
+  if (t.count) h += '<details class="card plain" data-dk="dayfacts"><summary>Nutrition facts for the whole day</summary><div style="margin-top:10px">' + factsHTML(t.n, 'Everything logged ' + (rel(date) === nice(date) ? nice(date) : rel(date).toLowerCase()) + ' · ' + t.count + ' item' + (t.count === 1 ? '' : 's')) + '</div></details>';
   h += '<p class="tiny muted">Food data: U.S. Department of Agriculture, FoodData Central' + (foodDb.list ? ' · ' + commas(foodDb.list.length) + ' foods' : '') + '. Brand recipes change, so check the package when it matters.</p>';
   return h;
 }
 ACT['go-body'] = () => { state.scrollTo = 'bodyCard'; if (state.tab === 'me') render(); else location.hash = 'me'; };
 ACT.water = async el => {
-  const pid = me(), date = state.selDate, oz = Number(el.dataset.oz), g = goalsFor(pid), before = dayTotals(pid, date).water;
+  const pid = me(), date = state.selDate, oz = Number(el.dataset.oz), g = goalsFor(pid), had = dayTotals(pid, date).water, before = scoreSnapshot();
   const ok = await addWater(date, oz); if (!ok) return;
   render();
-  const now = dayTotals(pid, date).water, hit = before < g.waterOz && now >= g.waterOz;
-  celebrate(hit ? 'Water goal reached: ' + Math.round(now) + ' oz.' : (oz > 0 ? '+' : '−') + Math.abs(oz) + ' oz · ' + Math.round(now) + ' of ' + g.waterOz, { force: hit, ms: 1800 });
+  const now = dayTotals(pid, date).water, hit = had < g.waterOz && now >= g.waterOz;
+  celebrate(hit ? 'Water goal reached: ' + Math.round(now) + ' oz.' : (oz > 0 ? '+' : '−') + Math.abs(oz) + ' oz · ' + Math.round(now) + ' of ' + g.waterOz, { force: hit, ms: 1800, before });
 };
 ACT['food-add'] = el => openOv({ type: 'food', meal: el.dataset.meal || mealByClock(), date: state.selDate, q: '' });
 ACT['food-item'] = el => {
@@ -2134,8 +2187,9 @@ ACT['food-pick'] = el => {
 };
 ACT['food-again'] = async el => {
   const o = state.ov, it = o.results && o.results[Number(el.dataset.i)]; if (!it) return;
+  const before = scoreSnapshot();
   const ok = await addFoodItem(o.date, Object.assign({}, it, { id: uid(), meal: o.meal })); if (!ok) return;
-  closeOv(); render(); celebrate('Added to ' + MEAL_NAME[o.meal] + ': ' + it.name + '.');
+  closeOv(); render(); celebrate('Added to ' + MEAL_NAME[o.meal] + ': ' + it.name + '.', { before });
 };
 function ovNutrients(o) {
   const q = Number(o.qty) > 0 ? Number(o.qty) : 0;
@@ -2165,7 +2219,7 @@ OV.fooditem = {
 ACT['food-back'] = () => { const b = state.ov.back; if (b) openOv(b); else closeOv(); };
 ACT['food-save'] = async () => {
   const o = state.ov, q = Number(o.qty); if (!(q > 0)) { toast('Enter how many.'); return; }
-  let ok, name;
+  const before = scoreSnapshot(); let ok, name;
   if (o.item) { name = o.item.name; ok = await changeFoodItem(o.date, o.item.id, Object.assign({}, o.item, { qty: q, meal: o.meal, n: ovNutrients(o) })); }
   else {
     const p = o.food.portions[Number(o.pi) || 0]; name = o.food.name;
@@ -2173,7 +2227,7 @@ ACT['food-save'] = async () => {
   }
   if (!ok) return;
   const was = o.item; closeOv(); render();
-  celebrate((was ? 'Updated: ' : 'Added to ' + MEAL_NAME[o.meal] + ': ') + name + '.');
+  celebrate((was ? 'Updated: ' : 'Added to ' + MEAL_NAME[o.meal] + ': ') + name + '.', { before });
 };
 ACT['food-del'] = async () => { const o = state.ov; const ok = await changeFoodItem(o.date, o.item.id, null); if (!ok) return; closeOv(); settle(); render(); toast('Removed'); };
 
@@ -2190,9 +2244,9 @@ ACT['quick-save'] = async () => {
   if (kcal == null || Number.isNaN(kcal) || kcal > 10000) { toast('Enter the calories, 0 to 10,000.'); return; }
   if ([p, c, f].some(v => Number.isNaN(v))) { toast('Protein, carbs and fat must be numbers, or blank.'); return; }
   const n = NKEYS.map(() => null); n[0] = Math.round(kcal); n[1] = p; n[2] = f; n[3] = c;
-  const name = String(o.name || '').trim() || 'Quick add';
+  const name = String(o.name || '').trim() || 'Quick add', before = scoreSnapshot();
   const ok = await addFoodItem(o.date, { id: uid(), name, meal: o.meal, qty: 1, unit: 'quick add', grams: null, src: 'Quick add', n }); if (!ok) return;
-  closeOv(); render(); celebrate('Added to ' + MEAL_NAME[o.meal] + ': ' + name + '.');
+  closeOv(); render(); celebrate('Added to ' + MEAL_NAME[o.meal] + ': ' + name + '.', { before });
 };
 OV.custom = {
   html: o => '<div class="ov" role="dialog" aria-modal="true" aria-label="Create a food">' + ovHead('Create a food', 'Saved for both of you, searchable by name') +
@@ -2272,10 +2326,11 @@ ACT['hk-toggle'] = el => { const o = state.ov, k = el.dataset.k; o.use[k] = o.us
 ACT['hk-import'] = async () => {
   const o = state.ov, pid = me(), parsed = parseHealthPaste(o.text), plan = healthPlan(pid, parsed, state.selDate);
   if (plan.err) { toast(plan.err, 3400); return; }
+  const before = scoreSnapshot();
   const did = await applyHealthImport(pid, plan, parsed, o.use);
   state.selDate = plan.date; persistDrafts();
   closeOv(); render();
-  celebrate(did.length ? 'Imported for ' + hkWhen(plan.date) + ': ' + did.join(', ') + '.' : 'Nothing new to import.', { ms: 3600 });
+  celebrate(did.length ? 'Imported for ' + hkWhen(plan.date) + ': ' + did.join(', ') + '.' : 'Nothing new to import.', { ms: 3600, before });
 };
 
 /* ---- 75-ui-compete.js ---- */
@@ -2310,7 +2365,7 @@ function renderCompete() {
     (c.tips.length ? '<div class="tips">' + c.tips.map(tip => '<a class="tip" href="#' + tip.tab + '"><span><b>' + esc(tip.text) + '</b><br><span class="tiny muted">' + esc(tip.sub) + '</span></span><span class="gain">+' + tip.gain + '</span></a>').join('') + '</div>' : '<p class="muted">Everything available today is banked. Nice.</p>') +
     '<p class="tiny muted">Best case from here: ' + c.max + ' points this week.</p></section>';
 
-  h += '<details class="card plain"><summary>How scoring stays fair</summary><ul class="rules" style="margin-top:8px">' +
+  h += '<details class="card plain" data-dk="fair"><summary>How scoring stays fair</summary><ul class="rules" style="margin-top:8px">' +
     '<li><b>Move, 50 points.</b> Your share of your own weekly goal. ' + esc(P('tyson').name) + ': 30 for activity days plus 20 for lift days. ' + esc(P('jacquie').name) + ': 50 for active days of ' + minMin('jacquie') + ' minutes or more. Each of you sets your own goal, so a short walk that completes a day is worth as much as a lift day.</li>' +
     '<li><b>Fuel, 20 points.</b> Days logged inside your calorie range. Five such days fills it; a logged day outside the range earns half.</li>' +
     '<li><b>Water, 15 points.</b> Each day earns the share of your water goal you drank. Five full days fills it.</li>' +
@@ -2327,8 +2382,10 @@ function renderCompete() {
 ACT['stakes-edit'] = () => { state.forms.stakes = { text: state.comp.stakes || '' }; render('#stakesIn'); };
 ACT['stakes-save'] = async () => {
   const text = String((state.forms.stakes || {}).text || '').trim().slice(0, 80);
-  delete state.forms.stakes; typing = false;
-  await write('comp/settings', Object.assign({}, state.comp, { stakes: text })); render();
+  typing = false;
+  const ok = await write('comp/settings', Object.assign({}, state.comp, { stakes: text }));
+  if (ok) delete state.forms.stakes; // a refused save keeps what was typed
+  render();
 };
 
 /* ---- 80-ui-me.js ---- */
@@ -2394,14 +2451,14 @@ function renderMe() {
     '<div class="row"><button type="button" class="primary" data-a="body-save">Save targets</button></div>' +
     '<p class="tiny muted">These are general estimates for healthy adults, not medical advice. If you are pregnant, nursing, or managing a condition such as diabetes, kidney or heart disease, use the numbers your doctor gives you. Your weight and calories stay on this screen and never show in the competition.</p></section>';
 
-  const wi = p.weighIns, wd = Object.keys(wi).filter(validIso).sort(), pts = wd.slice(-30).map(d => ({ d, v: wi[d] }));
+  const wi = p.weighIns, wd = Object.keys(wi).filter(d => validIso(d) && isNum(wi[d])).sort(), pts = wd.slice(-30).map(d => ({ d, v: wi[d] }));
   h += '<section class="card stack"><div class="row between"><h3>Weigh-ins</h3>' + (wd.length ? '<span class="tiny muted num">' + wi[wd[wd.length - 1]] + ' lb · ' + shortDate(wd[wd.length - 1]) + '</span>' : '') + '</div>' + sparkSVG(pts) +
     (wd.length >= 2 ? '<p class="tiny muted num">' + (function () { const ch = Math.round((wi[wd[wd.length - 1]] - wi[wd[0]]) * 10) / 10; return (ch === 0 ? 'No change' : (ch < 0 ? 'Down ' : 'Up ') + Math.abs(ch) + ' lb') + ' since ' + shortDate(wd[0]) + '.'; })() + '</p>' : '<p class="tiny muted">Log a weight now and then. Same scale, same time of day, once a week is plenty.</p>') +
     '<div class="row" style="flex-wrap:nowrap;align-items:flex-end"><label class="f grow">Today\'s weight lb<input type="number" data-form="weigh" data-k="lb" inputmode="decimal" min="60" max="700" value="' + esc((state.forms.weigh || {}).lb || '') + '" placeholder="–"></label><button type="button" class="small" data-a="weigh-save" style="min-height:44px">Log</button></div></section>';
 
   h += '<section class="card stack" id="healthCard"><h3>Apple Health and Apple Watch</h3><p class="tiny muted">A web page cannot read Apple Health directly. A one-tap shortcut on your iPhone copies the day\'s Exercise Minutes, steps, active calories, water and weight, and you paste them in.</p>' +
     '<div class="row"><button type="button" class="small" data-a="health">Import from Health</button></div>' +
-    '<details class="plain"><summary>Set up the shortcut, once per iPhone</summary><div style="margin-top:8px">' + shortcutStepsHTML() + '</div></details></section>';
+    '<details class="plain" data-dk="hksteps"><summary>Set up the shortcut, once per iPhone</summary><div style="margin-top:8px">' + shortcutStepsHTML() + '</div></details></section>';
   h += '<section class="card stack"><h3>Workout style</h3>' + seg('plan-set', 'plan', p.plan, { program: 'Lifting program', choice: 'Pick-your-own' }) +
     '<p class="tiny muted">' + (p.plan === 'program' ? 'Push, Pull, Legs rotation with weight suggestions. Weekly goal: ' + moveGoal(pid) + ' activity days, ' + LIFT_GOAL + ' of them lifts.' : 'Choose from a gentle menu each day. Weekly goal: ' + moveGoal(pid) + ' active days of ' + minMin(pid) + ' minutes or more. Adjust it under Train, Plan.') + ' Switching keeps everything already logged.</p></section>';
 
@@ -2417,7 +2474,9 @@ ACT['avatar-set'] = async el => { await saveProfile(me(), { avatar: el.dataset.v
 ACT['name-save'] = async () => {
   const name = String((state.forms.name || {}).name == null ? P(me()).name : state.forms.name.name).trim().slice(0, 20);
   if (!name) { toast('Enter a name.'); return; }
-  delete state.forms.name; typing = false; await saveProfile(me(), { name }); render(); toast('Saved');
+  typing = false;
+  const ok = await saveProfile(me(), { name }); if (!ok) return; // a refused save keeps what was typed
+  delete state.forms.name; render(); toast('Saved');
 };
 ACT['form-set'] = el => { const f = el.dataset.form; (state.forms[f] = state.forms[f] || {})[el.dataset.k] = el.dataset.v; render(); };
 ACT['plan-set'] = async el => { if (P(me()).plan === el.dataset.v) return; await saveProfile(me(), { plan: el.dataset.v }); settle(); render(); toast(el.dataset.v === 'program' ? 'Lifting program on. Your Train tab is the Push, Pull, Legs log.' : 'Pick-your-own on. Your Train tab is the activity menu.', 3200); };
@@ -2433,9 +2492,9 @@ ACT['body-save'] = async () => {
   const heightIn = ft != null ? ft * 12 + (inch || 0) : null;
   const patch = { body: { sex: v.sex === 'm' || v.sex === 'f' ? v.sex : null, age, heightIn, weightLb: lb, activity: ACTIVITY[v.activity] ? v.activity : 'light', pace: PACE[v.pace] ? v.pace : 'maintain' }, doctor: { kcal: dkcal, waterOz: dwater } };
   if (lb != null && lb !== latestWeight(pid)) { patch.weighIns = {}; patch.weighIns[todayIso()] = lb; }
-  delete state.forms.body; typing = false;
+  typing = false;
   const ok = await saveProfile(pid, patch); if (!ok) return;
-  settle(); render();
+  delete state.forms.body; settle(); render();
   const g = goalsFor(pid);
   toast(g.ready ? 'Targets set: ' + commas(g.kcal) + ' calories and ' + g.waterOz + ' oz of water a day.' : 'Saved. Add sex, age, height and weight, or a doctor\'s number, to replace the placeholder.', 3600);
 };
@@ -2443,9 +2502,9 @@ ACT['weigh-save'] = async () => {
   const lb = Number(String((state.forms.weigh || {}).lb || '').trim());
   if (!(lb >= 60 && lb <= 700)) { toast('Enter a weight from 60 to 700 lb.'); return; }
   const patch = { weighIns: {}, body: { weightLb: lb } }; patch.weighIns[todayIso()] = lb;
-  delete state.forms.weigh; typing = false;
+  typing = false;
   const ok = await saveProfile(me(), patch); if (!ok) return;
-  settle(); render(); toast('Weigh-in logged: ' + lb + ' lb.');
+  delete state.forms.weigh; settle(); render(); toast('Weigh-in logged: ' + lb + ' lb.');
 };
 
 /* ---------- Profile switcher ---------- */
@@ -2489,15 +2548,20 @@ function banners() {
   let html = '';
   if (state.storage === 'local') html += '<div class="banner">Saving in this browser only. Nothing here syncs to your account until you open the page signed in to claude.ai.</div>';
   if (state.cantWrite) html += '<div class="banner bad">This account can view the shared log but not save to it. Ask the owner to invite you as an Editor from the Share menu.</div>';
-  if (state.storage === 'nodb') html += '<div class="banner bad">Your account log can\'t be reached right now. Saves may fail; lifting inputs stay on this phone as drafts.</div>';
+  if (state.storage === 'nodb') html += '<div class="banner bad">Your account log can\'t be reached right now, so nothing can be saved. Lifting inputs stay on this phone as drafts. Reload the page to try again.</div>';
   if (state.stale) html += '<div class="banner">Still loading your log. What you see may be out of date.</div>';
   if (state.localOnly && state.localOnly.length) html += '<div class="banner"><span>' + state.localOnly.length + ' entr' + (state.localOnly.length === 1 ? 'y' : 'ies') + ' saved in this browser ' + (state.localOnly.length === 1 ? 'is' : 'are') + ' not in your account.</span><div class="row"><button type="button" class="small" id="importBtn">Import to account</button><button type="button" class="small" id="importDismiss">Not now</button></div></div>';
   if (state.importNote) html += '<div class="banner good"><span>' + esc(state.importNote) + '</span><div class="row"><button type="button" class="small" id="importOk">OK</button></div></div>';
   return html;
 }
+// Open <details> are remembered across a redraw of the same tab, so a save from the other phone does not fold them shut.
+const detKey = d => d.dataset.dk || (d.dataset.hdate ? 'h:' + d.dataset.hdate : '');
+let drawnTab = null;
+function newDay() { if (state.ready) { announce(); closeWeeks(); } } // a new day can bring last week's result and close an older week
 function render(focusSel) {
   if (typing) { pendingRender = true; return; }
   pendingRender = false;
+  if (rollDay()) setTimeout(newDay, 0);
   renderChrome();
   const tab = state.tab, plan = P(me()).plan;
   let html = banners();
@@ -2505,8 +2569,10 @@ function render(focusSel) {
   html += tab === 'train' ? (plan === 'program' ? renderTrain() : renderMove())
     : tab === 'program' ? (plan === 'program' ? renderProgram() : renderPlanChoice())
     : tab === 'history' ? renderHistory() : tab === 'fuel' ? renderFuel() : tab === 'compete' ? renderCompete() : renderMe();
-  const y = window.scrollY;
-  main.innerHTML = html;
+  const y = window.scrollY, open = {};
+  if (drawnTab === tab) main.querySelectorAll('details[open]').forEach(d => { const k = detKey(d); if (k) open[k] = true; });
+  main.innerHTML = html; drawnTab = tab;
+  main.querySelectorAll('details').forEach(d => { if (open[detKey(d)]) d.open = true; });
   bind();
   if (focusSel) { const el = $(focusSel); if (el) el.focus({ preventScroll: true }); }
   if (Math.abs(window.scrollY - y) > 2) window.scrollTo(0, y);
@@ -2558,12 +2624,21 @@ main.addEventListener('focusout', e => {
   if (pendingRender) setTimeout(() => { if (pendingRender && !typing) render(); }, 300);
 });
 // one click handler for every data-a action, in the page and in overlays
+// Actions that save one thing per tap. A second tap while the first is still saving is dropped, so a slow
+// connection cannot log the same food or activity twice. Water is left out on purpose: tapping it twice means two glasses.
+const ONE_AT_A_TIME = ['act-log', 'act-del', 'rest', 'food-save', 'food-again', 'food-del', 'quick-save', 'custom-save', 'hk-import', 'body-save', 'weigh-save', 'name-save', 'stakes-save'];
+const busy = {};
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-a]'); if (!el || el.disabled) return;
-  const fn = ACT[el.dataset.a]; if (!fn) return;
+  const a = el.dataset.a, fn = ACT[a]; if (!fn) return;
   if (el.tagName === 'A') e.preventDefault();
   if (main.contains(el)) typing = false;
-  fn(el, e);
+  if (!ONE_AT_A_TIME.includes(a)) { fn(el, e); return; }
+  if (busy[a]) return;
+  busy[a] = true;
+  const free = () => { busy[a] = false; };
+  let r; try { r = fn(el, e); } catch (err) { free(); throw err; }
+  Promise.resolve(r).then(free, err => { free(); throw err; });
 });
 // overlay fields write straight into the overlay's state
 const ovRoot = $('#ov');
@@ -2644,16 +2719,17 @@ function save() {
     const k = Object.keys(EX).find(k => r.errors[0].startsWith(EX[k].name)); const inp = k ? document.getElementById('w-' + k) : null; if (inp) inp.focus(); return;
   }
   delete state.formError[date]; state.menu = null; typing = false;
-  const note = saveNote(date, m);
-  saveRecord(date, r.doc).then(() => {
+  const note = saveNote(date, m), before = scoreSnapshot();
+  saveRecord(date, r.doc).then(ok => {
+    if (ok === false) return; // nothing was attempted: the log is not loaded yet
     const st = state.status[date];
     if (st && st.s === 'failed') { toast('Save failed. Your inputs are kept; tap Retry.', 3200); return; }
     const msg = r.kind === 'cardio' && r.fromLift ? r.doc.treadmill.minutes + ' treadmill minutes saved. No lifting sets recorded; ' + DAYS[nextDayKey(date)].name + ' remains next.'
       : r.kind === 'strength' ? (note ? note.text : DAYS[r.doc.day].name + ' day saved · counts as lift day · next: ' + DAYS[ROTATION[(ROTATION.indexOf(r.doc.day) + 1) % 3]].name)
       : r.kind === 'rest' ? 'Rest day saved.' : 'Treadmill saved.';
-    celebrate(msg + (st && st.s === 'synced' ? ' Synced.' : st && st.s === 'local' ? ' Saved in this browser.' : ''), { ms: 3800 });
+    celebrate(msg + (st && st.s === 'synced' ? ' Synced.' : st && st.s === 'local' ? ' Saved in this browser.' : ''), { ms: 3800, before });
   });
-  if (!state.settings.startDate) saveSettings({ startDate: date < todayIso() ? date : todayIso() });
+  if (state.ready && !state.settings.startDate) saveSettings({ startDate: date < todayIso() ? date : todayIso() });
 }
 
 /* ---------- Routing and boot ---------- */
@@ -2671,6 +2747,11 @@ window.MorningLaps = { state, P, weekScore, coach, goalsFor, badgesFor, searchFo
   state.pid = PIDS.includes(saved) ? saved : null;
   applySkin();
   window.addEventListener('hashchange', route);
+  // a phone left open overnight: when it comes back to the front on a new day, move "today" forward
+  const wake = () => { if (document.visibilityState === 'hidden' || !rollDay()) return; render(); newDay(); };
+  document.addEventListener('visibilitychange', wake);
+  window.addEventListener('pageshow', wake);
+  window.addEventListener('focus', wake);
   route();
   if (!state.pid) openOv({ type: 'who', first: true });
   connect();

@@ -91,4 +91,5 @@ Serve a doctype-wrapped copy of `index.html` with `foods.json` beside it on `htt
 ```
 node tests/test.js       # lifting program: drafts, classification, blank sets, progression, dates, layouts, sync (148 checks)
 node tests/app.test.js   # profiles, looks, pick-your-own, nutrition, competition, badges, storage paths, Apple Health import, sync, layouts (156 checks)
+node tests/review.test.js # review regressions: writes before the log loads, old-day drafts, double taps, day rollover, season tally, coach gains, calorie floor, plural food search, lead changes, a dead connection (50 checks)
 ```

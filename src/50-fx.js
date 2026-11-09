@@ -63,7 +63,7 @@ function keepBadges(pid) { // write newly earned badges onto the profile, with t
   fresh.forEach(b => { badges[b.id] = todayIso(); });
   put(PATH.profile(pid), Object.assign({}, cur, { badges, updatedAt: new Date().toISOString() })).catch(() => {});
 }
-function settle() { state.snap = scoreSnapshot(); keepBadges(me()); } // after a change that should not be celebrated (an edit, a removal, a goal change)
+function settle() { keepBadges(me()); } // after a change that is not celebrated (an edit, a removal, a goal change)
 function checkBadges(pid, quiet) { // returns badges earned since this device last looked
   keepBadges(pid);
   const earned = badgesFor(pid).filter(b => b.earned), seen = lsGet('ml.badges.' + pid, null);
@@ -72,10 +72,11 @@ function checkBadges(pid, quiet) { // returns badges earned since this device la
   if (fresh.length) lsSet('ml.badges.' + pid, seen.concat(fresh.map(b => b.id)));
   return fresh;
 }
+// opts.before: the scores taken just before the change was made. Comparing against that moment, rather than against
+// the last thing this phone celebrated, keeps the other phone's activity in between from faking or hiding a lead change.
 function celebrate(msg, opts) {
   opts = opts || {};
-  const pid = me(), other = otherPid(pid), prev = state.snap || scoreSnapshot(), now = scoreSnapshot();
-  state.snap = now;
+  const pid = me(), other = otherPid(pid), now = scoreSnapshot(), prev = opts.before || now;
   const gained = now[pid] - prev[pid];
   if (gained > 0 || opts.force) burst({ count: gained >= 10 ? 120 : 70 });
   if (msg) toast(msg + (gained > 0 ? '  +' + gained + ' pts' : ''), opts.ms || 3000);
@@ -90,7 +91,7 @@ function announce() { // on opening the app: badges and last week's result this 
   if (w && w.played && lsGet('ml.seenWeek', '') < w.ws) { lsSet('ml.seenWeek', w.ws); queueOv({ type: 'weekwin', week: w }); }
 }
 function onReady() {
-  state.ready = true; settle();
+  state.ready = true; reconcileBlindDrafts(); settle();
   PIDS.forEach(pid => { if (lsGet('ml.badges.' + pid, null) == null) checkBadges(pid, true); });
   applySkin();
   if (!state.pid) openOv({ type: 'who', first: true }); else announce();

@@ -26,6 +26,7 @@ function dateHead(label, mode) {
 }
 const hkLineHTML = date => { const t = healthLine(me(), date); return t ? '<p class="tiny muted" id="hkLine" style="margin-top:-4px">' + esc(t) + '</p>' : ''; };
 function statusText(date) {
+  if (!state.ready) return state.storage === 'nodb' ? 'Log unreachable · inputs kept on this phone' : 'Loading your log…';
   const rec = state.sessions[date]; const d = state.drafts[date]; const st = state.status[date];
   if (st && st.s === 'saving') return 'Saving…';
   if (st && st.s === 'failed') return 'Save failed · inputs kept';
@@ -80,7 +81,7 @@ function renderTrain() {
   if (isLift) {
     const r = parseDraft(date, m);
     const checked = m.countAs == null ? (r.kind === 'strength' ? r.auto : false) : !!m.countAs;
-    h += '<details class="plain sessopts"' + (m.countAs != null ? ' open' : '') + '><summary>Session options</summary>' +
+    h += '<details class="plain sessopts" data-dk="sessopts"' + (m.countAs != null ? ' open' : '') + '><summary>Session options</summary>' +
       '<label class="row" style="gap:8px;flex-wrap:nowrap;align-items:flex-start;margin-top:8px;font-size:.875rem"><input type="checkbox" id="countAs" style="width:22px;height:22px;flex:none;margin:0"' + (checked ? ' checked' : '') + '><span>Count as ' + DAYS[kind].name + ' lift day' + (m.countAs == null ? ' <span class="muted">(automatic: on once ' + QUALIFY_MIN + ' lifts have a logged set)</span>' : ' <span class="muted">(set by you)</span>') + '</span></label>' +
       '<p class="tiny muted" style="margin-top:6px">A counted lift day advances the rotation and earns lift credit. Full rules on the Program tab.</p></details>';
   }
@@ -163,7 +164,7 @@ function saveNote(date, m) {
 }
 function renderSaveBar(date, m, rec) {
   const st = state.status[date]; const r = parseDraft(date, m); const note = saveNote(date, m);
-  const disabled = (r.kind === 'none' && r.empty && !(st && st.s === 'failed')) || (st && st.s === 'saving');
+  const disabled = !state.ready || (r.kind === 'none' && r.empty && !(st && st.s === 'failed')) || (st && st.s === 'saving');
   let h = '<div class="savebar" id="savebar">';
   if (note) h += '<p class="note ' + note.cls + '" id="savenote">' + esc(note.text) + '</p>';
   h += '<div class="bar"><span class="st" id="saveStatus">' + esc(statusText(date)) + '</span>' +
@@ -173,7 +174,7 @@ function renderSaveBar(date, m, rec) {
   return h;
 }
 function renderMorning(phase, kind) {
-  return '<details class="card plain"><summary>Morning plan · at IMS by 9</summary><div class="sched" style="margin-top:8px">' +
+  return '<details class="card plain" data-dk="morning"><summary>Morning plan · at IMS by 9</summary><div class="sched" style="margin-top:8px">' +
     '<span class="t num">10:30</span><span>Lights out. Bag packed, Fitness+ workout picked.</span>' +
     '<span class="t num">6:00</span><span>Up. Water, small bite, drive to Avon.</span>' +
     '<span class="t num">6:30</span><span>Treadmill ' + TREAD_MIN[phase] + ' min, then ' + (DAYS[kind] ? DAYS[kind].name + ' day' : 'lift') + ' (about 30 min).</span>' +
@@ -257,17 +258,18 @@ ACT['act-log'] = async () => {
   if (!(min > 0) || min > 300) { toast('Enter minutes between 1 and 300.'); return; }
   const name = o.k === 'other' ? (String(o.name || '').trim() || 'Activity') : a.name;
   const entry = { id: o.id || uid(), a: o.k, name, min, feel: o.feel || null, hurt: !!o.hurt, note: String(o.note || '').trim(), mv: a.mv !== false, at: o.at || new Date().toISOString() };
+  const before = scoreSnapshot();
   const ok = await logActivity(o.date, entry); if (!ok) return;
   closeOv(); render();
   const di = dayInfo(me(), o.date);
-  celebrate(min + ' min of ' + name.toLowerCase() + ' logged. ' + (a.mv === false ? 'Recovery counts for you, not for points.' : di.active ? 'That is an active day.' : (minMin(me()) - di.minutes) + ' more min makes it count.'), { force: di.active });
+  celebrate(min + ' min of ' + name.toLowerCase() + ' logged. ' + (a.mv === false ? 'Recovery counts for you, not for points.' : di.active ? 'That is an active day.' : (minMin(me()) - di.minutes) + ' more min makes it count.'), { force: di.active, before });
 };
 ACT['act-del'] = async () => { const o = state.ov; const ok = await removeActivity(o.date, o.id); if (!ok) return; closeOv(); settle(); render(); toast('Removed'); };
 ACT.surprise = () => { const k = surpriseActivity(me()); const a = ACTS[k]; openOv({ type: 'act', k, date: state.selDate, min: String(a.min), feel: null, hurt: false, note: '', name: '' }); burst({ count: 24, y: 0.35 }); };
 ACT.filter = el => { state.filter.cat = el.dataset.cat; render(); };
 ACT['filter-quick'] = () => { state.filter.quick = !state.filter.quick; render(); };
 ACT['filter-fav'] = () => { state.filter.fav = !state.filter.fav; render(); };
-ACT.rest = async () => { const ok = await logRest(state.selDate); if (!ok) return; render(); celebrate('Rest day logged. Recovery is part of the plan.'); };
+ACT.rest = async () => { const before = scoreSnapshot(); const ok = await logRest(state.selDate); if (!ok) return; render(); celebrate('Rest day logged. Recovery is part of the plan.', { before }); };
 ACT['rest-undo'] = async () => { await write(PATH.session(me(), state.selDate), null); settle(); render(); };
 
 /* ---------- Program tab ---------- */

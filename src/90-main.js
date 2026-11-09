@@ -22,15 +22,20 @@ function banners() {
   let html = '';
   if (state.storage === 'local') html += '<div class="banner">Saving in this browser only. Nothing here syncs to your account until you open the page signed in to claude.ai.</div>';
   if (state.cantWrite) html += '<div class="banner bad">This account can view the shared log but not save to it. Ask the owner to invite you as an Editor from the Share menu.</div>';
-  if (state.storage === 'nodb') html += '<div class="banner bad">Your account log can\'t be reached right now. Saves may fail; lifting inputs stay on this phone as drafts.</div>';
+  if (state.storage === 'nodb') html += '<div class="banner bad">Your account log can\'t be reached right now, so nothing can be saved. Lifting inputs stay on this phone as drafts. Reload the page to try again.</div>';
   if (state.stale) html += '<div class="banner">Still loading your log. What you see may be out of date.</div>';
   if (state.localOnly && state.localOnly.length) html += '<div class="banner"><span>' + state.localOnly.length + ' entr' + (state.localOnly.length === 1 ? 'y' : 'ies') + ' saved in this browser ' + (state.localOnly.length === 1 ? 'is' : 'are') + ' not in your account.</span><div class="row"><button type="button" class="small" id="importBtn">Import to account</button><button type="button" class="small" id="importDismiss">Not now</button></div></div>';
   if (state.importNote) html += '<div class="banner good"><span>' + esc(state.importNote) + '</span><div class="row"><button type="button" class="small" id="importOk">OK</button></div></div>';
   return html;
 }
+// Open <details> are remembered across a redraw of the same tab, so a save from the other phone does not fold them shut.
+const detKey = d => d.dataset.dk || (d.dataset.hdate ? 'h:' + d.dataset.hdate : '');
+let drawnTab = null;
+function newDay() { if (state.ready) { announce(); closeWeeks(); } } // a new day can bring last week's result and close an older week
 function render(focusSel) {
   if (typing) { pendingRender = true; return; }
   pendingRender = false;
+  if (rollDay()) setTimeout(newDay, 0);
   renderChrome();
   const tab = state.tab, plan = P(me()).plan;
   let html = banners();
@@ -38,8 +43,10 @@ function render(focusSel) {
   html += tab === 'train' ? (plan === 'program' ? renderTrain() : renderMove())
     : tab === 'program' ? (plan === 'program' ? renderProgram() : renderPlanChoice())
     : tab === 'history' ? renderHistory() : tab === 'fuel' ? renderFuel() : tab === 'compete' ? renderCompete() : renderMe();
-  const y = window.scrollY;
-  main.innerHTML = html;
+  const y = window.scrollY, open = {};
+  if (drawnTab === tab) main.querySelectorAll('details[open]').forEach(d => { const k = detKey(d); if (k) open[k] = true; });
+  main.innerHTML = html; drawnTab = tab;
+  main.querySelectorAll('details').forEach(d => { if (open[detKey(d)]) d.open = true; });
   bind();
   if (focusSel) { const el = $(focusSel); if (el) el.focus({ preventScroll: true }); }
   if (Math.abs(window.scrollY - y) > 2) window.scrollTo(0, y);
@@ -91,12 +98,21 @@ main.addEventListener('focusout', e => {
   if (pendingRender) setTimeout(() => { if (pendingRender && !typing) render(); }, 300);
 });
 // one click handler for every data-a action, in the page and in overlays
+// Actions that save one thing per tap. A second tap while the first is still saving is dropped, so a slow
+// connection cannot log the same food or activity twice. Water is left out on purpose: tapping it twice means two glasses.
+const ONE_AT_A_TIME = ['act-log', 'act-del', 'rest', 'food-save', 'food-again', 'food-del', 'quick-save', 'custom-save', 'hk-import', 'body-save', 'weigh-save', 'name-save', 'stakes-save'];
+const busy = {};
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-a]'); if (!el || el.disabled) return;
-  const fn = ACT[el.dataset.a]; if (!fn) return;
+  const a = el.dataset.a, fn = ACT[a]; if (!fn) return;
   if (el.tagName === 'A') e.preventDefault();
   if (main.contains(el)) typing = false;
-  fn(el, e);
+  if (!ONE_AT_A_TIME.includes(a)) { fn(el, e); return; }
+  if (busy[a]) return;
+  busy[a] = true;
+  const free = () => { busy[a] = false; };
+  let r; try { r = fn(el, e); } catch (err) { free(); throw err; }
+  Promise.resolve(r).then(free, err => { free(); throw err; });
 });
 // overlay fields write straight into the overlay's state
 const ovRoot = $('#ov');
@@ -177,16 +193,17 @@ function save() {
     const k = Object.keys(EX).find(k => r.errors[0].startsWith(EX[k].name)); const inp = k ? document.getElementById('w-' + k) : null; if (inp) inp.focus(); return;
   }
   delete state.formError[date]; state.menu = null; typing = false;
-  const note = saveNote(date, m);
-  saveRecord(date, r.doc).then(() => {
+  const note = saveNote(date, m), before = scoreSnapshot();
+  saveRecord(date, r.doc).then(ok => {
+    if (ok === false) return; // nothing was attempted: the log is not loaded yet
     const st = state.status[date];
     if (st && st.s === 'failed') { toast('Save failed. Your inputs are kept; tap Retry.', 3200); return; }
     const msg = r.kind === 'cardio' && r.fromLift ? r.doc.treadmill.minutes + ' treadmill minutes saved. No lifting sets recorded; ' + DAYS[nextDayKey(date)].name + ' remains next.'
       : r.kind === 'strength' ? (note ? note.text : DAYS[r.doc.day].name + ' day saved · counts as lift day · next: ' + DAYS[ROTATION[(ROTATION.indexOf(r.doc.day) + 1) % 3]].name)
       : r.kind === 'rest' ? 'Rest day saved.' : 'Treadmill saved.';
-    celebrate(msg + (st && st.s === 'synced' ? ' Synced.' : st && st.s === 'local' ? ' Saved in this browser.' : ''), { ms: 3800 });
+    celebrate(msg + (st && st.s === 'synced' ? ' Synced.' : st && st.s === 'local' ? ' Saved in this browser.' : ''), { ms: 3800, before });
   });
-  if (!state.settings.startDate) saveSettings({ startDate: date < todayIso() ? date : todayIso() });
+  if (state.ready && !state.settings.startDate) saveSettings({ startDate: date < todayIso() ? date : todayIso() });
 }
 
 /* ---------- Routing and boot ---------- */
@@ -204,6 +221,11 @@ window.MorningLaps = { state, P, weekScore, coach, goalsFor, badgesFor, searchFo
   state.pid = PIDS.includes(saved) ? saved : null;
   applySkin();
   window.addEventListener('hashchange', route);
+  // a phone left open overnight: when it comes back to the front on a new day, move "today" forward
+  const wake = () => { if (document.visibilityState === 'hidden' || !rollDay()) return; render(); newDay(); };
+  document.addEventListener('visibilitychange', wake);
+  window.addEventListener('pageshow', wake);
+  window.addEventListener('focus', wake);
   route();
   if (!state.pid) openOv({ type: 'who', first: true });
   connect();

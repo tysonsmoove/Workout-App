@@ -60,14 +60,14 @@ function renderMe() {
     '<div class="row"><button type="button" class="primary" data-a="body-save">Save targets</button></div>' +
     '<p class="tiny muted">These are general estimates for healthy adults, not medical advice. If you are pregnant, nursing, or managing a condition such as diabetes, kidney or heart disease, use the numbers your doctor gives you. Your weight and calories stay on this screen and never show in the competition.</p></section>';
 
-  const wi = p.weighIns, wd = Object.keys(wi).filter(validIso).sort(), pts = wd.slice(-30).map(d => ({ d, v: wi[d] }));
+  const wi = p.weighIns, wd = Object.keys(wi).filter(d => validIso(d) && isNum(wi[d])).sort(), pts = wd.slice(-30).map(d => ({ d, v: wi[d] }));
   h += '<section class="card stack"><div class="row between"><h3>Weigh-ins</h3>' + (wd.length ? '<span class="tiny muted num">' + wi[wd[wd.length - 1]] + ' lb · ' + shortDate(wd[wd.length - 1]) + '</span>' : '') + '</div>' + sparkSVG(pts) +
     (wd.length >= 2 ? '<p class="tiny muted num">' + (function () { const ch = Math.round((wi[wd[wd.length - 1]] - wi[wd[0]]) * 10) / 10; return (ch === 0 ? 'No change' : (ch < 0 ? 'Down ' : 'Up ') + Math.abs(ch) + ' lb') + ' since ' + shortDate(wd[0]) + '.'; })() + '</p>' : '<p class="tiny muted">Log a weight now and then. Same scale, same time of day, once a week is plenty.</p>') +
     '<div class="row" style="flex-wrap:nowrap;align-items:flex-end"><label class="f grow">Today\'s weight lb<input type="number" data-form="weigh" data-k="lb" inputmode="decimal" min="60" max="700" value="' + esc((state.forms.weigh || {}).lb || '') + '" placeholder="–"></label><button type="button" class="small" data-a="weigh-save" style="min-height:44px">Log</button></div></section>';
 
   h += '<section class="card stack" id="healthCard"><h3>Apple Health and Apple Watch</h3><p class="tiny muted">A web page cannot read Apple Health directly. A one-tap shortcut on your iPhone copies the day\'s Exercise Minutes, steps, active calories, water and weight, and you paste them in.</p>' +
     '<div class="row"><button type="button" class="small" data-a="health">Import from Health</button></div>' +
-    '<details class="plain"><summary>Set up the shortcut, once per iPhone</summary><div style="margin-top:8px">' + shortcutStepsHTML() + '</div></details></section>';
+    '<details class="plain" data-dk="hksteps"><summary>Set up the shortcut, once per iPhone</summary><div style="margin-top:8px">' + shortcutStepsHTML() + '</div></details></section>';
   h += '<section class="card stack"><h3>Workout style</h3>' + seg('plan-set', 'plan', p.plan, { program: 'Lifting program', choice: 'Pick-your-own' }) +
     '<p class="tiny muted">' + (p.plan === 'program' ? 'Push, Pull, Legs rotation with weight suggestions. Weekly goal: ' + moveGoal(pid) + ' activity days, ' + LIFT_GOAL + ' of them lifts.' : 'Choose from a gentle menu each day. Weekly goal: ' + moveGoal(pid) + ' active days of ' + minMin(pid) + ' minutes or more. Adjust it under Train, Plan.') + ' Switching keeps everything already logged.</p></section>';
 
@@ -83,7 +83,9 @@ ACT['avatar-set'] = async el => { await saveProfile(me(), { avatar: el.dataset.v
 ACT['name-save'] = async () => {
   const name = String((state.forms.name || {}).name == null ? P(me()).name : state.forms.name.name).trim().slice(0, 20);
   if (!name) { toast('Enter a name.'); return; }
-  delete state.forms.name; typing = false; await saveProfile(me(), { name }); render(); toast('Saved');
+  typing = false;
+  const ok = await saveProfile(me(), { name }); if (!ok) return; // a refused save keeps what was typed
+  delete state.forms.name; render(); toast('Saved');
 };
 ACT['form-set'] = el => { const f = el.dataset.form; (state.forms[f] = state.forms[f] || {})[el.dataset.k] = el.dataset.v; render(); };
 ACT['plan-set'] = async el => { if (P(me()).plan === el.dataset.v) return; await saveProfile(me(), { plan: el.dataset.v }); settle(); render(); toast(el.dataset.v === 'program' ? 'Lifting program on. Your Train tab is the Push, Pull, Legs log.' : 'Pick-your-own on. Your Train tab is the activity menu.', 3200); };
@@ -99,9 +101,9 @@ ACT['body-save'] = async () => {
   const heightIn = ft != null ? ft * 12 + (inch || 0) : null;
   const patch = { body: { sex: v.sex === 'm' || v.sex === 'f' ? v.sex : null, age, heightIn, weightLb: lb, activity: ACTIVITY[v.activity] ? v.activity : 'light', pace: PACE[v.pace] ? v.pace : 'maintain' }, doctor: { kcal: dkcal, waterOz: dwater } };
   if (lb != null && lb !== latestWeight(pid)) { patch.weighIns = {}; patch.weighIns[todayIso()] = lb; }
-  delete state.forms.body; typing = false;
+  typing = false;
   const ok = await saveProfile(pid, patch); if (!ok) return;
-  settle(); render();
+  delete state.forms.body; settle(); render();
   const g = goalsFor(pid);
   toast(g.ready ? 'Targets set: ' + commas(g.kcal) + ' calories and ' + g.waterOz + ' oz of water a day.' : 'Saved. Add sex, age, height and weight, or a doctor\'s number, to replace the placeholder.', 3600);
 };
@@ -109,9 +111,9 @@ ACT['weigh-save'] = async () => {
   const lb = Number(String((state.forms.weigh || {}).lb || '').trim());
   if (!(lb >= 60 && lb <= 700)) { toast('Enter a weight from 60 to 700 lb.'); return; }
   const patch = { weighIns: {}, body: { weightLb: lb } }; patch.weighIns[todayIso()] = lb;
-  delete state.forms.weigh; typing = false;
+  typing = false;
   const ok = await saveProfile(me(), patch); if (!ok) return;
-  settle(); render(); toast('Weigh-in logged: ' + lb + ' lb.');
+  delete state.forms.weigh; settle(); render(); toast('Weigh-in logged: ' + lb + ' lb.');
 };
 
 /* ---------- Profile switcher ---------- */

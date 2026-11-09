@@ -11,6 +11,7 @@ const T = iso => new Date(iso);
 async function newPage(browser, { time, width = 390, height = 844, init, me = 'tyson', scheme = 'light', reducedMotion = 'no-preference' } = {}) {
   const ctx = await browser.newContext({ viewport: { width, height }, isMobile: width < 900, hasTouch: width < 900, deviceScaleFactor: 2, colorScheme: scheme, reducedMotion });
   const page = await ctx.newPage();
+  if (process.env.ML_TIMEOUT) page.setDefaultTimeout(Number(process.env.ML_TIMEOUT));
   await page.clock.install({ time: time || T('2026-11-03T12:00:00Z') }); // Tue Nov 3, 07:00 Indianapolis
   await page.addInitScript(who => {
     if (who && !localStorage.getItem('ml.me')) localStorage.setItem('ml.me', JSON.stringify(who));
@@ -42,8 +43,10 @@ const score = (page, pid) => page.evaluate(p => window.MorningLaps.weekScore(p),
 const overflow = page => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
 
 // An in-memory stand-in for the artifact database, keyed by full document path.
+// window.__snapDelay (set before this runs) makes the first snapshots arrive late; window.__failListen() breaks the listeners.
 function fakeDb() {
-  const store = {}, cols = [], docs = {}; window.__failSet = false; window.__store = store;
+  const store = {}, cols = [], docs = {}, errs = [], first = window.__snapDelay || 10; window.__failSet = false; window.__store = store;
+  window.__failListen = () => errs.forEach(fn => fn({ code: 'unavailable', message: 'test' }));
   const meta = { fromCache: false, hasPendingWrites: false };
   const snapOf = p => ({ id: p.split('/').pop(), exists: p in store, data: () => store[p], metadata: meta });
   const inCol = c => Object.keys(store).filter(k => k.indexOf(c + '/') === 0 && k.slice(c.length + 1).indexOf('/') < 0);
@@ -54,9 +57,9 @@ function fakeDb() {
     doc: p => ({
       set: async d => { await new Promise(r => setTimeout(r, 20)); if (window.__failSet) throw { code: 'unavailable', message: 'test' }; store[p] = JSON.parse(JSON.stringify(d)); notify(); },
       delete: async () => { delete store[p]; notify(); },
-      onSnapshot: fn => { (docs[p] = docs[p] || []).push(fn); setTimeout(() => fn(snapOf(p)), 10); return () => {}; }
+      onSnapshot: (fn, err) => { (docs[p] = docs[p] || []).push(fn); if (err) errs.push(err); setTimeout(() => fn(snapOf(p)), first); return () => {}; }
     }),
-    collection: c => ({ onSnapshot: fn => { cols.push({ c, fn }); setTimeout(() => fn(colSnap(c)), 10); return () => {}; } })
+    collection: c => ({ onSnapshot: (fn, err) => { cols.push({ c, fn }); if (err) errs.push(err); setTimeout(() => fn(colSnap(c)), first); return () => {}; } })
   } : null };
 }
 function finish(label) {

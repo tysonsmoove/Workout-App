@@ -29,7 +29,7 @@ function renderCompete() {
     (c.tips.length ? '<div class="tips">' + c.tips.map(tip => '<a class="tip" href="#' + tip.tab + '"><span><b>' + esc(tip.text) + '</b><br><span class="tiny muted">' + esc(tip.sub) + '</span></span><span class="gain">+' + tip.gain + '</span></a>').join('') + '</div>' : '<p class="muted">Everything available today is banked. Nice.</p>') +
     '<p class="tiny muted">Best case from here: ' + c.max + ' points this week.</p></section>';
 
-  h += '<details class="card plain"><summary>How scoring stays fair</summary><ul class="rules" style="margin-top:8px">' +
+  h += '<details class="card plain" data-dk="fair"><summary>How scoring stays fair</summary><ul class="rules" style="margin-top:8px">' +
     '<li><b>Move, 50 points.</b> Your share of your own weekly goal. ' + esc(P('tyson').name) + ': 30 for activity days plus 20 for lift days. ' + esc(P('jacquie').name) + ': 50 for active days of ' + minMin('jacquie') + ' minutes or more. Each of you sets your own goal, so a short walk that completes a day is worth as much as a lift day.</li>' +
     '<li><b>Fuel, 20 points.</b> Days logged inside your calorie range. Five such days fills it; a logged day outside the range earns half.</li>' +
     '<li><b>Water, 15 points.</b> Each day earns the share of your water goal you drank. Five full days fills it.</li>' +
@@ -46,6 +46,8 @@ function renderCompete() {
 ACT['stakes-edit'] = () => { state.forms.stakes = { text: state.comp.stakes || '' }; render('#stakesIn'); };
 ACT['stakes-save'] = async () => {
   const text = String((state.forms.stakes || {}).text || '').trim().slice(0, 80);
-  delete state.forms.stakes; typing = false;
-  await write('comp/settings', Object.assign({}, state.comp, { stakes: text })); render();
+  typing = false;
+  const ok = await write('comp/settings', Object.assign({}, state.comp, { stakes: text }));
+  if (ok) delete state.forms.stakes; // a refused save keeps what was typed
+  render();
 };

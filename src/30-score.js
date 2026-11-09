@@ -53,17 +53,20 @@ function coach(pid) {
       add('move', 'Treadmill only today', 'Any Fitness+ treadmill workout', 'train', c => { const x = c.days[i]; x.active = true; x.minutes += 20; x.kinds = ['treadmill']; });
     } else {
       const need = Math.max(1, minMin(pid) - d.minutes);
-      add('move', d.minutes ? need + ' more minutes of movement today' : 'Move for ' + minMin(pid) + ' minutes today', 'A walk, a stretch, anything on your list', 'train', c => { const x = c.days[i]; x.active = true; x.minutes += need; if (!x.kinds.length) x.kinds = ['__any']; });
+      // no new kind is assumed here: repeating something already done this week earns no variety bonus
+      add('move', d.minutes ? need + ' more minutes of movement today' : 'Move for ' + minMin(pid) + ' minutes today', 'A walk, a stretch, anything on your list', 'train', c => { const x = c.days[i]; x.active = true; x.minutes += need; });
     }
   }
   if (f.plan !== 'program' && !base.variety && base.kinds === 2) add('variety', 'Try something you have not done this week', 'A third kind of activity earns the variety bonus', 'train', c => { c.days[i].kinds.push('__new'); });
   if (!base.pb && f.lastMin > 0) { const need = f.lastMin - base.minutes + 1; add('pb', need + ' more active minutes this week', 'Beats last week\'s ' + f.lastMin + ' minutes', 'train', c => { c.days[i].minutes += need; }); }
   if (d.water < 1) { const need = Math.max(1, Math.ceil(g.waterOz - dayTotals(pid, t).water)); add('water', 'Drink ' + need + ' more oz of water', 'Reaches today\'s ' + g.waterOz + ' oz', 'fuel', c => { c.days[i].water = 1; }); }
-  if (d.fuel < 1) add('fuel', 'Log today\'s food and land in range', commas(g.lo) + ' to ' + commas(g.hi) + ' calories', 'fuel', c => { c.days[i].fuel = 1; });
+  const overToday = dayTotals(pid, t).kcal > g.hi; // already past the range: nothing eaten later can bring today back into it
+  if (d.fuel < 1 && !overToday) add('fuel', 'Log today\'s food and land in range', commas(g.lo) + ' to ' + commas(g.hi) + ' calories', 'fuel', c => { c.days[i].fuel = 1; });
   tips.sort((a, b) => b.gain - a.gain);
   // best case from here: every remaining day goes perfectly
   const best = cloneFacts(f);
-  best.days.forEach((x, j) => { if (j >= i) { x.active = true; if (f.plan === 'program') x.lift = true; x.minutes += 30; x.fuel = 1; x.water = 1; x.kinds.push('__k' + j); } });
+  best.days.forEach((x, j) => { if (j >= i) { x.active = true; if (f.plan === 'program') x.lift = true; x.minutes += 30; if (!(j === i && overToday)) x.fuel = 1; x.water = 1; x.kinds.push('__k' + j); } });
+  const bestMin = sum(best.days, x => x.minutes); if (bestMin <= f.lastMin) best.days[i].minutes += f.lastMin - bestMin + 1; // a perfect finish also beats last week's minutes
   const max = scoreFacts(best).total;
   // shortest list of today's actions that passes the other profile
   const other = weekScore(otherPid(pid), ws).total; let plan = null;
@@ -77,9 +80,10 @@ function coach(pid) {
 /* ---------- Competition history ---------- */
 function compStart() {
   if (state.comp.start && validIso(state.comp.start)) return weekStart(state.comp.start);
-  let first = todayIso();
-  PIDS.forEach(pid => { Object.keys(state.data[pid].sessions).concat(Object.keys(state.data[pid].food)).forEach(d => { if (validIso(d) && d < first) first = d; }); });
-  return weekStart(first);
+  // no start on record: the race begins the first week in which both of you logged something, so solo weeks before it never count
+  const weeksOf = pid => new Set(Object.keys(state.data[pid].sessions).concat(Object.keys(state.data[pid].food)).filter(validIso).map(weekStart));
+  const a = weeksOf('tyson'), b = weeksOf('jacquie'), both = Array.from(a).filter(w => b.has(w)).sort();
+  return both.length ? both[0] : weekStart(todayIso());
 }
 const GRACE_DAYS = 2; // a finished week stays open for late entries through Tuesday, then its result is final
 function liveWeek(ws) {

@@ -54,8 +54,9 @@ ACT['hk-toggle'] = el => { const o = state.ov, k = el.dataset.k; o.use[k] = o.us
 ACT['hk-import'] = async () => {
   const o = state.ov, pid = me(), parsed = parseHealthPaste(o.text), plan = healthPlan(pid, parsed, state.selDate);
   if (plan.err) { toast(plan.err, 3400); return; }
+  const before = scoreSnapshot();
   const did = await applyHealthImport(pid, plan, parsed, o.use);
   state.selDate = plan.date; persistDrafts();
   closeOv(); render();
-  celebrate(did.length ? 'Imported for ' + hkWhen(plan.date) + ': ' + did.join(', ') + '.' : 'Nothing new to import.', { ms: 3600 });
+  celebrate(did.length ? 'Imported for ' + hkWhen(plan.date) + ': ' + did.join(', ') + '.' : 'Nothing new to import.', { ms: 3600, before });
 };

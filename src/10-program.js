@@ -88,7 +88,7 @@ const records = () => recordsOf(me());
 /* ---------- Derived progress (active profile unless a pid is given) ---------- */
 function startDate(pid) {
   pid = pid || me(); const st = state.data[pid].settings;
-  if (st.startDate) return st.startDate;
+  if (st.startDate && validIso(st.startDate)) return st.startDate;
   const all = Object.keys(state.data[pid].sessions).sort(); return all[0] || todayIso();
 }
 function liftDays(from, to, pid) { return recordsOf(pid || me()).filter(r => r.date >= from && r.date <= to && r.n.qualifies).length; }
@@ -159,7 +159,7 @@ function model(date) { // what the form shows
   return rec ? seedFromRecord(rec) : emptyDraft();
 }
 function draft(date) { // create the draft on first edit
-  if (!state.drafts[date]) { const rec = state.sessions[date]; state.drafts[date] = rec ? seedFromRecord(rec) : emptyDraft(); }
+  if (!state.drafts[date]) { const rec = state.sessions[date]; state.drafts[date] = rec ? seedFromRecord(rec) : emptyDraft(); if (!state.ready) state.drafts[date].blind = true; }
   state.drafts[date].updatedAt = Date.now();
   return state.drafts[date];
 }
@@ -174,7 +174,7 @@ function kindFor(date, m) {
   if (rec) { const n = normalize(rec); if (n.kind === 'strength' && n.day) return n.day; if (n.kind === 'cardio' || n.kind === 'rest') return n.kind; }
   return nextDayKey(date);
 }
-function phaseOf(date) { const rec = state.sessions[date]; return rec && rec.phase ? rec.phase : phaseFor(date); }
+function phaseOf(date) { const rec = state.sessions[date], ph = rec ? Number(rec.phase) : 0; return ph >= 1 && ph <= 3 ? Math.floor(ph) : phaseFor(date); }
 function plannedFor(date, kind, m) {
   // Returns [{base, key}] in order. An existing record keeps its own planned list; swaps in the draft apply on top.
   const rec = state.sessions[date]; const n = rec ? normalize(rec) : null;
@@ -182,12 +182,15 @@ function plannedFor(date, kind, m) {
   if (n && n.kind === 'strength' && n.day === kind && n.plannedBase) bases = n.plannedBase.filter(k => EX[k]);
   else if (n && n.kind === 'strength' && n.day === kind && n.legacy) bases = Array.from(new Set((DAYS[kind].phases[phaseOf(date)] || []).concat(n.keys)));
   else bases = DAYS[kind].phases[phaseOf(date)];
-  const dflt = n && n.plannedBase ? n.swaps : (state.settings.swaps || {});
+  // a saved lift day keeps the exercises it was saved with: today's default swaps apply to new workouts only
+  const own = n && n.kind === 'strength' && n.day === kind;
+  const dflt = own ? (n.swaps || {}) : (state.settings.swaps || {});
+  const seen = {};
   return bases.map(b => {
     let key = m.swaps[b] != null ? m.swaps[b] : (dflt[b] || b);
     if (!EX[key]) key = b;
     return { base: b, key };
-  });
+  }).filter(p => seen[p.key] ? false : (seen[p.key] = true));
 }
 function setCount(key, m, date) {
   const sg = suggest(key, date);
@@ -241,14 +244,41 @@ function parseDraft(date, m) {
 
 /* ---------- Saving the lifting log ---------- */
 function setStatus(date, s, msg) { state.status[date] = { s, at: Date.now(), msg: msg || '' }; }
-async function saveRecord(date, doc) {
+async function saveRecord(date, doc) { // resolves false when nothing was attempted
+  if (!state.ready) { toast(state.storage === 'nodb' ? 'Your log cannot be reached right now. Your inputs are kept on this phone.' : 'Still loading your log. Your inputs are kept; try again in a moment.', 3400); return false; }
   const pid = me(), path = PATH.session(pid, date), drafts = state.draftsBy[pid];
   setStatus(date, 'saving'); applyDoc(path, doc); render();
   try { const how = await put(path, doc); delete drafts[date]; setStatus(date, how === 'local' ? 'local' : 'synced'); }
   catch (e) { setStatus(date, 'failed', (e && e.code) || 'error'); drafts[date] = drafts[date] || seedFromRecord(doc); }
   persistDrafts(); render();
+  return true;
+}
+// A draft started before the log finished loading could not see the day's saved record. Once it loads, fill in
+// whatever the draft left untouched, so saving the draft cannot drop sets that were already saved.
+function reconcileBlindDrafts() {
+  PIDS.forEach(pid => {
+    const ds = state.draftsBy[pid];
+    Object.keys(ds).forEach(date => {
+      const d = ds[date]; if (!d.blind) return;
+      const rec = state.data[pid].sessions[date];
+      if (rec && !Array.isArray(rec.acts)) {
+        const base = seedFromRecord(rec);
+        if (d.tm.minutes === '') d.tm.minutes = base.tm.minutes;
+        if (!d.tm.title) d.tm.title = base.tm.title;
+        if (!d.notes) d.notes = base.notes;
+        if (d.kindSel == null) d.kindSel = base.kindSel;
+        if (d.countAs == null) d.countAs = base.countAs;
+        Object.keys(base.ex).forEach(k => { if (!d.ex[k]) d.ex[k] = base.ex[k]; });
+        Object.keys(base.swaps).forEach(k => { if (d.swaps[k] == null) d.swaps[k] = base.swaps[k]; });
+        d.fromRecord = true;
+      }
+      delete d.blind;
+    });
+  });
+  persistDrafts();
 }
 async function removeRecord(date) {
+  if (!state.ready) { toast('Still loading your log. Try again in a moment.'); return; }
   const pid = me(), path = PATH.session(pid, date), had = getDoc(path);
   delete state.draftsBy[pid][date]; state.confirmRemove = null; persistDrafts();
   applyDoc(path, null); render();
@@ -257,6 +287,7 @@ async function removeRecord(date) {
   settle();
 }
 async function saveSettings(patch) {
+  if (!state.ready) { toast('Still loading your log. Try again in a moment.'); return; }
   const pid = me(), path = PATH.settings(pid), next = Object.assign({}, state.data[pid].settings, patch);
   applyDoc(path, next); render();
   try { await put(path, next); } catch (e) { toast('Could not save settings'); }
