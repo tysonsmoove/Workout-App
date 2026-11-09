@@ -1,33 +1,88 @@
 # Morning Laps
 
-Single-page workout log for Tyson's mornings at Anytime Fitness Avon (1124 N SR 267).
+A phone-first fitness tracker for two people, Tyson and Jacquie: workouts, nutrition, water, a weekly competition scored fairly against each person's own goals, badges, and a look each profile sets for itself.
 
 - Live app: https://claude.ai/artifact/WpxQrh73Td3TuyfYKvHaMr
-- Source: `index.html` (published as a Claude artifact; uses the artifact `db` capability for account storage, with a localStorage fallback when signed out)
+- Built page: `index.html` (generated; do not edit by hand) plus `foods.json`
+- Source: `src/`, built with `node build.js`
 
-## What it does
+## Layout of the repo
 
-- Push → Pull → Legs rotation that is not tied to weekdays. The next lift is the one after the last **counted** lift day, so a missed morning never desyncs the plan.
-- Every session opens with an Apple Fitness+ treadmill block (20 / 25 / 30 min by phase).
-- Weight suggestions per exercise from the last logged weight and reps, with a "Can't go higher" hold that switches to rep / set progression.
-- Back-dated logging: pick any past day from the 7-day strip or the date field. Future dates are not loggable.
-- Phases unlock after each completed week (3 counted lift days, Mon–Sun): Phase 2 adds exercises, Phase 3 swaps in squats, lunges and flys.
-- Bodyweight core finisher (crunches, lying leg raises, bench knee tucks) on Pull and Legs days.
-- Swap any machine for a dumbbell / barbell / cable fallback from the exercise's ··· menu (that workout only); the Program tab sets defaults for future workouts. The same menu holds "Can't go higher", Add a set (up to 5), Exercise details and Collapse.
+| Path | What it holds |
+|---|---|
+| `src/shell.html`, `src/style.css` | Page shell and styles |
+| `src/00-core.js` | Dates, state, looks, the path-addressed store (account database or this browser) |
+| `src/10-program.js` | Lifting program: Push / Pull / Legs rotation, drafts, weight suggestions |
+| `src/20-activities.js` | Pick-your-own menu of gentle activities |
+| `src/30-score.js` | Weekly score, coaching tips, competition history, badges |
+| `src/40-nutrition.js` | Calorie and water targets, food log, food search, Nutrition Facts label |
+| `src/50-fx.js` | Overlays, confetti, celebrations |
+| `src/60…80-ui-*.js` | Screens: Train, Fuel, Compete, Me |
+| `src/90-main.js` | Render loop, events, routing, boot |
+| `tools/build_foods.py` | Builds `foods.json` from USDA FoodData Central downloads |
+| `tests/` | Playwright suites |
 
-## How records work
+`build.js` concatenates the numbered modules into one closure, so they share a scope in filename order.
 
-- Unsaved input is a **draft**, kept in this browser's localStorage per date (drafts older than 14 days are pruned). It survives swaps, tab switches, date changes and reloads, and is only cleared by Save or Discard.
-- Save classifies the entry from its content, never from the selected tab: any logged set makes a lift entry; treadmill minutes alone make a treadmill entry; Rest is rest.
-- A lift entry **counts as a lift day** (advances the rotation, earns weekly lift credit) when at least 2 non-core lifts have a logged set, or when the checkbox above Save is set by hand. Partial sessions still save.
-- Sets are `null` when not entered; `0` is a recorded failed set. Only logged sets feed the weight rule.
-- Each record stores its own exercise keys, phase, planned list and swaps, so later program changes never rewrite history.
-- Records saved by the first version (no `v` field) are read conservatively: zeros are shown as not logged, and a "lift day" with no sets is surfaced as treadmill-only / needs review.
+## Profiles
 
-## Timezone
+Two fixed profiles, `tyson` and `jacquie`. Each phone remembers which one it uses (`localStorage ml.me`); the button at the top right switches. A profile holds its name, avatar, look, workout style, body numbers, doctor's numbers, weigh-ins, favorites and earned badges.
 
-"Today" is computed in `America/Indiana/Indianapolis`; all other date math is pure calendar arithmetic (UTC), so DST changes never shift a day.
+Workout style is a profile setting:
+
+- **Lifting program** (Tyson by default): the Push → Pull → Legs rotation with an Apple Fitness+ treadmill block, weight suggestions, phases and drafts. Unchanged from the earlier single-user version.
+- **Pick-your-own** (Jacquie by default): choose from about 35 low-impact activities (walks, stretching, easy cardio, light strength, recovery, everyday movement) and log minutes. A day counts as active at a personal minimum (10 minutes by default). Areas with old injuries can be marked; activities that load them are flagged, sorted lower and skipped by Surprise me.
+
+## Weekly competition
+
+Monday to Sunday, 100 points, each person scored against their own goals:
+
+| Part | Points | How |
+|---|---|---|
+| Move | 50 | Share of the personal weekly goal. Lifting program: 30 for activity days + 20 for lift days (3). Pick-your-own: 50 for active days. |
+| Fuel | 20 | Days logged inside the calorie range (80–110% of target). Five fills it; a logged day outside the range earns half. |
+| Water | 15 | Each day earns the share of the water goal drunk. Five full days fills it. |
+| Bonus | 15 | 5 each: more active minutes than your own last week, three kinds of activity, moving on Saturday or Sunday. |
+
+Scores are derived from the saved logs, so edits never double-count. A finished week stays open through Tuesday for late entries, then its result is stored at `results/<monday>` and is final. The Compete tab lists actions available today with the points each would add, and the shortest set that passes the other person.
+
+Badges are derived from the logs and recorded on the profile the day they are earned, so later goal changes do not remove them.
+
+## Nutrition
+
+- **Targets.** Calories: Mifflin-St Jeor resting energy × activity factor, adjusted for the chosen pace (±250 or −500 kcal), never below 1,200 (women) / 1,500 (men). Water: the National Academies beverage guideline by sex (about 9 cups / 72 oz for women, 13 cups / 104 oz for men), raised to half of body weight in ounces when that is more, capped at 128 oz. A calorie or water number entered from a doctor replaces the estimate. These are general estimates, not medical advice.
+- **Food database.** `foods.json` holds 12,625 foods from USDA FoodData Central (FNDDS 2021–2023 and SR Legacy, public domain) with 14 nutrients per 100 g and up to five household portions each. Rebuild with:
+
+  ```
+  python3 tools/build_foods.py <sr_legacy_csv_dir> <fndds_csv_dir> foods.json
+  ```
+
+- **Logging.** Search, pick a portion and quantity, see the Nutrition Facts label, add to a meal. Logged items store their own nutrient values, so rebuilding the database never changes history. Quick add and saved custom foods cover anything not in the list.
+
+## Storage
+
+One path-addressed document store, backed by the artifact database when signed in with write access, otherwise by this browser's localStorage.
+
+| Path | Contents |
+|---|---|
+| `sessions/<date>`, `settings/program` | Tyson's lifting log and program settings (original location, kept) |
+| `profiles/<pid>` | Profile |
+| `profiles/<pid>/sessions/<date>` | Other profile's workout log |
+| `profiles/<pid>/food/<date>` | Food items and water for a day |
+| `profiles/<pid>/settings/program` | Lifting settings for a non-Tyson profile |
+| `foods/<id>` | Custom foods, shared |
+| `results/<monday>` | Final weekly results |
+| `comp/settings` | Competition start week, what is on the line |
+
+The artifact declares `db` with read and write at the `interact` level, so someone who only has a view link sees none of the health data. Unsaved lifting drafts stay in localStorage per profile.
+
+"Today" is the calendar day in `America/Indiana/Indianapolis`; all other date math is pure calendar arithmetic.
 
 ## Tests
 
-`tests/test.js` (Playwright; serve a doctype-wrapped copy of `index.html` on http://127.0.0.1:8765 and run `node tests/test.js`) covers draft stability, classification, blank-vs-zero, progression, chronology, phase isolation, week/DST/year boundaries, layouts and a fake-db sync/failure scenario. 148 checks, plus `scratch review.js` state screenshots (menu open, 5 sets, long names, validation, save failed, 125% text, short viewport).
+Serve a doctype-wrapped copy of `index.html` with `foods.json` beside it on `http://127.0.0.1:8765`, then:
+
+```
+node tests/test.js       # lifting program: drafts, classification, blank sets, progression, dates, layouts, sync (148 checks)
+node tests/app.test.js   # profiles, looks, pick-your-own, nutrition, competition, badges, storage paths, layouts (127 checks)
+```
