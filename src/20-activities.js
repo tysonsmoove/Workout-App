@@ -68,7 +68,7 @@ function surpriseActivity(pid) {
   return from[Math.floor(Math.random() * from.length)];
 }
 const actName = a => a.name || (ACTS[a.a] ? ACTS[a.a].name : 'Activity');
-const actIcon = a => ACTS[a.a] ? ACTS[a.a].icon : '✏️';
+const actIcon = a => a.src === 'health' ? '⌚' : ACTS[a.a] ? ACTS[a.a].icon : '✏️';
 
 async function logActivity(date, entry) {
   const pid = me(), path = PATH.session(pid, date), cur = getDoc(path), now = new Date().toISOString();
