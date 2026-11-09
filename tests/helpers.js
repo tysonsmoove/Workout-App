@@ -8,8 +8,8 @@ const T = iso => new Date(iso);
 
 // me: profile preselected on this "phone" (null = show the chooser). Celebration pop-ups are closed automatically
 // and their titles collected in window.__seen, unless window.__keepOv is set.
-async function newPage(browser, { time, width = 390, height = 844, init, me = 'tyson', scheme = 'light' } = {}) {
-  const ctx = await browser.newContext({ viewport: { width, height }, isMobile: width < 900, hasTouch: width < 900, deviceScaleFactor: 2, colorScheme: scheme });
+async function newPage(browser, { time, width = 390, height = 844, init, me = 'tyson', scheme = 'light', reducedMotion = 'no-preference' } = {}) {
+  const ctx = await browser.newContext({ viewport: { width, height }, isMobile: width < 900, hasTouch: width < 900, deviceScaleFactor: 2, colorScheme: scheme, reducedMotion });
   const page = await ctx.newPage();
   await page.clock.install({ time: time || T('2026-11-03T12:00:00Z') }); // Tue Nov 3, 07:00 Indianapolis
   await page.addInitScript(who => {
@@ -49,6 +49,7 @@ function fakeDb() {
   const inCol = c => Object.keys(store).filter(k => k.indexOf(c + '/') === 0 && k.slice(c.length + 1).indexOf('/') < 0);
   const colSnap = c => ({ docs: inCol(c).sort().map(snapOf), metadata: meta });
   const notify = () => { cols.forEach(x => x.fn(colSnap(x.c))); Object.keys(docs).forEach(p => docs[p].forEach(fn => fn(snapOf(p)))); };
+  window.__remoteSet = (p, d) => { store[p] = d; notify(); }; // a write arriving from the other phone
   window.claude = { use: async n => n === 'db' ? {
     doc: p => ({
       set: async d => { await new Promise(r => setTimeout(r, 20)); if (window.__failSet) throw { code: 'unavailable', message: 'test' }; store[p] = JSON.parse(JSON.stringify(d)); notify(); },

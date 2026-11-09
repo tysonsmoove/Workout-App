@@ -84,5 +84,5 @@ Serve a doctype-wrapped copy of `index.html` with `foods.json` beside it on `htt
 
 ```
 node tests/test.js       # lifting program: drafts, classification, blank sets, progression, dates, layouts, sync (148 checks)
-node tests/app.test.js   # profiles, looks, pick-your-own, nutrition, competition, badges, storage paths, layouts (127 checks)
+node tests/app.test.js   # profiles, looks, pick-your-own, nutrition, competition, badges, storage paths, sync, layouts (130 checks)
 ```

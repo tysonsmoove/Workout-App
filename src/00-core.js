@@ -133,12 +133,24 @@ function hexToHsl(hex) {
   if (d) { s = d / (1 - Math.abs(2 * l - 1)); h = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; h = Math.round(h * 60); if (h < 0) h += 360; }
   return { h, s: Math.round(s * 100), l: Math.round(l * 100) };
 }
+function hslLum(h, s, l) { // relative luminance of an hsl color
+  s /= 100; l /= 100;
+  const a = s * Math.min(l, 1 - l), f = n => { const k = (n + h / 30) % 12, v = l - a * Math.max(-1, Math.min(k - 3, Math.min(9 - k, 1))); return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+  return 0.2126 * f(0) + 0.7152 * f(8) + 0.0722 * f(4);
+}
+// the lightest accent, at or below `l`, that still gives white text the wanted contrast
+function fitLightness(h, s, l, want) { let v = l; while (v > 18 && 1.05 / (hslLum(h, s, v) + 0.05) < want) v--; return v; }
 function skinVars(sk) {
-  const c = sk && sk.custom ? hexToHsl(sk.custom) : null;
-  if (!c) return SKINS[sk && sk.preset] || SKINS.brick;
-  const yellow = c.h >= 38 && c.h <= 68;
-  const al = yellow ? clamp(c.l, 46, 54) : clamp(c.l, 30, 50);
-  return { name: 'Custom', ah: c.h, as: clamp(c.s, 35, 92), al, ald: Math.min(al + 10, 60), nh: c.h, ns: clamp(Math.round(c.s * 0.35), 8, 34), nsd: 12, ink: yellow ? '#1C1400' : null };
+  const c = sk && sk.custom ? hexToHsl(sk.custom) : null, key = c ? 'custom:' + sk.custom : 'preset:' + (sk && sk.preset);
+  return cached('skin:' + key, () => {
+    let v;
+    if (c) {
+      const yellow = c.h >= 38 && c.h <= 68, al = yellow ? clamp(c.l, 46, 54) : clamp(c.l, 30, 50);
+      v = { name: 'Custom', ah: c.h, as: clamp(c.s, 35, 92), al, ald: Math.min(al + 10, 60), nh: c.h, ns: clamp(Math.round(c.s * 0.35), 8, 34), nsd: 12, ink: yellow ? '#1C1400' : null };
+    } else v = Object.assign({}, SKINS[sk && sk.preset] || SKINS.brick);
+    if (!v.ink) { v.al = fitLightness(v.ah, v.as, v.al, 4.5); v.ald = fitLightness(v.ah, v.as, v.ald, 4); } // white text on the accent stays readable in both themes
+    return v;
+  });
 }
 function loadFont(f) {
   if (!FONT_URL[f] || document.getElementById('font-' + f)) return;

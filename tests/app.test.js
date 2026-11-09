@@ -276,6 +276,22 @@ const logAct = async (page, k, opts = {}) => {
   check('J retry succeeds', await txt(page, '#waterNow') === '12');
   await ctx.close();
 
+  // ---------- L: the other phone, and reduced motion ----------
+  ({ ctx, page } = await newPage(browser, { me: 'tyson', init: fakeDb }));
+  await page.waitForFunction(() => window.MorningLaps.state.storage === 'db');
+  await go(page, 'me');
+  await page.focus('[data-form="body"][data-k="age"]'); await page.keyboard.type('3');
+  await page.evaluate(() => window.__remoteSet('profiles/jacquie/sessions/2026-11-03', { v: 2, date: '2026-11-03', kind: 'activity', acts: [{ id: 'r1', a: 'walkeasy', name: 'Easy walk', min: 15, feel: null, hurt: false, note: '', mv: true, at: 'x' }], savedAt: 'x', updatedAt: 'x' }));
+  await page.keyboard.type('5');
+  check('L typing survives a write arriving from the other phone', await val(page, '[data-form="body"][data-k="age"]') === '35' && await page.evaluate(() => document.activeElement.dataset.k === 'age'));
+  await page.click('h1'); await page.waitForFunction(() => document.getElementById('theirScore').textContent === '22', null, { timeout: 4000 }).catch(() => {});
+  check('L the partner\'s activity shows up without a reload', await txt(page, '#theirScore') === '22' && await val(page, '[data-form="body"][data-k="age"]') === '35');
+  await ctx.close();
+  ({ ctx, page } = await newPage(browser, { me: 'jacquie', reducedMotion: 'reduce' }));
+  await logAct(page, 'walkeasy');
+  check('L reduced motion: logging works and no confetti is drawn', (await score(page, 'jacquie')).total === 22 && await page.evaluate(() => document.getElementById('fx').width === 300));
+  await ctx.close();
+
   // ---------- K: layouts ----------
   for (const [w, h, name] of [[375, 667, '375'], [390, 844, '390'], [430, 932, '430'], [844, 390, 'landscape'], [1280, 800, 'desktop']]) {
     for (const who of ['tyson', 'jacquie']) {
