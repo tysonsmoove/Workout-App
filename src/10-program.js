@@ -253,6 +253,36 @@ async function saveRecord(date, doc) { // resolves false when nothing was attemp
   persistDrafts(); render();
   return true;
 }
+function fillDraft(d, base) { // copy into d whatever d has left untouched
+  if (d.tm.minutes === '') d.tm.minutes = base.tm.minutes;
+  if (!d.tm.title) d.tm.title = base.tm.title;
+  if (!d.notes) d.notes = base.notes;
+  if (d.kindSel == null) d.kindSel = base.kindSel;
+  if (d.countAs == null) d.countAs = base.countAs;
+  Object.keys(base.ex || {}).forEach(k => { if (!d.ex[k]) d.ex[k] = base.ex[k]; });
+  Object.keys(base.swaps || {}).forEach(k => { if (d.swaps[k] == null) d.swaps[k] = base.swaps[k]; });
+}
+const draftShaped = d => !!(d && typeof d === 'object' && d.tm && typeof d.tm === 'object' && d.ex && typeof d.ex === 'object' && d.swaps && typeof d.swaps === 'object');
+// Once the log has loaded: take the profile this account uses if the device has forgotten it, and bring back
+// unsaved drafts the account kept. A draft is skipped when the day was saved after the draft was last touched.
+function adoptAccount() {
+  const known = prefGet('ml.me', null);
+  if (!state.pid && PIDS.includes(known)) { state.pid = known; lsSet('ml.me', known); }
+  const theirs = state.acctDrafts; state.acctDrafts = null; if (!theirs) return;
+  draftsSent = JSON.stringify({ tyson: theirs.tyson || {}, jacquie: theirs.jacquie || {} }); // what the account already holds
+  PIDS.forEach(pid => {
+    const mine = state.draftsBy[pid], kept = theirs[pid] && typeof theirs[pid] === 'object' ? theirs[pid] : {};
+    Object.keys(kept).forEach(date => {
+      const d = kept[date]; if (!validIso(date) || !draftShaped(d)) return;
+      const rec = state.data[pid].sessions[date], saved = rec ? Date.parse(rec.updatedAt || rec.savedAt || '') || 0 : 0;
+      if (saved >= (d.updatedAt || 0)) return;
+      const cur = mine[date];
+      if (cur && cur.blind) { fillDraft(cur, d); return; }        // typed before the log loaded: keep that, add the rest
+      if (cur && (cur.updatedAt || 0) >= (d.updatedAt || 0)) return;
+      mine[date] = Object.assign(emptyDraft(), d, { recovered: true });
+    });
+  });
+}
 // A draft started before the log finished loading could not see the day's saved record. Once it loads, fill in
 // whatever the draft left untouched, so saving the draft cannot drop sets that were already saved.
 function reconcileBlindDrafts() {
@@ -261,17 +291,7 @@ function reconcileBlindDrafts() {
     Object.keys(ds).forEach(date => {
       const d = ds[date]; if (!d.blind) return;
       const rec = state.data[pid].sessions[date];
-      if (rec && !Array.isArray(rec.acts)) {
-        const base = seedFromRecord(rec);
-        if (d.tm.minutes === '') d.tm.minutes = base.tm.minutes;
-        if (!d.tm.title) d.tm.title = base.tm.title;
-        if (!d.notes) d.notes = base.notes;
-        if (d.kindSel == null) d.kindSel = base.kindSel;
-        if (d.countAs == null) d.countAs = base.countAs;
-        Object.keys(base.ex).forEach(k => { if (!d.ex[k]) d.ex[k] = base.ex[k]; });
-        Object.keys(base.swaps).forEach(k => { if (d.swaps[k] == null) d.swaps[k] = base.swaps[k]; });
-        d.fromRecord = true;
-      }
+      if (rec && !Array.isArray(rec.acts)) { fillDraft(d, seedFromRecord(rec)); d.fromRecord = true; }
       delete d.blind;
     });
   });

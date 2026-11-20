@@ -22,6 +22,7 @@ const logAct = async (page, k, opts = {}) => {
   // ---------- E: profiles and looks ----------
   ({ ctx, page } = await newPage(browser, { me: null }));
   check('E chooser shows on a new phone', (await txt(page, '#ov')).includes('Who is logging?'));
+  check('E nobody\'s log is drawn before a profile is picked', await page.evaluate(() => document.documentElement.classList.contains('nopid') && getComputedStyle(document.getElementById('main')).visibility === 'hidden'));
   await page.keyboard.press('Escape');
   check('E chooser cannot be dismissed without a pick', !(await page.$eval('#ov', e => e.hidden)));
   await shot(page, 'who.png');
@@ -134,7 +135,7 @@ const logAct = async (page, k, opts = {}) => {
   check('G under-18 age rejected', (await toastWith(page, 'adults')).includes('adults')); await fill(page, '[data-form="body"][data-k="age"]', 30);
   await go(page, 'fuel');
   await page.click('[data-a="food-add"][data-meal="l"]'); await page.waitForSelector('#foodQ');
-  await page.waitForFunction(() => document.getElementById('foodRes').textContent.includes('Type to search'), null, { timeout: 15000 });
+  await page.waitForFunction(() => /Type to search [\d,]+ foods/.test(document.getElementById('foodRes').textContent), null, { timeout: 15000 }); // the count appears once the list has loaded
   const count = await page.evaluate(() => window.MorningLaps.foodCount());
   check('G thousands of foods loaded', count > 12000, 'foods: ' + count);
   const long = await page.evaluate(() => window.MorningLaps.searchFoods('skin not eaten', 500).length);

@@ -66,10 +66,10 @@ function keepBadges(pid) { // write newly earned badges onto the profile, with t
 function settle() { keepBadges(me()); } // after a change that is not celebrated (an edit, a removal, a goal change)
 function checkBadges(pid, quiet) { // returns badges earned since this device last looked
   keepBadges(pid);
-  const earned = badgesFor(pid).filter(b => b.earned), seen = lsGet('ml.badges.' + pid, null);
-  if (seen == null || quiet) { lsSet('ml.badges.' + pid, earned.map(b => b.id)); return []; }
+  const earned = badgesFor(pid).filter(b => b.earned), got = prefGet('ml.badges.' + pid, null), seen = Array.isArray(got) ? got : null;
+  if (seen == null || quiet) { prefSet('ml.badges.' + pid, earned.map(b => b.id)); return []; }
   const fresh = earned.filter(b => !seen.includes(b.id));
-  if (fresh.length) lsSet('ml.badges.' + pid, seen.concat(fresh.map(b => b.id)));
+  if (fresh.length) prefSet('ml.badges.' + pid, seen.concat(fresh.map(b => b.id)));
   return fresh;
 }
 // opts.before: the scores taken just before the change was made. Comparing against that moment, rather than against
@@ -88,13 +88,17 @@ function announce() { // on opening the app: badges and last week's result this 
   const pid = me();
   checkBadges(pid).slice(0, 3).forEach(b => queueOv({ type: 'badge', pid, badge: b }));
   const weeks = compWeeks(), w = weeks[weeks.length - 1];
-  if (w && w.played && lsGet('ml.seenWeek', '') < w.ws) { lsSet('ml.seenWeek', w.ws); queueOv({ type: 'weekwin', week: w }); }
+  if (w && w.played && String(prefGet('ml.seenWeek', '')) < w.ws) { prefSet('ml.seenWeek', w.ws); queueOv({ type: 'weekwin', week: w }); }
 }
+// With no profile on this device the page waits for the account to say which one this person uses, and asks only
+// when the account does not know either (or cannot be reached).
+function askWho() { if (!state.pid && !(state.ov && state.ov.type === 'who')) openOv({ type: 'who', first: true }); }
 function onReady() {
-  state.ready = true; reconcileBlindDrafts(); settle();
-  PIDS.forEach(pid => { if (lsGet('ml.badges.' + pid, null) == null) checkBadges(pid, true); });
+  state.ready = true; adoptAccount(); reconcileBlindDrafts(); settle();
+  PIDS.forEach(pid => { if (prefGet('ml.badges.' + pid, null) == null) checkBadges(pid, true); });
   applySkin();
-  if (!state.pid) openOv({ type: 'who', first: true }); else announce();
+  if (!state.pid) askWho(); else announce();
+  acctFlush(); // anything chosen before the account could be reached
   closeWeeks();
   render();
 }

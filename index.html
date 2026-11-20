@@ -73,6 +73,9 @@ h3 { font-size: 1.0625rem; font-weight: 600; font-family: var(--body); }
 .tiny { font-size: .8125rem; }
 p { margin: 0; }
 a { color: inherit; }
+/* before a profile is known: hold the page back rather than flash the wrong person's log */
+.nopid .wrap > * { visibility: hidden; }
+.nopid .wrap::before { content: "Morning Laps"; display: block; padding: 28vh 0 0; text-align: center; font-family: var(--display); font-size: 1.5rem; font-weight: 700; color: var(--muted, currentColor); letter-spacing: .02em; }
 .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 6px; }
 .who { display: flex; align-items: center; gap: 8px; border-radius: 999px; padding: 3px 12px 3px 3px; min-height: 40px; background: var(--card); font-weight: 600; }
 .who::after { content: "▾"; font-size: .75rem; color: var(--muted); }
@@ -455,7 +458,9 @@ const state = {
   customFoods: {},
   comp: { start: null, stakes: '' },
   results: {},        // week start -> final result, once a finished week is closed
-  draftsBy: { tyson: {}, jacquie: {} },   // date -> unsaved lifting form draft (this device only)
+  draftsBy: { tyson: {}, jacquie: {} },   // date -> unsaved lifting form draft (this device, mirrored to the account)
+  acct: {},           // what this signed-in person's account remembers: profile, what has been shown; see prefGet
+  acctDrafts: null,   // the account's copy of unsaved drafts, as last read
   status: {},         // date -> { s: 'saving'|'synced'|'local'|'failed', at, msg }
   formError: {},      // date -> validation message shown after a Save attempt
   details: {},        // exercise key -> details panel open (this visit)
@@ -642,12 +647,49 @@ async function saveProfile(pid, patch) {
   const ok = await write(PATH.profile(pid), next);
   return ok;
 }
+/* ---------- What a person's account remembers ---------- */
+// An iPhone can empty a page's own storage between visits, which used to mean choosing a profile on every open and
+// seeing last week's result again and again. So the profile choice, what has already been shown and unsaved lifting
+// drafts are also kept in the signed-in person's private corner of the account store (data/users/<id>/, which nobody
+// else can read). This device's storage answers first when it still holds a value.
+// The profile choice and the last result shown are kept per kind of device, so two phones signed in to one account
+// can still be two different people. (Two identical phones on one account cannot be told apart; separate accounts can.)
+const devKey = (() => {
+  try { let h = 5381; const s = [navigator.userAgent, screen.width, screen.height, window.devicePixelRatio || 1].join('|'); for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0; return h.toString(36); }
+  catch (e) { return 'any'; }
+})();
+const ACCT_KEYS = { 'ml.me': 'me_' + devKey, 'ml.seenWeek': 'seenWeek_' + devKey, 'ml.badges.tyson': 'badgesTyson', 'ml.badges.jacquie': 'badgesJacquie' };
+let acctPath = null, acctDraftsPath = null, acctT = null, draftsT = null, draftsSent = '';
+const acctLocal = {}; // fields set on this device during this visit; they win over what the account says
+function prefGet(k, dflt) { const v = lsGet(k, null); if (v != null) return v; const a = state.acct[ACCT_KEYS[k]]; return a == null ? dflt : a; }
+function prefSet(k, v) {
+  lsSet(k, v);
+  const f = ACCT_KEYS[k]; if (!f || JSON.stringify(state.acct[f]) === JSON.stringify(v)) return;
+  state.acct[f] = v; acctLocal[f] = v;
+  clearTimeout(acctT); acctT = setTimeout(acctFlush, 300);
+}
+function acctFlush() {
+  clearTimeout(acctT); acctT = null;
+  if (!acctPath || !db || !state.ready || !Object.keys(acctLocal).length) return;
+  const doc = Object.assign({ v: 1 }, state.acct, { updatedAt: new Date().toISOString() });
+  queueWrite(acctPath, () => db.doc(acctPath).set(doc)).catch(() => {}); // a missed write only means being asked or shown once more
+}
+function draftsFlush() {
+  clearTimeout(draftsT); draftsT = null;
+  if (!acctDraftsPath || !db || !state.ready) return;
+  const body = JSON.stringify(state.draftsBy); if (body === draftsSent) return;
+  draftsSent = body;
+  const doc = Object.assign({ v: 1, updatedAt: new Date().toISOString() }, JSON.parse(body));
+  queueWrite(acctDraftsPath, () => db.doc(acctDraftsPath).set(doc)).catch(() => { draftsSent = ''; });
+}
+function flushAccount() { if (acctT) acctFlush(); if (draftsT) draftsFlush(); } // the page is going to the background: write now
 function persistDrafts() {
   const old = Date.now() - 14 * 86400000; // drafts untouched for two weeks are dropped; the workout's own date does not matter
   PIDS.forEach(pid => {
     const d = state.draftsBy[pid]; Object.keys(d).forEach(k => { if (k !== state.selDate && (d[k].updatedAt || 0) < old) delete d[k]; });
     lsSet(pid === 'tyson' ? 'ml.drafts' : 'ml.drafts.' + pid, d);
   });
+  if (acctDraftsPath) { clearTimeout(draftsT); draftsT = setTimeout(draftsFlush, 1500); }
   lsSet('ml.ui', { selDate: state.selDate, today: todayIso() }); // selected date is restored only within the same day
 }
 // The calendar day can change while the page stays open. If the screen was on "today", it follows.
@@ -674,10 +716,12 @@ async function connect() {
   PIDS.forEach(pid => { const d = lsGet(pid === 'tyson' ? 'ml.drafts' : 'ml.drafts.' + pid, {}); Object.values(d).forEach(x => { x.recovered = true; }); state.draftsBy[pid] = d; });
   const ui = lsGet('ml.ui', null); if (ui && ui.today === todayIso() && validIso(ui.selDate) && ui.selDate <= todayIso()) state.selDate = ui.selDate;
   let resolved = false;
-  const timer = setTimeout(() => { if (!resolved) { state.stale = true; render(); } }, 10000);
+  const timer = setTimeout(() => { if (!resolved) { state.stale = true; askWho(); render(); } }, 10000);
   db = await (window.claude && window.claude.use ? window.claude.use('db') : Promise.resolve(null));
   if (db) { // someone who can only view the shared log gets browser-only saving instead of failing writes
-    try { const user = await window.claude.use('user'); const can = user ? await user.can('data.write') : null; if (can === false) db = null; state.canWriteKnown = can === true; } catch (e) { /* keep db */ }
+    let uid = null;
+    try { const user = await window.claude.use('user'); const can = user ? await user.can('data.write') : null; if (can === false) db = null; state.canWriteKnown = can === true; uid = user && user.id ? await user.id() : null; } catch (e) { /* keep db */ }
+    if (db && typeof uid === 'string' && uid) { acctPath = 'data/users/' + uid + '/prefs'; acctDraftsPath = 'data/users/' + uid + '/drafts'; }
   }
   if (!db) { state.storage = 'local'; localLoad(); clearTimeout(timer); onReady(); render(); return; }
   const need = new Set();
@@ -685,7 +729,7 @@ async function connect() {
     need.delete(key);
     if (!need.size && !resolved) { resolved = true; clearTimeout(timer); state.stale = false; state.storage = 'db'; findLocalOnly(); onReady(); }
   };
-  const fail = () => { state.storage = 'nodb'; state.ready = false; clearTimeout(timer); render(); }; // a dead listener means stale data: stop saving on top of it
+  const fail = () => { state.storage = 'nodb'; state.ready = false; clearTimeout(timer); askWho(); render(); }; // a dead listener means stale data: stop saving on top of it
   const subCol = colPath => {
     need.add(colPath);
     db.collection(colPath).onSnapshot(snap => {
@@ -701,6 +745,15 @@ async function connect() {
       if (!snap.metadata.fromCache) got(path); render();
     }, fail);
   };
+  // this person's private memory: read before the page is called ready, so the profile is known without asking
+  const subOwn = (path, take) => {
+    need.add(path);
+    db.doc(path).onSnapshot(snap => { take(snap.exists ? snap.data() || {} : {}); if (!snap.metadata.fromCache) got(path); }, () => got(path)); // unreadable: carry on without it
+  };
+  if (acctPath) {
+    subOwn(acctPath, d => { state.acct = Object.assign({}, d, acctLocal); });
+    subOwn(acctDraftsPath, d => { if (!resolved) state.acctDrafts = d; });
+  }
   PIDS.forEach(pid => { subCol(PATH.sessions(pid)); subCol(PATH.foodCol(pid)); subCol(PATH.healthCol(pid)); subDoc(PATH.settings(pid)); subDoc(PATH.profile(pid)); });
   subCol('foods'); subCol('results'); subDoc('comp/settings');
 }
@@ -961,6 +1014,36 @@ async function saveRecord(date, doc) { // resolves false when nothing was attemp
   persistDrafts(); render();
   return true;
 }
+function fillDraft(d, base) { // copy into d whatever d has left untouched
+  if (d.tm.minutes === '') d.tm.minutes = base.tm.minutes;
+  if (!d.tm.title) d.tm.title = base.tm.title;
+  if (!d.notes) d.notes = base.notes;
+  if (d.kindSel == null) d.kindSel = base.kindSel;
+  if (d.countAs == null) d.countAs = base.countAs;
+  Object.keys(base.ex || {}).forEach(k => { if (!d.ex[k]) d.ex[k] = base.ex[k]; });
+  Object.keys(base.swaps || {}).forEach(k => { if (d.swaps[k] == null) d.swaps[k] = base.swaps[k]; });
+}
+const draftShaped = d => !!(d && typeof d === 'object' && d.tm && typeof d.tm === 'object' && d.ex && typeof d.ex === 'object' && d.swaps && typeof d.swaps === 'object');
+// Once the log has loaded: take the profile this account uses if the device has forgotten it, and bring back
+// unsaved drafts the account kept. A draft is skipped when the day was saved after the draft was last touched.
+function adoptAccount() {
+  const known = prefGet('ml.me', null);
+  if (!state.pid && PIDS.includes(known)) { state.pid = known; lsSet('ml.me', known); }
+  const theirs = state.acctDrafts; state.acctDrafts = null; if (!theirs) return;
+  draftsSent = JSON.stringify({ tyson: theirs.tyson || {}, jacquie: theirs.jacquie || {} }); // what the account already holds
+  PIDS.forEach(pid => {
+    const mine = state.draftsBy[pid], kept = theirs[pid] && typeof theirs[pid] === 'object' ? theirs[pid] : {};
+    Object.keys(kept).forEach(date => {
+      const d = kept[date]; if (!validIso(date) || !draftShaped(d)) return;
+      const rec = state.data[pid].sessions[date], saved = rec ? Date.parse(rec.updatedAt || rec.savedAt || '') || 0 : 0;
+      if (saved >= (d.updatedAt || 0)) return;
+      const cur = mine[date];
+      if (cur && cur.blind) { fillDraft(cur, d); return; }        // typed before the log loaded: keep that, add the rest
+      if (cur && (cur.updatedAt || 0) >= (d.updatedAt || 0)) return;
+      mine[date] = Object.assign(emptyDraft(), d, { recovered: true });
+    });
+  });
+}
 // A draft started before the log finished loading could not see the day's saved record. Once it loads, fill in
 // whatever the draft left untouched, so saving the draft cannot drop sets that were already saved.
 function reconcileBlindDrafts() {
@@ -969,17 +1052,7 @@ function reconcileBlindDrafts() {
     Object.keys(ds).forEach(date => {
       const d = ds[date]; if (!d.blind) return;
       const rec = state.data[pid].sessions[date];
-      if (rec && !Array.isArray(rec.acts)) {
-        const base = seedFromRecord(rec);
-        if (d.tm.minutes === '') d.tm.minutes = base.tm.minutes;
-        if (!d.tm.title) d.tm.title = base.tm.title;
-        if (!d.notes) d.notes = base.notes;
-        if (d.kindSel == null) d.kindSel = base.kindSel;
-        if (d.countAs == null) d.countAs = base.countAs;
-        Object.keys(base.ex).forEach(k => { if (!d.ex[k]) d.ex[k] = base.ex[k]; });
-        Object.keys(base.swaps).forEach(k => { if (d.swaps[k] == null) d.swaps[k] = base.swaps[k]; });
-        d.fromRecord = true;
-      }
+      if (rec && !Array.isArray(rec.acts)) { fillDraft(d, seedFromRecord(rec)); d.fromRecord = true; }
       delete d.blind;
     });
   });
@@ -1653,10 +1726,10 @@ function keepBadges(pid) { // write newly earned badges onto the profile, with t
 function settle() { keepBadges(me()); } // after a change that is not celebrated (an edit, a removal, a goal change)
 function checkBadges(pid, quiet) { // returns badges earned since this device last looked
   keepBadges(pid);
-  const earned = badgesFor(pid).filter(b => b.earned), seen = lsGet('ml.badges.' + pid, null);
-  if (seen == null || quiet) { lsSet('ml.badges.' + pid, earned.map(b => b.id)); return []; }
+  const earned = badgesFor(pid).filter(b => b.earned), got = prefGet('ml.badges.' + pid, null), seen = Array.isArray(got) ? got : null;
+  if (seen == null || quiet) { prefSet('ml.badges.' + pid, earned.map(b => b.id)); return []; }
   const fresh = earned.filter(b => !seen.includes(b.id));
-  if (fresh.length) lsSet('ml.badges.' + pid, seen.concat(fresh.map(b => b.id)));
+  if (fresh.length) prefSet('ml.badges.' + pid, seen.concat(fresh.map(b => b.id)));
   return fresh;
 }
 // opts.before: the scores taken just before the change was made. Comparing against that moment, rather than against
@@ -1675,13 +1748,17 @@ function announce() { // on opening the app: badges and last week's result this 
   const pid = me();
   checkBadges(pid).slice(0, 3).forEach(b => queueOv({ type: 'badge', pid, badge: b }));
   const weeks = compWeeks(), w = weeks[weeks.length - 1];
-  if (w && w.played && lsGet('ml.seenWeek', '') < w.ws) { lsSet('ml.seenWeek', w.ws); queueOv({ type: 'weekwin', week: w }); }
+  if (w && w.played && String(prefGet('ml.seenWeek', '')) < w.ws) { prefSet('ml.seenWeek', w.ws); queueOv({ type: 'weekwin', week: w }); }
 }
+// With no profile on this device the page waits for the account to say which one this person uses, and asks only
+// when the account does not know either (or cannot be reached).
+function askWho() { if (!state.pid && !(state.ov && state.ov.type === 'who')) openOv({ type: 'who', first: true }); }
 function onReady() {
-  state.ready = true; reconcileBlindDrafts(); settle();
-  PIDS.forEach(pid => { if (lsGet('ml.badges.' + pid, null) == null) checkBadges(pid, true); });
+  state.ready = true; adoptAccount(); reconcileBlindDrafts(); settle();
+  PIDS.forEach(pid => { if (prefGet('ml.badges.' + pid, null) == null) checkBadges(pid, true); });
   applySkin();
-  if (!state.pid) openOv({ type: 'who', first: true }); else announce();
+  if (!state.pid) askWho(); else announce();
+  acctFlush(); // anything chosen before the account could be reached
   closeWeeks();
   render();
 }
@@ -2179,7 +2256,7 @@ OV.food = {
     '<input type="search" id="foodQ" data-ovf="q" value="' + esc(o.q || '') + '" placeholder="Search: banana, chicken breast, pizza" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" aria-label="Search foods">' +
     '<div class="row"><button type="button" class="small" data-a="food-quick">Quick add calories</button><button type="button" class="small" data-a="food-custom">Create a food</button></div>' +
     '<div id="foodRes" class="results" aria-live="polite"></div></div>',
-  after: o => { fillFoodResults(); const q = $('#foodQ'); if (q && !o.keepBlur) q.focus({ preventScroll: true }); loadFoods().then(() => { if (state.ov && state.ov.type === 'food') fillFoodResults(); }); }
+  after: o => { const loaded = loadFoods(); fillFoodResults(); const q = $('#foodQ'); if (q && !o.keepBlur) q.focus({ preventScroll: true }); loaded.then(() => { if (state.ov && state.ov.type === 'food') fillFoodResults(); }); } // start the load first, so the hint says it is loading
 };
 ACT['food-pick'] = el => {
   const o = state.ov, f = o.results && o.results[Number(el.dataset.i)]; if (!f) return;
@@ -2463,7 +2540,7 @@ function renderMe() {
     '<p class="tiny muted">' + (p.plan === 'program' ? 'Push, Pull, Legs rotation with weight suggestions. Weekly goal: ' + moveGoal(pid) + ' activity days, ' + LIFT_GOAL + ' of them lifts.' : 'Choose from a gentle menu each day. Weekly goal: ' + moveGoal(pid) + ' active days of ' + minMin(pid) + ' minutes or more. Adjust it under Train, Plan.') + ' Switching keeps everything already logged.</p></section>';
 
   const sync = state.storage === 'db' ? (state.cantWrite ? 'This account can read the shared log but not save to it.' : 'Saving to the shared log on your Claude account.') : state.storage === 'local' ? 'Saving in this browser only.' : state.storage === 'nodb' ? 'The shared log cannot be reached right now.' : 'Connecting…';
-  h += '<section class="card stack"><h3>Two phones, one log</h3><p class="tiny muted">' + sync + '</p><p class="tiny muted">Both profiles live in one shared log. To use it from two phones, open this page\'s Share menu and invite your partner by email as an Editor, or sign in to the same Claude account on both. Each phone remembers which profile it uses, and the top-right button switches.</p></section>';
+  h += '<section class="card stack"><h3>Two phones, one log</h3><p class="tiny muted">' + sync + '</p><p class="tiny muted">Both profiles live in one shared log. To use it from two phones, open this page\'s Share menu and invite your partner by email as an Editor, or sign in to the same Claude account on both. Your Claude account remembers which profile you use, so you are not asked again; the top-right button switches.</p></section>';
   return h;
 }
 ACT.badge = el => { const b = badgesFor(me()).find(x => x.id === el.dataset.id); if (b) openOv({ type: 'badgeinfo', badge: b }); };
@@ -2510,14 +2587,14 @@ ACT['weigh-save'] = async () => {
 /* ---------- Profile switcher ---------- */
 OV.who = {
   locked: o => !!o.first,
-  html: o => '<div class="ov" role="dialog" aria-modal="true" aria-label="Choose a profile">' + (o.first ? '<div><h2>Who is logging?</h2><div class="tiny muted">This phone remembers your pick. Switch any time from the top right.</div></div>' : ovHead('Switch profile')) +
+  html: o => '<div class="ov" role="dialog" aria-modal="true" aria-label="Choose a profile">' + (o.first ? '<div><h2>Who is logging?</h2><div class="tiny muted">Your pick is remembered. Switch any time from the top right.</div></div>' : ovHead('Switch profile')) +
     PIDS.map(pid => { const p = P(pid); return '<button type="button" class="whocard' + (state.pid === pid ? ' on' : '') + '" data-a="who-pick" data-pid="' + pid + '">' + avatarHTML(pid, 'lg') + '<span><b style="font-size:1.125rem">' + esc(p.name) + '</b><br><span class="tiny muted">' + (p.plan === 'program' ? 'Lifting program' : 'Pick-your-own workouts') + '</span></span><span class="num muted">' + (state.ready ? weekScore(pid).total + ' pts' : '') + '</span></button>'; }).join('') + '</div>'
 };
 ACT.who = () => openOv({ type: 'who' });
 ACT['who-pick'] = el => { switchProfile(el.dataset.pid); closeOv(); };
 function switchProfile(pid) {
   if (!PIDS.includes(pid)) return;
-  state.pid = pid; lsSet('ml.me', pid);
+  state.pid = pid; prefSet('ml.me', pid);
   state.status = {}; state.formError = {}; state.menu = null; state.forms = {}; state.details = {}; state.confirmRemove = null;
   applySkin(); render();
   if (state.ready) announce();
@@ -2561,6 +2638,7 @@ function newDay() { if (state.ready) { announce(); closeWeeks(); } } // a new da
 function render(focusSel) {
   if (typing) { pendingRender = true; return; }
   pendingRender = false;
+  document.documentElement.classList.toggle('nopid', !state.pid); // nothing is drawn for a profile nobody has chosen yet
   if (rollDay()) setTimeout(newDay, 0);
   renderChrome();
   const tab = state.tab, plan = P(me()).plan;
@@ -2748,13 +2826,13 @@ window.MorningLaps = { state, P, weekScore, coach, goalsFor, badgesFor, searchFo
   applySkin();
   window.addEventListener('hashchange', route);
   // a phone left open overnight: when it comes back to the front on a new day, move "today" forward
-  const wake = () => { if (document.visibilityState === 'hidden' || !rollDay()) return; render(); newDay(); };
+  const wake = () => { if (document.visibilityState === 'hidden') { flushAccount(); return; } if (!rollDay()) return; render(); newDay(); };
   document.addEventListener('visibilitychange', wake);
+  window.addEventListener('pagehide', flushAccount);
   window.addEventListener('pageshow', wake);
   window.addEventListener('focus', wake);
   route();
-  if (!state.pid) openOv({ type: 'who', first: true });
-  connect();
+  connect(); // with no profile on this device, connect asks who is logging once the account has had its say
 })();
 
 })();

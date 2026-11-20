@@ -65,7 +65,7 @@ OV.food = {
     '<input type="search" id="foodQ" data-ovf="q" value="' + esc(o.q || '') + '" placeholder="Search: banana, chicken breast, pizza" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" aria-label="Search foods">' +
     '<div class="row"><button type="button" class="small" data-a="food-quick">Quick add calories</button><button type="button" class="small" data-a="food-custom">Create a food</button></div>' +
     '<div id="foodRes" class="results" aria-live="polite"></div></div>',
-  after: o => { fillFoodResults(); const q = $('#foodQ'); if (q && !o.keepBlur) q.focus({ preventScroll: true }); loadFoods().then(() => { if (state.ov && state.ov.type === 'food') fillFoodResults(); }); }
+  after: o => { const loaded = loadFoods(); fillFoodResults(); const q = $('#foodQ'); if (q && !o.keepBlur) q.focus({ preventScroll: true }); loaded.then(() => { if (state.ov && state.ov.type === 'food') fillFoodResults(); }); } // start the load first, so the hint says it is loading
 };
 ACT['food-pick'] = el => {
   const o = state.ov, f = o.results && o.results[Number(el.dataset.i)]; if (!f) return;

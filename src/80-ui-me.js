@@ -72,7 +72,7 @@ function renderMe() {
     '<p class="tiny muted">' + (p.plan === 'program' ? 'Push, Pull, Legs rotation with weight suggestions. Weekly goal: ' + moveGoal(pid) + ' activity days, ' + LIFT_GOAL + ' of them lifts.' : 'Choose from a gentle menu each day. Weekly goal: ' + moveGoal(pid) + ' active days of ' + minMin(pid) + ' minutes or more. Adjust it under Train, Plan.') + ' Switching keeps everything already logged.</p></section>';
 
   const sync = state.storage === 'db' ? (state.cantWrite ? 'This account can read the shared log but not save to it.' : 'Saving to the shared log on your Claude account.') : state.storage === 'local' ? 'Saving in this browser only.' : state.storage === 'nodb' ? 'The shared log cannot be reached right now.' : 'Connecting…';
-  h += '<section class="card stack"><h3>Two phones, one log</h3><p class="tiny muted">' + sync + '</p><p class="tiny muted">Both profiles live in one shared log. To use it from two phones, open this page\'s Share menu and invite your partner by email as an Editor, or sign in to the same Claude account on both. Each phone remembers which profile it uses, and the top-right button switches.</p></section>';
+  h += '<section class="card stack"><h3>Two phones, one log</h3><p class="tiny muted">' + sync + '</p><p class="tiny muted">Both profiles live in one shared log. To use it from two phones, open this page\'s Share menu and invite your partner by email as an Editor, or sign in to the same Claude account on both. Your Claude account remembers which profile you use, so you are not asked again; the top-right button switches.</p></section>';
   return h;
 }
 ACT.badge = el => { const b = badgesFor(me()).find(x => x.id === el.dataset.id); if (b) openOv({ type: 'badgeinfo', badge: b }); };
@@ -119,14 +119,14 @@ ACT['weigh-save'] = async () => {
 /* ---------- Profile switcher ---------- */
 OV.who = {
   locked: o => !!o.first,
-  html: o => '<div class="ov" role="dialog" aria-modal="true" aria-label="Choose a profile">' + (o.first ? '<div><h2>Who is logging?</h2><div class="tiny muted">This phone remembers your pick. Switch any time from the top right.</div></div>' : ovHead('Switch profile')) +
+  html: o => '<div class="ov" role="dialog" aria-modal="true" aria-label="Choose a profile">' + (o.first ? '<div><h2>Who is logging?</h2><div class="tiny muted">Your pick is remembered. Switch any time from the top right.</div></div>' : ovHead('Switch profile')) +
     PIDS.map(pid => { const p = P(pid); return '<button type="button" class="whocard' + (state.pid === pid ? ' on' : '') + '" data-a="who-pick" data-pid="' + pid + '">' + avatarHTML(pid, 'lg') + '<span><b style="font-size:1.125rem">' + esc(p.name) + '</b><br><span class="tiny muted">' + (p.plan === 'program' ? 'Lifting program' : 'Pick-your-own workouts') + '</span></span><span class="num muted">' + (state.ready ? weekScore(pid).total + ' pts' : '') + '</span></button>'; }).join('') + '</div>'
 };
 ACT.who = () => openOv({ type: 'who' });
 ACT['who-pick'] = el => { switchProfile(el.dataset.pid); closeOv(); };
 function switchProfile(pid) {
   if (!PIDS.includes(pid)) return;
-  state.pid = pid; lsSet('ml.me', pid);
+  state.pid = pid; prefSet('ml.me', pid);
   state.status = {}; state.formError = {}; state.menu = null; state.forms = {}; state.details = {}; state.confirmRemove = null;
   applySkin(); render();
   if (state.ready) announce();

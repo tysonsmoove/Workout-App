@@ -29,7 +29,9 @@ async function newPage(browser, { time, width = 390, height = 844, init, me = 't
   }, me);
   if (init) await page.addInitScript(init);
   page.on('pageerror', e => check('no page error', false, e.message));
-  await page.goto(URL); await page.waitForSelector('#main .card');
+  await page.goto(URL);
+  // with no profile on this phone the page stays hidden until one is picked, so wait for the chooser instead
+  await page.waitForSelector(me ? '#main .card' : '#ov:not([hidden]) [data-a="who-pick"], html:not(.nopid) #main .card');
   return { ctx, page };
 }
 const val = (page, sel) => page.$eval(sel, el => el.value);
@@ -44,6 +46,7 @@ const overflow = page => page.evaluate(() => document.documentElement.scrollWidt
 
 // An in-memory stand-in for the artifact database, keyed by full document path.
 // window.__snapDelay (set before this runs) makes the first snapshots arrive late; window.__failListen() breaks the listeners.
+// window.__uid (set before this runs) signs the visitor in as that account, which gives them a private data/users/<uid>/ corner.
 function fakeDb() {
   const store = {}, cols = [], docs = {}, errs = [], first = window.__snapDelay || 10; window.__failSet = false; window.__store = store;
   window.__failListen = () => errs.forEach(fn => fn({ code: 'unavailable', message: 'test' }));
@@ -60,7 +63,7 @@ function fakeDb() {
       onSnapshot: (fn, err) => { (docs[p] = docs[p] || []).push(fn); if (err) errs.push(err); setTimeout(() => fn(snapOf(p)), first); return () => {}; }
     }),
     collection: c => ({ onSnapshot: (fn, err) => { cols.push({ c, fn }); if (err) errs.push(err); setTimeout(() => fn(colSnap(c)), first); return () => {}; } })
-  } : null };
+  } : n === 'user' && window.__uid ? { can: async () => true, id: async () => window.__uid } : null };
 }
 function finish(label) {
   const fails = results.filter(r => !r.ok);

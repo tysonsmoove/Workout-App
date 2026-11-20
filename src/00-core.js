@@ -76,7 +76,9 @@ const state = {
   customFoods: {},
   comp: { start: null, stakes: '' },
   results: {},        // week start -> final result, once a finished week is closed
-  draftsBy: { tyson: {}, jacquie: {} },   // date -> unsaved lifting form draft (this device only)
+  draftsBy: { tyson: {}, jacquie: {} },   // date -> unsaved lifting form draft (this device, mirrored to the account)
+  acct: {},           // what this signed-in person's account remembers: profile, what has been shown; see prefGet
+  acctDrafts: null,   // the account's copy of unsaved drafts, as last read
   status: {},         // date -> { s: 'saving'|'synced'|'local'|'failed', at, msg }
   formError: {},      // date -> validation message shown after a Save attempt
   details: {},        // exercise key -> details panel open (this visit)
@@ -263,12 +265,49 @@ async function saveProfile(pid, patch) {
   const ok = await write(PATH.profile(pid), next);
   return ok;
 }
+/* ---------- What a person's account remembers ---------- */
+// An iPhone can empty a page's own storage between visits, which used to mean choosing a profile on every open and
+// seeing last week's result again and again. So the profile choice, what has already been shown and unsaved lifting
+// drafts are also kept in the signed-in person's private corner of the account store (data/users/<id>/, which nobody
+// else can read). This device's storage answers first when it still holds a value.
+// The profile choice and the last result shown are kept per kind of device, so two phones signed in to one account
+// can still be two different people. (Two identical phones on one account cannot be told apart; separate accounts can.)
+const devKey = (() => {
+  try { let h = 5381; const s = [navigator.userAgent, screen.width, screen.height, window.devicePixelRatio || 1].join('|'); for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0; return h.toString(36); }
+  catch (e) { return 'any'; }
+})();
+const ACCT_KEYS = { 'ml.me': 'me_' + devKey, 'ml.seenWeek': 'seenWeek_' + devKey, 'ml.badges.tyson': 'badgesTyson', 'ml.badges.jacquie': 'badgesJacquie' };
+let acctPath = null, acctDraftsPath = null, acctT = null, draftsT = null, draftsSent = '';
+const acctLocal = {}; // fields set on this device during this visit; they win over what the account says
+function prefGet(k, dflt) { const v = lsGet(k, null); if (v != null) return v; const a = state.acct[ACCT_KEYS[k]]; return a == null ? dflt : a; }
+function prefSet(k, v) {
+  lsSet(k, v);
+  const f = ACCT_KEYS[k]; if (!f || JSON.stringify(state.acct[f]) === JSON.stringify(v)) return;
+  state.acct[f] = v; acctLocal[f] = v;
+  clearTimeout(acctT); acctT = setTimeout(acctFlush, 300);
+}
+function acctFlush() {
+  clearTimeout(acctT); acctT = null;
+  if (!acctPath || !db || !state.ready || !Object.keys(acctLocal).length) return;
+  const doc = Object.assign({ v: 1 }, state.acct, { updatedAt: new Date().toISOString() });
+  queueWrite(acctPath, () => db.doc(acctPath).set(doc)).catch(() => {}); // a missed write only means being asked or shown once more
+}
+function draftsFlush() {
+  clearTimeout(draftsT); draftsT = null;
+  if (!acctDraftsPath || !db || !state.ready) return;
+  const body = JSON.stringify(state.draftsBy); if (body === draftsSent) return;
+  draftsSent = body;
+  const doc = Object.assign({ v: 1, updatedAt: new Date().toISOString() }, JSON.parse(body));
+  queueWrite(acctDraftsPath, () => db.doc(acctDraftsPath).set(doc)).catch(() => { draftsSent = ''; });
+}
+function flushAccount() { if (acctT) acctFlush(); if (draftsT) draftsFlush(); } // the page is going to the background: write now
 function persistDrafts() {
   const old = Date.now() - 14 * 86400000; // drafts untouched for two weeks are dropped; the workout's own date does not matter
   PIDS.forEach(pid => {
     const d = state.draftsBy[pid]; Object.keys(d).forEach(k => { if (k !== state.selDate && (d[k].updatedAt || 0) < old) delete d[k]; });
     lsSet(pid === 'tyson' ? 'ml.drafts' : 'ml.drafts.' + pid, d);
   });
+  if (acctDraftsPath) { clearTimeout(draftsT); draftsT = setTimeout(draftsFlush, 1500); }
   lsSet('ml.ui', { selDate: state.selDate, today: todayIso() }); // selected date is restored only within the same day
 }
 // The calendar day can change while the page stays open. If the screen was on "today", it follows.
@@ -295,10 +334,12 @@ async function connect() {
   PIDS.forEach(pid => { const d = lsGet(pid === 'tyson' ? 'ml.drafts' : 'ml.drafts.' + pid, {}); Object.values(d).forEach(x => { x.recovered = true; }); state.draftsBy[pid] = d; });
   const ui = lsGet('ml.ui', null); if (ui && ui.today === todayIso() && validIso(ui.selDate) && ui.selDate <= todayIso()) state.selDate = ui.selDate;
   let resolved = false;
-  const timer = setTimeout(() => { if (!resolved) { state.stale = true; render(); } }, 10000);
+  const timer = setTimeout(() => { if (!resolved) { state.stale = true; askWho(); render(); } }, 10000);
   db = await (window.claude && window.claude.use ? window.claude.use('db') : Promise.resolve(null));
   if (db) { // someone who can only view the shared log gets browser-only saving instead of failing writes
-    try { const user = await window.claude.use('user'); const can = user ? await user.can('data.write') : null; if (can === false) db = null; state.canWriteKnown = can === true; } catch (e) { /* keep db */ }
+    let uid = null;
+    try { const user = await window.claude.use('user'); const can = user ? await user.can('data.write') : null; if (can === false) db = null; state.canWriteKnown = can === true; uid = user && user.id ? await user.id() : null; } catch (e) { /* keep db */ }
+    if (db && typeof uid === 'string' && uid) { acctPath = 'data/users/' + uid + '/prefs'; acctDraftsPath = 'data/users/' + uid + '/drafts'; }
   }
   if (!db) { state.storage = 'local'; localLoad(); clearTimeout(timer); onReady(); render(); return; }
   const need = new Set();
@@ -306,7 +347,7 @@ async function connect() {
     need.delete(key);
     if (!need.size && !resolved) { resolved = true; clearTimeout(timer); state.stale = false; state.storage = 'db'; findLocalOnly(); onReady(); }
   };
-  const fail = () => { state.storage = 'nodb'; state.ready = false; clearTimeout(timer); render(); }; // a dead listener means stale data: stop saving on top of it
+  const fail = () => { state.storage = 'nodb'; state.ready = false; clearTimeout(timer); askWho(); render(); }; // a dead listener means stale data: stop saving on top of it
   const subCol = colPath => {
     need.add(colPath);
     db.collection(colPath).onSnapshot(snap => {
@@ -322,6 +363,15 @@ async function connect() {
       if (!snap.metadata.fromCache) got(path); render();
     }, fail);
   };
+  // this person's private memory: read before the page is called ready, so the profile is known without asking
+  const subOwn = (path, take) => {
+    need.add(path);
+    db.doc(path).onSnapshot(snap => { take(snap.exists ? snap.data() || {} : {}); if (!snap.metadata.fromCache) got(path); }, () => got(path)); // unreadable: carry on without it
+  };
+  if (acctPath) {
+    subOwn(acctPath, d => { state.acct = Object.assign({}, d, acctLocal); });
+    subOwn(acctDraftsPath, d => { if (!resolved) state.acctDrafts = d; });
+  }
   PIDS.forEach(pid => { subCol(PATH.sessions(pid)); subCol(PATH.foodCol(pid)); subCol(PATH.healthCol(pid)); subDoc(PATH.settings(pid)); subDoc(PATH.profile(pid)); });
   subCol('foods'); subCol('results'); subDoc('comp/settings');
 }

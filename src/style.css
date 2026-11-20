@@ -68,6 +68,9 @@ h3 { font-size: 1.0625rem; font-weight: 600; font-family: var(--body); }
 .tiny { font-size: .8125rem; }
 p { margin: 0; }
 a { color: inherit; }
+/* before a profile is known: hold the page back rather than flash the wrong person's log */
+.nopid .wrap > * { visibility: hidden; }
+.nopid .wrap::before { content: "Morning Laps"; display: block; padding: 28vh 0 0; text-align: center; font-family: var(--display); font-size: 1.5rem; font-weight: 700; color: var(--muted, currentColor); letter-spacing: .02em; }
 .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 6px; }
 .who { display: flex; align-items: center; gap: 8px; border-radius: 999px; padding: 3px 12px 3px 3px; min-height: 40px; background: var(--card); font-weight: 600; }
 .who::after { content: "▾"; font-size: .75rem; color: var(--muted); }

@@ -35,6 +35,7 @@ function newDay() { if (state.ready) { announce(); closeWeeks(); } } // a new da
 function render(focusSel) {
   if (typing) { pendingRender = true; return; }
   pendingRender = false;
+  document.documentElement.classList.toggle('nopid', !state.pid); // nothing is drawn for a profile nobody has chosen yet
   if (rollDay()) setTimeout(newDay, 0);
   renderChrome();
   const tab = state.tab, plan = P(me()).plan;
@@ -222,11 +223,11 @@ window.MorningLaps = { state, P, weekScore, coach, goalsFor, badgesFor, searchFo
   applySkin();
   window.addEventListener('hashchange', route);
   // a phone left open overnight: when it comes back to the front on a new day, move "today" forward
-  const wake = () => { if (document.visibilityState === 'hidden' || !rollDay()) return; render(); newDay(); };
+  const wake = () => { if (document.visibilityState === 'hidden') { flushAccount(); return; } if (!rollDay()) return; render(); newDay(); };
   document.addEventListener('visibilitychange', wake);
+  window.addEventListener('pagehide', flushAccount);
   window.addEventListener('pageshow', wake);
   window.addEventListener('focus', wake);
   route();
-  if (!state.pid) openOv({ type: 'who', first: true });
-  connect();
+  connect(); // with no profile on this device, connect asks who is logging once the account has had its say
 })();

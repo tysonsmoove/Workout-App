@@ -27,7 +27,7 @@ A phone-first fitness tracker for two people, Tyson and Jacquie: workouts, nutri
 
 ## Profiles
 
-Two fixed profiles, `tyson` and `jacquie`. Each phone remembers which one it uses (`localStorage ml.me`); the button at the top right switches. A profile holds its name, avatar, look, workout style, body numbers, doctor's numbers, weigh-ins, favorites and earned badges.
+Two fixed profiles, `tyson` and `jacquie`. The signed-in person's account remembers which one they use, so the chooser shows once (see "What the account remembers" below); the button at the top right switches. A profile holds its name, avatar, look, workout style, body numbers, doctor's numbers, weigh-ins, favorites and earned badges.
 
 Workout style is a profile setting:
 
@@ -79,8 +79,14 @@ One path-addressed document store, backed by the artifact database when signed i
 | `foods/<id>` | Custom foods, shared |
 | `results/<monday>` | Final weekly results |
 | `comp/settings` | Competition start week, what is on the line |
+| `data/users/<id>/prefs` | Private to one signed-in person: which profile they use and the last weekly result shown (both per kind of device), badges already celebrated |
+| `data/users/<id>/drafts` | Private to one signed-in person: unsaved lifting drafts |
 
-The artifact declares `db` with read and write at the `interact` level, so someone who only has a view link sees none of the health data. Unsaved lifting drafts stay in localStorage per profile.
+The artifact declares `db` with read and write at the `interact` level, so someone who only has a view link sees none of the health data. Unsaved lifting drafts stay in localStorage per profile and are mirrored to the account.
+
+### What the account remembers
+
+An iPhone can empty a page's own storage between visits. The profile choice, the weekly result and badges already shown, and unsaved lifting drafts are therefore also written to `data/users/<id>/`, which only that signed-in person can read. Device storage answers first when it still holds a value; the account fills in when it does not. The page is not drawn until a profile is known, and the chooser appears only when neither the device nor the account knows one, or the account cannot be reached within ten seconds. Drafts are written 1.5 seconds after typing stops and at once when the page goes to the background; a draft older than the day's saved record is ignored. Two identical phones signed in to the same Claude account cannot be told apart, so each person should use their own account.
 
 "Today" is the calendar day in `America/Indiana/Indianapolis`; all other date math is pure calendar arithmetic.
 
@@ -92,4 +98,5 @@ Serve a doctype-wrapped copy of `index.html` with `foods.json` beside it on `htt
 node tests/test.js       # lifting program: drafts, classification, blank sets, progression, dates, layouts, sync (148 checks)
 node tests/app.test.js   # profiles, looks, pick-your-own, nutrition, competition, badges, storage paths, Apple Health import, sync, layouts (156 checks)
 node tests/review.test.js # review regressions: writes before the log loads, old-day drafts, double taps, day rollover, season tally, coach gains, calorie floor, plural food search, lead changes, a dead connection (50 checks)
+node tests/account.test.js # account memory: profile choice, weekly result and badges shown once, unsaved drafts, on a phone that empties its storage (29 checks)
 ```
