@@ -3,35 +3,39 @@
 // kettlebells, medicine balls, resistance bands, plyo boxes. Selectorized machines and the cable station
 // are standard at Anytime Fitness clubs; every machine move has a dumbbell/barbell fallback via Swap.
 // `per: 'each hand'` marks dumbbell loads: the weight is one dumbbell, not the pair.
+// `alt` lists substitutes in order of preference. Some are also planned on the same day in a later phase, so a swap
+// is only ever offered to one that is not already in that day's workout (see swapOptions).
 const EX = {
-  chestpress:  { name: 'Chest press machine', equip: 'Machine', sets: 3, lo: 8, hi: 12, inc: 5, start: 70, alt: 'dbbench' },
-  dbbench:     { name: 'Dumbbell bench press', equip: 'Dumbbells + bench', sets: 3, lo: 8, hi: 12, inc: 5, start: 30, per: 'each hand', alt: 'chestpress' },
-  shoulderpress:{ name: 'Shoulder press machine', equip: 'Machine', sets: 3, lo: 8, hi: 12, inc: 5, start: 50, alt: 'dbshoulder' },
-  dbshoulder:  { name: 'Seated dumbbell shoulder press', equip: 'Dumbbells + bench', sets: 3, lo: 8, hi: 12, inc: 5, start: 20, per: 'each hand', alt: 'shoulderpress' },
-  pushdown:    { name: 'Cable triceps pushdown', equip: 'Cable station', sets: 3, lo: 10, hi: 15, inc: 5, start: 40, alt: 'dbtri' },
-  dbtri:       { name: 'Dumbbell overhead triceps extension', equip: 'One dumbbell, both hands', sets: 3, lo: 10, hi: 15, inc: 5, start: 25, alt: 'pushdown' },
-  inclinedb:   { name: 'Incline dumbbell press', equip: 'Dumbbells + incline bench', sets: 3, lo: 8, hi: 12, inc: 5, start: 25, per: 'each hand', alt: 'pecdeck' },
-  pecdeck:     { name: 'Pec deck / chest fly machine', equip: 'Machine', sets: 3, lo: 10, hi: 15, inc: 5, start: 60, alt: 'inclinedb' },
-  latraise:    { name: 'Dumbbell lateral raise', equip: 'Dumbbells', sets: 3, lo: 12, hi: 15, inc: 2.5, start: 10, per: 'each hand', alt: 'cablelat' },
-  cablelat:    { name: 'Cable lateral raise', equip: 'Cable station', sets: 3, lo: 12, hi: 15, inc: 2.5, start: 10, alt: 'latraise' },
-  latpull:     { name: 'Lat pulldown machine', equip: 'Machine', sets: 3, lo: 8, hi: 12, inc: 5, start: 80, alt: 'assistpull' },
-  assistpull:  { name: 'Assisted pull-up machine', equip: 'Machine. Weight = assist; less assist is harder', sets: 3, lo: 8, hi: 12, inc: -5, start: 80, alt: 'latpull' },
-  seatedrow:   { name: 'Seated cable row', equip: 'Cable row station', sets: 3, lo: 8, hi: 12, inc: 5, start: 80, alt: 'dbrow' },
-  dbrow:       { name: 'One-arm dumbbell row', equip: 'Dumbbell + bench', sets: 3, lo: 8, hi: 12, inc: 5, start: 30, per: 'each hand', alt: 'seatedrow' },
-  dbcurl:      { name: 'Dumbbell biceps curl', equip: 'Dumbbells', sets: 3, lo: 10, hi: 12, inc: 2.5, start: 20, per: 'each hand', alt: 'cablecurl' },
-  cablecurl:   { name: 'Cable biceps curl', equip: 'Cable station', sets: 3, lo: 10, hi: 12, inc: 5, start: 40, alt: 'dbcurl' },
-  hammer:      { name: 'Hammer curl', equip: 'Dumbbells', sets: 3, lo: 10, hi: 12, inc: 2.5, start: 20, per: 'each hand', alt: 'dbcurl' },
-  facepull:    { name: 'Cable face pull', equip: 'Cable station + rope', sets: 3, lo: 12, hi: 15, inc: 5, start: 30, alt: 'reardelt' },
-  reardelt:    { name: 'Dumbbell rear-delt fly', equip: 'Dumbbells', sets: 3, lo: 12, hi: 15, inc: 2.5, start: 10, per: 'each hand', alt: 'facepull' },
-  legpress:    { name: 'Leg press machine', equip: 'Machine', sets: 3, lo: 10, hi: 12, inc: 10, start: 140, alt: 'goblet' },
-  goblet:      { name: 'Goblet squat', equip: 'Kettlebell or dumbbell', sets: 3, lo: 10, hi: 12, inc: 5, start: 35, alt: 'legpress' },
-  legext:      { name: 'Leg extension machine', equip: 'Machine', sets: 3, lo: 10, hi: 15, inc: 5, start: 70, alt: 'splitsquat' },
-  splitsquat:  { name: 'Dumbbell split squat', equip: 'Dumbbells', sets: 3, lo: 10, hi: 12, inc: 5, start: 20, per: 'each hand', alt: 'legext' },
-  legcurl:     { name: 'Leg curl machine', equip: 'Machine (seated or lying)', sets: 3, lo: 10, hi: 15, inc: 5, start: 60, alt: 'dbrdl' },
-  dbrdl:       { name: 'Dumbbell Romanian deadlift', equip: 'Dumbbells', sets: 3, lo: 10, hi: 12, inc: 5, start: 30, per: 'each hand', alt: 'legcurl' },
-  calf:        { name: 'Standing calf raise', equip: 'Calf machine or step + dumbbell', sets: 3, lo: 12, hi: 15, inc: 10, start: 90, alt: 'goblet' },
-  squat:       { name: 'Barbell back squat', equip: 'Squat rack', sets: 3, lo: 6, hi: 10, inc: 10, start: 95, alt: 'legpress' },
-  lunge:       { name: 'Walking lunges', equip: 'Dumbbells', sets: 3, lo: 10, hi: 12, inc: 5, start: 15, per: 'each hand', alt: 'splitsquat' },
+  chestpress:  { name: 'Chest press machine', equip: 'Machine', sets: 3, lo: 8, hi: 12, inc: 5, start: 70, alt: ['dbbench'] },
+  dbbench:     { name: 'Dumbbell bench press', equip: 'Dumbbells + bench', sets: 3, lo: 8, hi: 12, inc: 5, start: 30, per: 'each hand', alt: ['chestpress'] },
+  shoulderpress:{ name: 'Shoulder press machine', equip: 'Machine', sets: 3, lo: 8, hi: 12, inc: 5, start: 50, alt: ['dbshoulder'] },
+  dbshoulder:  { name: 'Seated dumbbell shoulder press', equip: 'Dumbbells + bench', sets: 3, lo: 8, hi: 12, inc: 5, start: 20, per: 'each hand', alt: ['shoulderpress'] },
+  pushdown:    { name: 'Cable triceps pushdown', equip: 'Cable station', sets: 3, lo: 10, hi: 15, inc: 5, start: 40, alt: ['dbtri'] },
+  dbtri:       { name: 'Dumbbell overhead triceps extension', equip: 'One dumbbell, both hands', sets: 3, lo: 10, hi: 15, inc: 5, start: 25, alt: ['pushdown'] },
+  inclinedb:   { name: 'Incline dumbbell press', equip: 'Dumbbells + incline bench', sets: 3, lo: 8, hi: 12, inc: 5, start: 25, per: 'each hand', alt: ['pecdeck', 'chestpress', 'dbbench'] },
+  pecdeck:     { name: 'Pec deck / chest fly machine', equip: 'Machine', sets: 3, lo: 10, hi: 15, inc: 5, start: 60, alt: ['inclinedb', 'chestpress', 'dbbench'] },
+  latraise:    { name: 'Dumbbell lateral raise', equip: 'Dumbbells', sets: 3, lo: 12, hi: 15, inc: 2.5, start: 10, per: 'each hand', alt: ['cablelat'] },
+  cablelat:    { name: 'Cable lateral raise', equip: 'Cable station', sets: 3, lo: 12, hi: 15, inc: 2.5, start: 10, alt: ['latraise'] },
+  latpull:     { name: 'Lat pulldown machine', equip: 'Machine', sets: 3, lo: 8, hi: 12, inc: 5, start: 80, alt: ['assistpull'] },
+  assistpull:  { name: 'Assisted pull-up machine', equip: 'Machine. Weight = assist; less assist is harder', sets: 3, lo: 8, hi: 12, inc: -5, start: 80, alt: ['latpull'] },
+  seatedrow:   { name: 'Seated cable row', equip: 'Cable row station', sets: 3, lo: 8, hi: 12, inc: 5, start: 80, alt: ['dbrow'] },
+  dbrow:       { name: 'One-arm dumbbell row', equip: 'Dumbbell + bench', sets: 3, lo: 8, hi: 12, inc: 5, start: 30, per: 'each hand', alt: ['seatedrow'] },
+  dbcurl:      { name: 'Dumbbell biceps curl', equip: 'Dumbbells', sets: 3, lo: 10, hi: 12, inc: 2.5, start: 20, per: 'each hand', alt: ['cablecurl', 'hammer'] },
+  cablecurl:   { name: 'Cable biceps curl', equip: 'Cable station', sets: 3, lo: 10, hi: 12, inc: 5, start: 40, alt: ['dbcurl', 'hammer'] },
+  hammer:      { name: 'Hammer curl', equip: 'Dumbbells', sets: 3, lo: 10, hi: 12, inc: 2.5, start: 20, per: 'each hand', alt: ['dbcurl', 'cablecurl'] },
+  facepull:    { name: 'Cable face pull', equip: 'Cable station + rope', sets: 3, lo: 12, hi: 15, inc: 5, start: 30, alt: ['reardelt'] },
+  reardelt:    { name: 'Dumbbell rear-delt fly', equip: 'Dumbbells', sets: 3, lo: 12, hi: 15, inc: 2.5, start: 10, per: 'each hand', alt: ['facepull'] },
+  legpress:    { name: 'Leg press machine', equip: 'Machine', sets: 3, lo: 10, hi: 12, inc: 10, start: 140, alt: ['goblet'] },
+  goblet:      { name: 'Goblet squat', equip: 'Kettlebell or dumbbell', sets: 3, lo: 10, hi: 12, inc: 5, start: 35, alt: ['legpress'] },
+  legext:      { name: 'Leg extension machine', equip: 'Machine', sets: 3, lo: 10, hi: 15, inc: 5, start: 70, alt: ['splitsquat'] },
+  splitsquat:  { name: 'Dumbbell split squat', equip: 'Dumbbells', sets: 3, lo: 10, hi: 12, inc: 5, start: 20, per: 'each hand', alt: ['legext'] },
+  legcurl:     { name: 'Leg curl machine', equip: 'Machine (seated or lying)', sets: 3, lo: 10, hi: 15, inc: 5, start: 60, alt: ['dbrdl', 'hipthrust'] },
+  dbrdl:       { name: 'Dumbbell Romanian deadlift', equip: 'Dumbbells', sets: 3, lo: 10, hi: 12, inc: 5, start: 30, per: 'each hand', alt: ['legcurl', 'bbrdl', 'hipthrust'] },
+  calf:        { name: 'Standing calf raise', equip: 'Calf machine or step + dumbbell', sets: 3, lo: 12, hi: 15, inc: 10, start: 90, alt: ['goblet'] },
+  squat:       { name: 'Barbell back squat', equip: 'Squat rack', sets: 3, lo: 6, hi: 10, inc: 10, start: 95, alt: ['legpress', 'goblet'] },
+  lunge:       { name: 'Walking lunges', equip: 'Dumbbells', sets: 3, lo: 10, hi: 12, inc: 5, start: 15, per: 'each hand', alt: ['splitsquat', 'legext'] },
+  bbrdl:       { name: 'Barbell Romanian deadlift', equip: 'Barbell', sets: 3, lo: 8, hi: 12, inc: 10, start: 65, alt: ['dbrdl', 'legcurl', 'hipthrust'] },
+  hipthrust:   { name: 'Dumbbell hip thrust', equip: 'Dumbbell + flat bench', sets: 3, lo: 10, hi: 15, inc: 5, start: 30, alt: ['legcurl', 'dbrdl', 'bbrdl'] },
   crunch:      { name: 'Crunches', equip: 'Mat', sets: 3, lo: 15, hi: 20, bw: true },
   legraise:    { name: 'Lying leg raises', equip: 'Mat', sets: 3, lo: 10, hi: 15, bw: true },
   benchtuck:   { name: 'Bench knee tucks', equip: 'Flat bench', sets: 3, lo: 10, hi: 15, bw: true, note: 'Sit on the end of the bench, legs hanging, lean back and pull knees to chest.' }
@@ -46,15 +50,46 @@ const DAYS = {
     phases: { 1: ['legpress', 'legext', 'legcurl'].concat(CORE), 2: ['legpress', 'dbrdl', 'legext', 'legcurl', 'calf'].concat(CORE), 3: ['squat', 'dbrdl', 'lunge', 'legcurl', 'calf'].concat(CORE) } }
 };
 const ROTATION = ['push', 'pull', 'legs'];
+const alts = k => { const a = EX[k] && EX[k].alt; return (Array.isArray(a) ? a : a ? [a] : []).filter(x => EX[x]); };
+// Two slots never land on the same exercise. An old saved swap can point at one that is also planned that day; then
+// the slot whose own planned exercise it is keeps it, and otherwise the earlier slot does, while the other slot goes
+// back to its planned exercise. No slot is ever dropped, so a day always keeps its full count.
+function settleSwaps(slots) {
+  for (let guard = 0; guard <= slots.length; guard++) {
+    const seen = {}; let changed = false;
+    slots.forEach(p => { if (p.key === p.base) seen[p.key] = 1; });
+    slots.forEach(p => { if (p.key === p.base) return; if (seen[p.key]) { p.key = p.base; changed = true; } else seen[p.key] = 1; });
+    if (!changed) break;
+  }
+  return slots;
+}
+const planSlots = (kind, phase, swaps) => settleSwaps((DAYS[kind].phases[phase] || []).map(b => ({ base: b, key: swaps && swaps[b] && EX[swaps[b]] ? swaps[b] : b })));
+// What one slot can be swapped to in a workout: back to its planned exercise, or an alternate, but never an exercise
+// that is planned in another slot or already swapped into one.
+function swapOptions(planned, p) {
+  const taken = {}; planned.forEach(x => { if (x.base !== p.base) { taken[x.base] = 1; taken[x.key] = 1; } });
+  const out = []; if (p.key !== p.base && !taken[p.base]) out.push(p.base);
+  alts(p.base).concat(alts(p.key)).forEach(k => { if (k !== p.key && k !== p.base && !taken[k] && !out.includes(k)) out.push(k); });
+  return out;
+}
+// A default swap applies to every future workout, so "the day's plan" is every phase the exercise appears in.
+function defaultSwapTaken(k) {
+  const sw = state.settings.swaps || {}, taken = {};
+  ROTATION.forEach(r => Object.keys(DAYS[r].phases).forEach(ph => { const list = DAYS[r].phases[ph]; if (!list.includes(k)) return; list.forEach(b => { if (b === k) return; taken[b] = 1; if (sw[b] && EX[sw[b]]) taken[sw[b]] = 1; }); }));
+  return taken;
+}
+const defaultSwapOption = k => { const taken = defaultSwapTaken(k); return alts(k).find(a => !taken[a]) || null; };
 const TREAD_MIN = { 1: 20, 2: 25, 3: 30 };
 
 /* ---------- Records: normalize (content decides the kind, never the tab) ---------- */
+// A day can hold a program entry (sets, treadmill) and activities together. The program content decides the kind;
+// activities next to it are extras. An `acts` list on its own makes an activity day.
+const HK_ACT_ID = 'hk-exercise';                 // the one entry that tops a day up to the Apple Watch's Exercise Minutes
+const isHk = a => !!a && a.id === HK_ACT_ID;
 function normalize(rec) {
-  const base = { day: null, qualifies: false, complete: null, ex: {}, keys: [], mainLogged: 0, legacy: false, ambiguous: false, tm: null, acts: [], minutes: 0, allMin: 0, notes: rec.notes || '', phase: rec.phase || null, planned: null, plannedBase: null, swaps: {}, qualifyOverride: null };
-  if (rec.kind === 'activity' || Array.isArray(rec.acts)) { // pick-your-own day: a list of activities with minutes
-    const acts = (rec.acts || []).filter(a => a && isNum(a.min) && a.min > 0);
-    return Object.assign(base, { kind: acts.length ? 'activity' : 'empty', acts, phase: null, allMin: sum(acts, a => a.min), minutes: sum(acts, a => a.mv === false ? 0 : a.min) });
-  }
+  const base = { day: null, qualifies: false, complete: null, ex: {}, keys: [], mainLogged: 0, legacy: false, ambiguous: false, tm: null, acts: [], minutes: 0, allMin: 0, progMin: 0, actMin: 0, program: false, notes: rec.notes || '', phase: rec.phase || null, planned: null, plannedBase: null, swaps: {}, qualifyOverride: null };
+  const acts = Array.isArray(rec.acts) ? rec.acts.filter(a => a && isNum(a.min) && a.min > 0) : [];
+  const actMin = sum(acts, a => a.mv === false ? 0 : a.min), actAll = sum(acts, a => a.min); // recovery sessions log but are not movement minutes
   const legacy = !(rec.v >= 2);
   const ex = {};
   Object.keys(rec.ex || {}).forEach(k => {
@@ -68,18 +103,23 @@ function normalize(rec) {
   const mainLogged = keys.filter(k => !EX[k].bw).length;
   const tm = rec.treadmill && isNum(rec.treadmill.minutes) ? rec.treadmill : null;
   let kind;
-  if (rec.kind === 'rest') kind = 'rest';
-  else if (keys.length) kind = 'strength';
+  if (keys.length) kind = 'strength';
   else if (tm && (tm.minutes > 0 || rec.kind === 'cardio')) kind = 'cardio';
+  else if (acts.length) kind = 'activity';
+  else if (rec.kind === 'rest') kind = 'rest';
   else kind = 'empty';
-  const ambiguous = legacy && rec.kind === 'strength' && !keys.length;
+  const program = kind === 'strength' || kind === 'cardio';
+  const ambiguous = legacy && rec.kind === 'strength' && !keys.length && !acts.length;
   const qualifies = kind === 'strength' && (legacy ? mainLogged >= QUALIFY_MIN : !!rec.qualifies);
   const planned = Array.isArray(rec.planned) ? rec.planned.filter(k => EX[k]) : null;
   const complete = kind !== 'strength' ? null : planned ? planned.every(k => ex[k]) : null;
   const sets = sum(keys, k => ex[k].reps.filter(r => r != null).length);
-  const minutes = (tm ? tm.minutes : 0) + sets * 3; // lifting time is estimated at 3 minutes a logged set
-  return Object.assign(base, { kind, day: DAYS[rec.day] ? rec.day : null, qualifies, complete, ex, keys, mainLogged, legacy, ambiguous, tm, minutes, allMin: minutes, planned, plannedBase: rec.plannedBase || null, swaps: rec.swaps || {}, qualifyOverride: rec.qualifyOverride == null ? null : rec.qualifyOverride });
+  const progMin = program ? (tm ? tm.minutes : 0) + sets * 3 : 0; // lifting time is estimated at 3 minutes a logged set
+  return Object.assign(base, { kind, day: DAYS[rec.day] ? rec.day : null, qualifies, complete, ex, keys, mainLogged, legacy, ambiguous, tm, acts, program, progMin, actMin, minutes: progMin + actMin, allMin: progMin + actAll,
+    phase: program || kind === 'rest' ? rec.phase || null : null, planned, plannedBase: rec.plannedBase || null, swaps: rec.swaps || {}, qualifyOverride: rec.qualifyOverride == null ? null : rec.qualifyOverride });
 }
+// the part of a day the lifting log owns: a lift, a treadmill entry, a rest day (or an old entry that needs checking)
+const lifted = rec => { if (!rec) return false; const n = normalize(rec); return n.program || n.kind === 'rest' || n.ambiguous; };
 function recordsOf(pid) {
   return cached('recs:' + pid, () => { const s = state.data[pid].sessions; return Object.keys(s).filter(validIso).sort().map(d => ({ date: d, n: normalize(s[d]), rec: s[d] })); });
 }
@@ -103,10 +143,9 @@ function completedWeeks(asOf, pid) {
 const phaseFor = (asOf, pid) => Math.min(3, 1 + completedWeeks(asOf, pid));
 function lastLift(beforeDate, pid) { const l = recordsOf(pid || me()).filter(r => r.date < beforeDate && r.n.qualifies && r.n.day); return l.length ? l[l.length - 1] : null; }
 function nextDayKey(beforeDate, pid) { const p = lastLift(beforeDate, pid); return p ? ROTATION[(ROTATION.indexOf(p.n.day) + 1) % ROTATION.length] : ROTATION[0]; }
-function weekStats(asOf) {
-  const ws = weekStart(asOf), we = addDays(ws, 6);
-  const list = records().filter(r => r.date >= ws && r.date <= we);
-  return { activity: list.filter(r => r.n.kind === 'strength' || r.n.kind === 'cardio' || r.n.kind === 'activity').length, lifts: list.filter(r => r.n.qualifies).length, goal: state.settings.goal || GOAL };
+function weekStats(asOf, pid) { // the top strip: the same days and the same goals the score uses
+  pid = pid || me(); const ws = weekStart(asOf), sc = weekScore(pid, ws), g = weekGoals(pid, ws);
+  return { activity: sc.active, lifts: sc.lifts, minutes: sc.minutes, goal: g.goal, liftGoal: g.liftGoal, plan: g.plan };
 }
 function lastLog(key, beforeDate) {
   const l = records().filter(r => r.date < beforeDate && r.n.ex[key]);
@@ -185,12 +224,11 @@ function plannedFor(date, kind, m) {
   // a saved lift day keeps the exercises it was saved with: today's default swaps apply to new workouts only
   const own = n && n.kind === 'strength' && n.day === kind;
   const dflt = own ? (n.swaps || {}) : (state.settings.swaps || {});
-  const seen = {};
-  return bases.map(b => {
+  return settleSwaps(bases.map(b => {
     let key = m.swaps[b] != null ? m.swaps[b] : (dflt[b] || b);
     if (!EX[key]) key = b;
     return { base: b, key };
-  }).filter(p => seen[p.key] ? false : (seen[p.key] = true));
+  }));
 }
 function setCount(key, m, date) {
   const sg = suggest(key, date);
@@ -203,8 +241,15 @@ function parseDraft(date, m) {
   const kind = kindFor(date, m);
   const phase = phaseOf(date);
   const existing = state.sessions[date];
-  const doc = { v: SCHEMA, date, phase, savedAt: existing && existing.savedAt || new Date().toISOString(), updatedAt: new Date().toISOString() };
-  if (kind === 'rest') { doc.kind = 'rest'; doc.notes = m.notes.trim(); return { doc, errors, kind: 'rest' }; }
+  const now = new Date().toISOString();
+  const doc = { v: SCHEMA, date, phase, savedAt: existing && existing.savedAt || now, updatedAt: now, progAt: now };
+  // activities already logged on the day stay with it. The Watch top-up does not: next to a lift or treadmill entry the Watch minutes are shown, not added.
+  const kept = existing && Array.isArray(existing.acts) ? existing.acts.filter(a => a && !isHk(a)) : [];
+  if (kind === 'rest') {
+    if (kept.length) errors.push('This day has activities logged, so it is not a rest day. Remove them first, or leave the day as it is.');
+    doc.kind = 'rest'; doc.notes = m.notes.trim(); return { doc, errors, kind: 'rest' };
+  }
+  if (kept.length) doc.acts = kept;
   const min = m.tm.minutes === '' ? null : Number(m.tm.minutes);
   if (min != null && (!isFinite(min) || min < 0 || min !== Math.floor(min))) errors.push('Treadmill minutes must be a whole number, 0 or more.');
   if (min != null || m.tm.title.trim()) doc.treadmill = { minutes: min == null ? 0 : min, title: m.tm.title.trim() };
@@ -274,7 +319,7 @@ function adoptAccount() {
     const mine = state.draftsBy[pid], kept = theirs[pid] && typeof theirs[pid] === 'object' ? theirs[pid] : {};
     Object.keys(kept).forEach(date => {
       const d = kept[date]; if (!validIso(date) || !draftShaped(d)) return;
-      const rec = state.data[pid].sessions[date], saved = rec ? Date.parse(rec.updatedAt || rec.savedAt || '') || 0 : 0;
+      const rec = state.data[pid].sessions[date], saved = lifted(rec) ? Date.parse(rec.progAt || rec.updatedAt || rec.savedAt || '') || 0 : 0; // an activity logged later does not make a lifting draft stale
       if (saved >= (d.updatedAt || 0)) return;
       const cur = mine[date];
       if (cur && cur.blind) { fillDraft(cur, d); return; }        // typed before the log loaded: keep that, add the rest
@@ -291,7 +336,7 @@ function reconcileBlindDrafts() {
     Object.keys(ds).forEach(date => {
       const d = ds[date]; if (!d.blind) return;
       const rec = state.data[pid].sessions[date];
-      if (rec && !Array.isArray(rec.acts)) { fillDraft(d, seedFromRecord(rec)); d.fromRecord = true; }
+      if (lifted(rec)) { fillDraft(d, seedFromRecord(rec)); d.fromRecord = true; }
       delete d.blind;
     });
   });
@@ -299,10 +344,13 @@ function reconcileBlindDrafts() {
 }
 async function removeRecord(date) {
   if (!state.ready) { toast('Still loading your log. Try again in a moment.'); return; }
-  const pid = me(), path = PATH.session(pid, date), had = getDoc(path);
+  const pid = me(), path = PATH.session(pid, date), had = getDoc(path), n = had ? normalize(had) : null, now = new Date().toISOString();
   delete state.draftsBy[pid][date]; state.confirmRemove = null; persistDrafts();
-  applyDoc(path, null); render();
-  try { await del(path); toast('Removed ' + nice(date)); }
+  // On a day that also has activities only the lift or treadmill part goes. With that part gone, Watch minutes can top the day up again.
+  const acts = n && n.program ? watchTopUp(pid, date, n.acts.filter(a => !isHk(a)), false) : [];
+  const next = acts.length ? { v: SCHEMA, date, kind: 'activity', acts, savedAt: had.savedAt || now, updatedAt: now } : null;
+  applyDoc(path, next); render();
+  try { if (next) await put(path, next); else await del(path); toast(next ? 'Removed the ' + (n.kind === 'strength' ? 'lift' : 'treadmill entry') + '. Your activities for ' + nice(date) + ' are kept.' : 'Removed ' + nice(date), next ? 3200 : 2200); }
   catch (e) { applyDoc(path, had); toast('Could not remove ' + nice(date) + '. Try again.'); render(); }
   settle();
 }

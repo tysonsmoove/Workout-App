@@ -60,3 +60,21 @@ ACT['hk-import'] = async () => {
   closeOv(); render();
   celebrate(did.length ? 'Imported for ' + hkWhen(plan.date) + ': ' + did.join(', ') + '.' : 'Nothing new to import.', { ms: 3600, before });
 };
+// The Watch top-up is worked out, not typed: its sheet explains the number and can turn it off for the day.
+OV.hkinfo = {
+  html: o => {
+    const pid = me(), h = healthDay(pid, o.date) || {}, rec = state.sessions[o.date], n = rec ? normalize(rec) : null, top = n ? n.acts.find(isHk) : null;
+    const manual = n ? sum(n.acts.filter(a => !isHk(a) && a.mv !== false), a => a.min) : 0;
+    return '<div class="ov" role="dialog" aria-modal="true" aria-label="Apple Watch top-up">' + ovHead('⌚ Apple Watch top-up', rel(o.date)) +
+      '<p>' + (isNum(h.exercise) ? 'Your Watch counted <b>' + h.exercise + ' exercise minutes</b>. ' : '') + 'You logged <b>' + manual + ' min</b> of movement by hand, so <b>' + (top ? top.min : 0) + ' min</b> ' + (top && top.min === 1 ? 'is' : 'are') + ' added on top.</p>' +
+      '<p class="tiny muted">Log, change or remove an activity and this adjusts by itself, so the same minutes never count twice.</p>' +
+      '<div class="row"><button type="button" class="small danger" data-a="hk-off">Remove the top-up for this day</button><button type="button" class="small" data-a="ov-close">Close</button></div></div>';
+  }
+};
+ACT['hk-info'] = () => openOv({ type: 'hkinfo', date: state.selDate });
+ACT['hk-off'] = async () => {
+  const o = state.ov, pid = me(), path = PATH.health(pid, o.date), cur = getDoc(path);
+  if (cur) { if (!(await write(path, Object.assign({}, cur, { topUp: false })))) return; if ((await syncWatch(o.date)) === false) return; }
+  else if (!(await removeActivity(o.date, HK_ACT_ID))) return;
+  closeOv(); settle(); render(); toast('Top-up removed for ' + hkWhen(o.date) + '.');
+};

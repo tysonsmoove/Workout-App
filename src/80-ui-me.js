@@ -23,7 +23,8 @@ function targetNotes(pid) {
   return out;
 }
 function renderMe() {
-  const pid = me(), p = P(pid), g = goalsFor(pid), bs = badgesFor(pid), earned = bs.filter(b => b.earned).length, sk = p.skin, v = bodyVals(pid);
+  const pid = me(), p = P(pid), g = goalsFor(pid), bs = badgesFor(pid), earned = bs.filter(b => b.earned).length, sk = p.skin, v = bodyVals(pid), wk = thisWeek(pid), live = liveGoals(pid);
+  const lockedDiffer = ['kcal', 'lo', 'hi', 'waterOz', 'protein'].some(k => wk[k] !== live[k]), mon = startsNote();
   const seg = (a, k, cur, opts) => '<div class="seg">' + Object.keys(opts).map(o => '<button type="button" data-a="' + a + '" data-k="' + k + '" data-v="' + o + '" class="' + (cur === o ? 'on' : '') + '" aria-pressed="' + (cur === o) + '">' + (Array.isArray(opts[o]) ? opts[o][0] : opts[o]) + '</button>').join('') + '</div>';
   let h = '<section class="card"><div class="row" style="flex-wrap:nowrap">' + avatarHTML(pid, 'lg') + '<div class="grow"><h2>' + esc(p.name) + '</h2><div class="tiny muted">' + (p.plan === 'program' ? 'Lifting program' : 'Pick-your-own workouts') + ' · ' + earned + ' badge' + (earned === 1 ? '' : 's') + '</div></div><button type="button" class="small" data-a="who">Switch</button></div></section>';
 
@@ -42,8 +43,12 @@ function renderMe() {
     '<div class="row" style="flex-wrap:nowrap;align-items:flex-end"><label class="f grow">Display name<input type="text" data-form="name" data-k="name" maxlength="20" value="' + esc('name' in (state.forms.name || {}) ? state.forms.name.name : p.name) + '"></label><button type="button" class="small" data-a="name-save" style="min-height:44px">Save</button></div>' +
     '<p class="tiny muted">Your look applies whenever your profile is active, on any phone.</p></section>';
 
+  h += '<section class="card stack" id="gymCard"><h3>Gym</h3><div class="row" style="flex-wrap:nowrap;align-items:flex-end"><label class="f grow">Where you train<input type="text" data-form="gym" data-k="place" maxlength="40" value="' + esc('place' in (state.forms.gym || {}) ? state.forms.gym.place : (p.place || '')) + '" placeholder="Name of your gym"></label><button type="button" class="small" data-a="gym-save" style="min-height:44px">Save</button></div>' +
+    '<p class="tiny muted">Shown next to the date at the top and in the morning plan. Leave it empty to show no gym.</p></section>';
+
   h += '<section class="card stack" id="bodyCard"><div class="row between"><h3>Daily targets</h3>' + (g.ready ? '<span class="chip good">' + (g.kcalSrc === 'doctor' ? 'doctor' : 'estimate') + '</span>' : '<span class="chip warn">placeholder</span>') + '</div>' +
-    '<div class="kv"><span>Calories</span><b id="tKcal">' + commas(g.kcal) + '</b><span class="muted">Counts between</span><b class="muted">' + commas(g.lo) + '–' + commas(g.hi) + '</b><span>Water</span><b id="tWater">' + g.waterOz + ' oz</b><span class="muted">Protein · carbs · fat guide</span><b class="muted">' + g.protein + ' · ' + g.carbs + ' · ' + g.fat + ' g</b></div>' +
+    '<div class="kv"><span>Calories</span><b id="tKcal">' + commas(g.kcal) + '</b><span class="muted">Counts between</span><b class="muted">' + commas(g.lo) + '–' + commas(g.hi) + '</b><span>Water</span><b id="tWater">' + g.waterOz + ' oz</b><span>Protein</span><b id="tProtein">' + g.protein + ' g</b><span class="muted">Carbs · fat guide</span><b class="muted">' + g.carbs + ' · ' + g.fat + ' g</b></div>' +
+    (lockedDiffer ? '<div class="banner" id="lockedTargets"><span><b>This week, locked:</b> ' + commas(wk.kcal) + ' calories (counts ' + commas(wk.lo) + '–' + commas(wk.hi) + ') · ' + wk.waterOz + ' oz water · ' + wk.protein + ' g protein.</span><span><span class="chip accent">' + mon + '</span> the numbers above. The week already running is scored on the locked ones.</span></div>' : '<p class="tiny muted" id="lockedTargets">These are also this week\'s locked targets. A change here starts the next Monday.</p>') +
     '<div class="tiny muted stack" style="gap:4px">' + targetNotes(pid).map(x => '<p>' + esc(x) + '</p>').join('') + '</div>' +
     '<div><div class="eyebrow">Sex, for the estimate</div><div class="seg" style="margin-top:4px">' + [['m', 'Male'], ['f', 'Female']].map(o => '<button type="button" data-a="form-set" data-form="body" data-k="sex" data-v="' + o[0] + '" class="' + (v.sex === o[0] ? 'on' : '') + '" aria-pressed="' + (v.sex === o[0]) + '">' + o[1] + '</button>').join('') + '</div></div>' +
     '<div class="formgrid">' +
@@ -69,7 +74,8 @@ function renderMe() {
     '<div class="row"><button type="button" class="small" data-a="health">Import from Health</button></div>' +
     '<details class="plain" data-dk="hksteps"><summary>Set up the shortcut, once per iPhone</summary><div style="margin-top:8px">' + shortcutStepsHTML() + '</div></details></section>';
   h += '<section class="card stack"><h3>Workout style</h3>' + seg('plan-set', 'plan', p.plan, { program: 'Lifting program', choice: 'Pick-your-own' }) +
-    '<p class="tiny muted">' + (p.plan === 'program' ? 'Push, Pull, Legs rotation with weight suggestions. Weekly goal: ' + moveGoal(pid) + ' activity days, ' + LIFT_GOAL + ' of them lifts.' : 'Choose from a gentle menu each day. Weekly goal: ' + moveGoal(pid) + ' active days of ' + minMin(pid) + ' minutes or more. Adjust it under Train, Plan.') + ' Switching keeps everything already logged.</p></section>';
+    '<p class="tiny muted">' + (p.plan === 'program' ? 'Push, Pull, Legs rotation with weight suggestions. Weekly goal: ' + live.goal + ' activity days, ' + LIFT_GOAL + ' of them lifts. Walks and other activities can be added on any day.' : 'Choose from a gentle menu each day. Weekly goal: ' + live.goal + ' active days of ' + live.minMin + ' minutes or more. Adjust it under Train, Plan.') + ' Switching keeps everything already logged.</p>' +
+    (live.plan !== wk.plan ? '<p class="tiny locknote" id="planLock"><span class="chip accent">' + mon + '</span> for scoring. Your Train tab switches now, but this week is still scored as ' + (wk.plan === 'program' ? 'the lifting program' : 'pick-your-own') + ', so the race already running does not change.</p>' : '') + '</section>';
 
   const sync = state.storage === 'db' ? (state.cantWrite ? 'This account can read the shared log but not save to it.' : 'Saving to the shared log on your Claude account.') : state.storage === 'local' ? 'Saving in this browser only.' : state.storage === 'nodb' ? 'The shared log cannot be reached right now.' : 'Connecting…';
   h += '<section class="card stack"><h3>Two phones, one log</h3><p class="tiny muted">' + sync + '</p><p class="tiny muted">Both profiles live in one shared log. To use it from two phones, open this page\'s Share menu and invite your partner by email as an Editor, or sign in to the same Claude account on both. Your Claude account remembers which profile you use, so you are not asked again; the top-right button switches.</p></section>';
@@ -87,8 +93,14 @@ ACT['name-save'] = async () => {
   const ok = await saveProfile(me(), { name }); if (!ok) return; // a refused save keeps what was typed
   delete state.forms.name; render(); toast('Saved');
 };
+ACT['gym-save'] = async () => {
+  const place = String((state.forms.gym || {}).place == null ? (P(me()).place || '') : state.forms.gym.place).trim().slice(0, 40);
+  typing = false;
+  const ok = await saveProfile(me(), { place }); if (!ok) return; // a refused save keeps what was typed
+  delete state.forms.gym; render(); toast(place ? 'Gym set to ' + place + '.' : 'Gym cleared.');
+};
 ACT['form-set'] = el => { const f = el.dataset.form; (state.forms[f] = state.forms[f] || {})[el.dataset.k] = el.dataset.v; render(); };
-ACT['plan-set'] = async el => { if (P(me()).plan === el.dataset.v) return; await saveProfile(me(), { plan: el.dataset.v }); settle(); render(); toast(el.dataset.v === 'program' ? 'Lifting program on. Your Train tab is the Push, Pull, Legs log.' : 'Pick-your-own on. Your Train tab is the activity menu.', 3200); };
+ACT['plan-set'] = async el => { if (P(me()).plan === el.dataset.v) return; await saveProfile(me(), { plan: el.dataset.v }); settle(); render(); toast((el.dataset.v === 'program' ? 'Lifting program on. Your Train tab is the Push, Pull, Legs log.' : 'Pick-your-own on. Your Train tab is the activity menu.') + ' Scoring switches ' + nice(nextMonday()) + '.', 3800); };
 ACT['body-save'] = async () => {
   const pid = me(), v = bodyVals(pid), num = s => { const t = String(s).trim(); return t === '' ? null : Number(t); };
   const age = num(v.age), ft = num(v.ft), inch = num(v.inch), lb = num(v.lb), dkcal = num(v.dkcal), dwater = num(v.dwater);
@@ -102,10 +114,13 @@ ACT['body-save'] = async () => {
   const patch = { body: { sex: v.sex === 'm' || v.sex === 'f' ? v.sex : null, age, heightIn, weightLb: lb, activity: ACTIVITY[v.activity] ? v.activity : 'light', pace: PACE[v.pace] ? v.pace : 'maintain' }, doctor: { kcal: dkcal, waterOz: dwater } };
   if (lb != null && lb !== latestWeight(pid)) { patch.weighIns = {}; patch.weighIns[todayIso()] = lb; }
   typing = false;
+  const was = thisWeek(pid);
   const ok = await saveProfile(pid, patch); if (!ok) return;
-  delete state.forms.body; settle(); render();
-  const g = goalsFor(pid);
-  toast(g.ready ? 'Targets set: ' + commas(g.kcal) + ' calories and ' + g.waterOz + ' oz of water a day.' : 'Saved. Add sex, age, height and weight, or a doctor\'s number, to replace the placeholder.', 3600);
+  delete state.forms.body;
+  await lockWeeks(); // a week locked on placeholder targets takes its first real ones now
+  settle(); render();
+  const g = goalsFor(pid), now = thisWeek(pid), waits = g.ready && !was.placeholder && (now.kcal !== g.kcal || now.waterOz !== g.waterOz);
+  toast(g.ready ? 'Targets set: ' + commas(g.kcal) + ' calories and ' + g.waterOz + ' oz of water a day.' + (waits ? ' ' + startsNote() + '; this week keeps its locked targets.' : '') : 'Saved. Add sex, age, height and weight, or a doctor\'s number, to replace the placeholder.', waits ? 4600 : 3600);
 };
 ACT['weigh-save'] = async () => {
   const lb = Number(String((state.forms.weigh || {}).lb || '').trim());
@@ -127,7 +142,7 @@ ACT['who-pick'] = el => { switchProfile(el.dataset.pid); closeOv(); };
 function switchProfile(pid) {
   if (!PIDS.includes(pid)) return;
   state.pid = pid; prefSet('ml.me', pid);
-  state.status = {}; state.formError = {}; state.menu = null; state.forms = {}; state.details = {}; state.confirmRemove = null;
+  state.status = {}; state.formError = {}; state.menu = null; state.forms = {}; state.details = {}; state.confirmRemove = null; restStop();
   applySkin(); render();
   if (state.ready) announce();
 }

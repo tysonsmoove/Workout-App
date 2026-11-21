@@ -52,28 +52,28 @@ const field = (o, start) => { const k = Object.keys(o).find(x => x.indexOf(start
     check('A1 and its answer does not change the first phone\'s', await page.evaluate(() => { const o = window.__store['data/users/u_j/prefs']; return Object.keys(o).filter(k => k.indexOf('me_') === 0).map(k => o[k]).sort().join() === 'jacquie,tyson'; }));
   });
 
-  // ---------- A2: last week's result is announced once per person, not on every open ----------
+  // ---------- A2: last week's final result is announced once per person, not on every open ----------
   await section('A2', async () => {
     const week = { 'sessions/2026-11-02': lift('2026-11-02', 'push', PUSH), 'settings/program': SETTINGS, 'profiles/jacquie/sessions/2026-11-02': walk('2026-11-02', 15), 'comp/settings': { start: '2026-11-02', stakes: '' } };
-    ({ ctx, page } = await newPage(browser, { me: null, time: T('2026-11-09T12:00:00Z'), init: acct(week, 'u_j') }));
+    ({ ctx, page } = await newPage(browser, { me: null, time: T('2026-11-11T12:00:00Z'), init: acct(week, 'u_j') })); // Wednesday: the week before is final
     await pick(page, 'jacquie');
     await page.waitForFunction(() => window.__seen.some(x => x.includes('wins')), null, { timeout: 4000 }).catch(() => {});
-    check('A2 Monday: the result is announced', (await seen(page)).includes('Jacquie wins, 22 to 18'), JSON.stringify(await seen(page)));
-    await page.waitForFunction(() => { const o = window.__store['data/users/u_j/prefs']; return !!o && Object.keys(o).some(k => k.indexOf('seenWeek_') === 0); });
+    check('A2 Wednesday: the final result is announced', (await seen(page)).includes('Jacquie wins, 22 to 18'), JSON.stringify(await seen(page)));
+    await page.waitForFunction(() => { const o = window.__store['data/users/u_j/prefs']; return !!o && Object.keys(o).some(k => k.indexOf('seenFinalWeek_') === 0 && o[k] === '2026-11-02'); });
     store = await dump(page);
-    check('A2 the account notes which week was shown', field(prefsOf(store, 'u_j'), 'seenWeek_') === '2026-11-02');
+    check('A2 the account notes which final week was shown, and the result is stored', field(prefsOf(store, 'u_j'), 'seenFinalWeek_') === '2026-11-02' && store['results/2026-11-02'].final === true && store['results/2026-11-02'].winner === 'jacquie');
     await ctx.close();
 
     for (const n of [1, 2]) {
-      ({ ctx, page } = await newPage(browser, { me: null, time: T('2026-11-09T1' + n + ':00:00Z'), init: acct(store, 'u_j') }));
+      ({ ctx, page } = await newPage(browser, { me: null, time: T('2026-11-11T1' + n + ':00:00Z'), init: acct(store, 'u_j') }));
       await ready(page); await page.waitForTimeout(400);
       check('A2 reopen ' + n + ' with storage emptied: not announced again, and no chooser', !(await seen(page)).some(x => x.includes('wins')) && await page.evaluate(() => window.__whoShown === false), JSON.stringify(await seen(page)));
       await ctx.close();
     }
     store['profiles/jacquie/sessions/2026-11-10'] = walk('2026-11-10', 15);
-    ({ ctx, page } = await newPage(browser, { me: null, time: T('2026-11-16T12:00:00Z'), init: acct(store, 'u_j') }));
+    ({ ctx, page } = await newPage(browser, { me: null, time: T('2026-11-18T12:00:00Z'), init: acct(store, 'u_j') }));
     await page.waitForFunction(() => window.__seen.some(x => x.includes('wins')), null, { timeout: 4000 }).catch(() => {});
-    check('A2 the following Monday the new result is announced', (await seen(page)).some(x => x.includes('Jacquie wins')), JSON.stringify(await seen(page)));
+    check('A2 the following Wednesday the new final result is announced', (await seen(page)).some(x => x.includes('Jacquie wins')), JSON.stringify(await seen(page)));
   });
 
   // ---------- A3: a badge is celebrated once ----------

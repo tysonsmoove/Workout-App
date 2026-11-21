@@ -3,11 +3,12 @@ const main = $('#main');
 let typing = false, pendingRender = false;
 const isTextField = el => !!(el && el.matches && el.matches('input[type=number], input[type=text], input[type=search], textarea') && main.contains(el));
 function stripHTML() {
-  const pid = me(), t = todayIso(), ws = weekStart(t), p = P(pid), sc = weekScore(pid, ws), o = otherPid(pid), os = weekScore(o, ws);
+  const pid = me(), t = todayIso(), ws = weekStart(t), g = weekGoals(pid, ws), sc = weekScore(pid, ws), o = otherPid(pid), os = weekScore(o, ws);
   const pips = (n, of, cls) => '<span class="pips">' + Array.from({ length: of }, (_, i) => '<span class="pip ' + cls + (i < n ? ' on' : '') + '"></span>').join('') + '</span>';
   let h;
-  if (p.plan === 'program') { const w = weekStats(t); h = '<span>Activity <b id="actCount">' + w.activity + '/' + w.goal + '</b>' + pips(w.activity, w.goal, '') + '</span><span>Lifts <b id="liftCount">' + w.lifts + '/' + LIFT_GOAL + '</b>' + pips(w.lifts, LIFT_GOAL, 'lift') + '</span>'; }
-  else { const g = moveGoal(pid); h = '<span>Active days <b id="actCount">' + sc.active + '/' + g + '</b>' + pips(sc.active, g, '') + '</span><span>Minutes <b id="minCount">' + sc.minutes + '</b></span>'; }
+  // the strip counts the same days against the same locked goals as the score, so the two always agree
+  if (g.plan === 'program') { const w = weekStats(t); h = '<span>Activity <b id="actCount">' + w.activity + '/' + w.goal + '</b>' + pips(w.activity, w.goal, '') + '</span><span>Lifts <b id="liftCount">' + w.lifts + '/' + w.liftGoal + '</b>' + pips(w.lifts, w.liftGoal, 'lift') + '</span>'; }
+  else h = '<span>Active days <b id="actCount">' + sc.active + '/' + g.goal + '</b>' + pips(sc.active, g.goal, '') + '</span><span>Minutes <b id="minCount">' + sc.minutes + '</b></span>';
   return h + '<a href="#compete" aria-label="Weekly score">Score <b id="myScore">' + sc.total + '</b> · ' + esc(P(o).name) + ' <b id="theirScore">' + os.total + '</b></a>';
 }
 function renderChrome() {
@@ -31,7 +32,7 @@ function banners() {
 // Open <details> are remembered across a redraw of the same tab, so a save from the other phone does not fold them shut.
 const detKey = d => d.dataset.dk || (d.dataset.hdate ? 'h:' + d.dataset.hdate : '');
 let drawnTab = null;
-function newDay() { if (state.ready) { announce(); closeWeeks(); } } // a new day can bring last week's result and close an older week
+function newDay() { if (state.ready) openWeek(false); } // a new day can start a new week, bring last week's result, and close an older week
 function render(focusSel) {
   if (typing) { pendingRender = true; return; }
   pendingRender = false;
@@ -64,8 +65,10 @@ function refreshLive(date) {
     const nSets = el.querySelectorAll('[data-field="rep"]').length || setCount(key, m, date);
     const sm = exSummary(key, e, nSets);
     const prog = el.querySelector('[data-prog]');
-    if (prog) { prog.hidden = !sm.loggedN; prog.innerHTML = '<span><b>' + sm.loggedN + '/' + nSets + '</b> sets logged</span>' + (sm.done ? '<button type="button" class="quiet" data-collapse="' + key + '">Collapse</button>' : ''); const cb = prog.querySelector('[data-collapse]'); if (cb) cb.addEventListener('click', onCollapse); }
+    const qf = quickFills(key, e, nSets, suggest(key, date));
+    if (prog) { prog.hidden = !sm.loggedN; prog.innerHTML = exProgHTML(key, sm, nSets, qf); const cb = prog.querySelector('[data-collapse]'); if (cb) cb.addEventListener('click', onCollapse); const rb = prog.querySelector('[data-repeat]'); if (rb) rb.addEventListener('click', () => fillSets(key, 'repeat')); }
     const use = el.querySelector('[data-usew]'); if (use) use.hidden = ex.bw || String(e.w) === String(use.dataset.val);
+    const sb2 = el.querySelector('[data-same]'); if (sb2) sb2.hidden = !qf.same;
     const cs = el.querySelector('[data-sum]'); if (cs) cs.innerHTML = sm.line ? '<b>' + esc(sm.line) + '</b> · ' + sm.loggedN + '/' + nSets + ' logged' : 'Nothing logged';
   });
   document.querySelectorAll('.datebar [data-date]').forEach(b => { const dot = b.querySelector('.dot'); if (dot) dot.className = 'dot ' + dotClass(b.dataset.date, b.parentNode.dataset.mode); });
@@ -86,6 +89,24 @@ main.addEventListener('input', e => {
   }
   d.recovered = false; delete state.formError[date]; persistDrafts(); refreshLive(date);
 });
+// a set logged for today starts the rest timer: on change (leaving the field), never on each keystroke
+main.addEventListener('change', e => {
+  const el = e.target; if (!el.dataset || el.dataset.field !== 'rep' || el.value === '' || state.selDate !== todayIso() || !EX[el.dataset.ex]) return;
+  restStart(restFor(el.dataset.ex), EX[el.dataset.ex].name);
+});
+// One-tap fills for an exercise. Both write only into fields that are still empty, in the draft and on screen, without a re-render.
+function fillSets(key, how) {
+  const date = state.selDate, d = draft(date), ex = EX[key], sg = suggest(key, date), e = d.ex[key] = d.ex[key] || { w: '', reps: [] };
+  const n = document.querySelectorAll('[data-field="rep"][data-ex="' + key + '"]').length || setCount(key, d, date);
+  while (e.reps.length < n) e.reps.push('');
+  const set = (i, v) => { if (e.reps[i] !== '' && e.reps[i] != null) return; e.reps[i] = String(v); const inp = document.getElementById('r-' + key + '-' + i); if (inp) inp.value = String(v); };
+  if (how === 'same' && sg.last) {
+    for (let i = 0; i < n; i++) if (sg.last.reps[i] != null) set(i, sg.last.reps[i]);
+    if (!ex.bw && e.w === '' && sg.w != null) { e.w = String(sg.w); const w = document.getElementById('w-' + key); if (w) w.value = e.w; }
+  }
+  if (how === 'repeat' && e.reps[0] !== '' && e.reps[0] != null) for (let i = 1; i < n; i++) set(i, e.reps[0]);
+  d.recovered = false; delete state.formError[date]; persistDrafts(); refreshLive(date);
+}
 // half-filled forms (targets, name, stakes) live in state.forms so a re-render never drops what was typed
 function onFormInput(e) { const el = e.target; if (!el.dataset || !el.dataset.form) return; (state.forms[el.dataset.form] = state.forms[el.dataset.form] || {})[el.dataset.k] = el.value; }
 document.addEventListener('input', onFormInput);
@@ -101,7 +122,7 @@ main.addEventListener('focusout', e => {
 // one click handler for every data-a action, in the page and in overlays
 // Actions that save one thing per tap. A second tap while the first is still saving is dropped, so a slow
 // connection cannot log the same food or activity twice. Water is left out on purpose: tapping it twice means two glasses.
-const ONE_AT_A_TIME = ['act-log', 'act-del', 'rest', 'food-save', 'food-again', 'food-del', 'quick-save', 'custom-save', 'hk-import', 'body-save', 'weigh-save', 'name-save', 'stakes-save'];
+const ONE_AT_A_TIME = ['act-log', 'act-del', 'rest', 'food-save', 'food-again', 'food-del', 'quick-save', 'custom-save', 'custom-del', 'hk-import', 'hk-off', 'body-save', 'weigh-save', 'name-save', 'gym-save', 'stakes-save', 'cd-save', 'cd-clear'];
 const busy = {};
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-a]'); if (!el || el.disabled) return;
@@ -167,6 +188,8 @@ function bind() {
   document.querySelectorAll('.menu [data-act]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); menuAction(b.dataset.act, b); }));
   document.querySelectorAll('[data-gswap]').forEach(b => b.addEventListener('click', () => { const sw = Object.assign({}, state.settings.swaps || {}); if (b.dataset.to === b.dataset.gswap) delete sw[b.dataset.gswap]; else sw[b.dataset.gswap] = b.dataset.to; saveSettings({ swaps: sw }); }));
   document.querySelectorAll('[data-usew]').forEach(b => b.addEventListener('click', () => { const key = b.dataset.usew; const d = draft(state.selDate); d.ex[key] = d.ex[key] || { w: '', reps: [] }; d.ex[key].w = b.dataset.val; const inp = document.getElementById('w-' + key); if (inp) inp.value = b.dataset.val; d.recovered = false; persistDrafts(); refreshLive(state.selDate); const first = document.getElementById('r-' + key + '-0'); if (first && first.value === '') first.focus({ preventScroll: true }); }));
+  document.querySelectorAll('[data-same]').forEach(b => b.addEventListener('click', () => fillSets(b.dataset.same, 'same')));
+  document.querySelectorAll('[data-repeat]').forEach(b => b.addEventListener('click', () => fillSets(b.dataset.repeat, 'repeat')));
   document.querySelectorAll('[data-collapse]').forEach(b => b.addEventListener('click', onCollapse));
   document.querySelectorAll('[data-expand]').forEach(b => b.addEventListener('click', () => { const key = b.dataset.expand; const d = draft(state.selDate); delete d.closed[key]; persistDrafts(); render('[data-menu="' + key + '"]'); }));
   document.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => { state.selDate = b.dataset.edit; state.confirmRemove = null; persistDrafts(); location.hash = 'train'; if (state.tab === 'train') render(); }));
@@ -216,7 +239,8 @@ function route() {
   render();
   if (changed && !jump) window.scrollTo(0, 0);
 }
-window.MorningLaps = { state, P, weekScore, coach, goalsFor, badgesFor, searchFoods, loadFoods, dayTotals, compWeeks, parseHealthPaste, foodCount: () => foodDb.list ? foodDb.list.length : 0 };
+window.MorningLaps = { state, P, weekScore, coach, goalsFor, badgesFor, searchFoods, loadFoods, dayTotals, compWeeks, parseHealthPaste, foodCount: () => foodDb.list ? foodDb.list.length : 0,
+  EX, DAYS, normalize, dayInfo, weekFacts, scoreFacts, weekGoals, liveGoals, fuelParts, plannedFor, planSlots, swapOptions, defaultSwapOption, alts, teamStats, stakesFor, phaseFor, restT };
 (function boot() {
   const saved = lsGet('ml.me', null);
   state.pid = PIDS.includes(saved) ? saved : null;

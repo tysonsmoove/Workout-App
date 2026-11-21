@@ -69,12 +69,12 @@ const AVATARS = ['', '🏁', '🏎️', '🔥', '⚡', '💪', '🌸', '🌷', '
 
 /* ---------- State ---------- */
 const blankSettings = () => ({ startDate: null, maxed: {}, swaps: {}, goal: GOAL });
-const blankData = () => ({ profile: null, sessions: {}, settings: blankSettings(), food: {}, health: {} });
+const blankData = () => ({ profile: null, sessions: {}, settings: blankSettings(), food: {}, health: {}, weekgoals: {} });
 const state = {
   pid: null,
   data: { tyson: blankData(), jacquie: blankData() },
   customFoods: {},
-  comp: { start: null, stakes: '' },
+  comp: { start: null, stakes: '' },   // also, when set: stakesBy { monday: text }, countdown { date, label, setAt }
   results: {},        // week start -> final result, once a finished week is closed
   draftsBy: { tyson: {}, jacquie: {} },   // date -> unsaved lifting form draft (this device, mirrored to the account)
   acct: {},           // what this signed-in person's account remembers: profile, what has been shown; see prefGet
@@ -184,6 +184,8 @@ const PATH = {
   food: (pid, d) => 'profiles/' + pid + '/food/' + d,
   healthCol: pid => 'profiles/' + pid + '/health',
   health: (pid, d) => 'profiles/' + pid + '/health/' + d,
+  weekgoalsCol: pid => 'profiles/' + pid + '/weekgoals',                             // one snapshot of a person's targets per week
+  weekgoal: (pid, ws) => 'profiles/' + pid + '/weekgoals/' + ws,
   profile: pid => 'profiles/' + pid
 };
 function slot(path) { // where a document lives in state: { map, key } or { obj, field }
@@ -196,6 +198,7 @@ function slot(path) { // where a document lives in state: { map, key } or { obj,
     if (s[2] === 'sessions' && s.length === 4) return { map: D.sessions, key: s[3] };
     if (s[2] === 'food' && s.length === 4) return { map: D.food, key: s[3] };
     if (s[2] === 'health' && s.length === 4) return { map: D.health, key: s[3] };
+    if (s[2] === 'weekgoals' && s.length === 4) return { map: D.weekgoals, key: s[3] };
     if (s[2] === 'settings' && s[3] === 'program') return { obj: D, field: 'settings', dflt: blankSettings };
   }
   if (s[0] === 'foods' && s.length === 2) return { map: state.customFoods, key: s[1] };
@@ -214,7 +217,7 @@ function replaceCol(colPath, entries) {
   if (colPath === 'sessions') { host = state.data.tyson; field = 'sessions'; }
   else if (colPath === 'foods') { host = state; field = 'customFoods'; }
   else if (colPath === 'results') { host = state; field = 'results'; }
-  else if (s[0] === 'profiles' && state.data[s[1]] && (s[2] === 'sessions' || s[2] === 'food' || s[2] === 'health')) { host = state.data[s[1]]; field = s[2]; }
+  else if (s[0] === 'profiles' && state.data[s[1]] && (s[2] === 'sessions' || s[2] === 'food' || s[2] === 'health' || s[2] === 'weekgoals')) { host = state.data[s[1]]; field = s[2]; }
   if (!host) return;
   const m = {}; entries.forEach(e => { m[e[0]] = e[1]; }); host[field] = m; bump();
 }
@@ -276,7 +279,7 @@ const devKey = (() => {
   try { let h = 5381; const s = [navigator.userAgent, screen.width, screen.height, window.devicePixelRatio || 1].join('|'); for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0; return h.toString(36); }
   catch (e) { return 'any'; }
 })();
-const ACCT_KEYS = { 'ml.me': 'me_' + devKey, 'ml.seenWeek': 'seenWeek_' + devKey, 'ml.badges.tyson': 'badgesTyson', 'ml.badges.jacquie': 'badgesJacquie' };
+const ACCT_KEYS = { 'ml.me': 'me_' + devKey, 'ml.seenWeek': 'seenWeek_' + devKey, 'ml.seenFinalWeek': 'seenFinalWeek_' + devKey, 'ml.badges.tyson': 'badgesTyson', 'ml.badges.jacquie': 'badgesJacquie' };
 let acctPath = null, acctDraftsPath = null, acctT = null, draftsT = null, draftsSent = '';
 const acctLocal = {}; // fields set on this device during this visit; they win over what the account says
 function prefGet(k, dflt) { const v = lsGet(k, null); if (v != null) return v; const a = state.acct[ACCT_KEYS[k]]; return a == null ? dflt : a; }
@@ -317,7 +320,7 @@ function rollDay() {
   state.today = t; return true;
 }
 function findLocalOnly() {
-  const docs = localDocs(); const only = Object.keys(docs).filter(p => (/\/\d{4}-\d{2}-\d{2}$/.test(p) || /^profiles\/[a-z]+$/.test(p) || /^foods\/[A-Za-z0-9]+$/.test(p)) && p.indexOf('results/') !== 0 && slot(p) && !getDoc(p));
+  const docs = localDocs(); const only = Object.keys(docs).filter(p => (/\/\d{4}-\d{2}-\d{2}$/.test(p) || /^profiles\/[a-z]+$/.test(p) || /^foods\/[A-Za-z0-9]+$/.test(p)) && p.indexOf('results/') !== 0 && p.indexOf('/weekgoals/') < 0 && slot(p) && !getDoc(p)); // results and week locks are made fresh, never imported
   state.localOnly = only.length ? only : null;
 }
 async function importLocal() {
@@ -372,6 +375,6 @@ async function connect() {
     subOwn(acctPath, d => { state.acct = Object.assign({}, d, acctLocal); });
     subOwn(acctDraftsPath, d => { if (!resolved) state.acctDrafts = d; });
   }
-  PIDS.forEach(pid => { subCol(PATH.sessions(pid)); subCol(PATH.foodCol(pid)); subCol(PATH.healthCol(pid)); subDoc(PATH.settings(pid)); subDoc(PATH.profile(pid)); });
+  PIDS.forEach(pid => { subCol(PATH.sessions(pid)); subCol(PATH.foodCol(pid)); subCol(PATH.healthCol(pid)); subCol(PATH.weekgoalsCol(pid)); subDoc(PATH.settings(pid)); subDoc(PATH.profile(pid)); });
   subCol('foods'); subCol('results'); subDoc('comp/settings');
 }

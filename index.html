@@ -158,7 +158,8 @@ label.f { display: grid; gap: 3px; font-size: .6875rem; color: var(--muted); tex
 .blk .bhead h3 { flex: 1; min-width: 0; }
 .ex { position: relative; }
 .exrx { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: .875rem; color: var(--muted); }
-.exlast { font-size: .875rem; color: var(--muted); }
+.exlast { font-size: .875rem; color: var(--muted); display: flex; align-items: center; justify-content: space-between; gap: 4px 8px; flex-wrap: wrap; }
+.exlast button { flex: none; }
 .exlast b { color: var(--fg); font-weight: 500; }
 .exhold { font-size: .8125rem; color: var(--warn); }
 .logrow { display: grid; grid-template-columns: repeat(auto-fit, minmax(58px, 1fr)); gap: 6px; align-items: end; }
@@ -182,6 +183,19 @@ details.plain > summary::-webkit-details-marker { display: none; }
 details.plain > summary::before { content: "▸"; font-size: .75rem; }
 details.plain[open] > summary::before { content: "▾"; }
 details.sessopts { padding: 10px 0 2px; border-top: 1px solid var(--line); }
+
+.locknote { color: var(--muted); margin-top: 4px; }
+
+/* rest timer: its own bar, pinned just above the save bar */
+.restbar { --lift: 0px; position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(var(--lift) + 8px + env(safe-area-inset-bottom, 0px)); z-index: 20; width: min(528px, calc(100vw - 32px)); display: flex; align-items: center; gap: 8px; padding: 6px 8px 6px 12px; border-radius: 12px; background: var(--fg); color: var(--bg); overflow: hidden; box-shadow: 0 6px 18px rgba(0,0,0,.22); }
+.restbar[hidden] { display: none; }
+.restbar b { font-family: var(--display); font-size: 1.375rem; min-width: 2.6em; position: relative; }
+.restbar span { flex: 1; min-width: 0; font-size: .8125rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; position: relative; }
+.restbar button { position: relative; background: transparent; color: inherit; border-color: color-mix(in srgb, currentColor 40%, transparent); min-height: 36px; flex: none; }
+.restbar i { position: absolute; inset: 0 auto 0 0; width: 0; background: hsl(var(--ah) var(--as) 50% / .45); }
+.restbar.done { background: var(--good); color: #fff; }
+.restbar.done i { display: none; }
+.resting .toast { bottom: calc(140px + env(safe-area-inset-bottom, 0px)); }
 
 /* save bar */
 .savebar { position: sticky; bottom: 0; z-index: 4; background: var(--bg); padding-top: 6px; padding-bottom: calc(6px + env(safe-area-inset-bottom, 0px)); display: grid; gap: 4px; }
@@ -229,6 +243,11 @@ details.sessopts { padding: 10px 0 2px; border-top: 1px solid var(--line); }
 .macro .bar, .mini .bar { height: 6px; border-radius: 3px; background: var(--soft); overflow: hidden; }
 .macro .bar i, .mini .bar i { display: block; height: 100%; background: var(--fg); border-radius: 3px; }
 .macro b { font-variant-numeric: tabular-nums; }
+.macros.two { grid-template-columns: repeat(2, 1fr); }
+.protline { display: grid; gap: 4px; }
+.protline .bar { position: relative; height: 10px; border-radius: 5px; background: var(--soft); overflow: hidden; }
+.protline .bar i { display: block; height: 100%; background: var(--accent); border-radius: 5px; }
+.protline .bar em { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--fg); opacity: .55; }
 .meal { display: grid; gap: 2px; padding: 10px 0; border-top: 1px solid var(--line); }
 .meal:first-child { border-top: 0; }
 .meal .mh { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
@@ -267,6 +286,10 @@ details.sessopts { padding: 10px 0 2px; border-top: 1px solid var(--line); }
 .mini { display: grid; grid-template-columns: 72px 1fr 1fr; gap: 4px 10px; align-items: center; font-size: .8125rem; }
 .mini .bar i { background: hsl(var(--ph, 3) var(--ps, 65%) calc(var(--pl, 47%) * (1 - var(--dk)) + var(--pld, 57%) * var(--dk))); }
 .mini .cell { display: grid; grid-template-columns: 1fr auto; gap: 6px; align-items: center; }
+.trow { display: grid; grid-template-columns: auto minmax(0, 1.3fr) minmax(40px, 1fr) auto; gap: 8px; align-items: center; font-size: .875rem; }
+.trow .tn { line-height: 1.2; min-width: 0; }
+.trow .bar { height: 8px; border-radius: 4px; background: var(--soft); overflow: hidden; }
+.trow .bar i { display: block; height: 100%; border-radius: 4px; background: hsl(var(--ph, 3) var(--ps, 65%) calc(var(--pl, 47%) * (1 - var(--dk)) + var(--pld, 57%) * var(--dk))); }
 .tips { display: grid; }
 .tip { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; padding: 9px 0; border-top: 1px solid var(--line); text-decoration: none; }
 .tip:first-child { border-top: 0; }
@@ -344,6 +367,7 @@ pre.code { padding: 8px 10px; margin: 6px 0; overflow-x: auto; line-height: 1.5;
 .toast { position: fixed; left: 50%; bottom: calc(76px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--fg); color: var(--bg); padding: 10px 16px; border-radius: 12px; font-weight: 500; z-index: 45; max-width: calc(100vw - 32px); text-align: center; font-size: .875rem; }
 @media (prefers-reduced-motion: no-preference) {
   button { transition: background .12s, color .12s; }
+  .restbar.done { animation: flash .5s ease 4; }
   .lane .car { animation: carrun 1.1s cubic-bezier(.2, .8, .2, 1) both; }
   .lane .fill { animation: fillrun 1.1s cubic-bezier(.2, .8, .2, 1) both; }
   .bump { animation: bump .35s ease; }
@@ -352,6 +376,7 @@ pre.code { padding: 8px 10px; margin: 6px 0; overflow-x: auto; line-height: 1.5;
 @keyframes carrun { from { left: 3px; } }
 @keyframes fillrun { from { width: 40px; } }
 @keyframes bump { 50% { transform: scale(1.12); } }
+@keyframes flash { 50% { opacity: .35; } }
 
 </style>
 
@@ -374,6 +399,7 @@ pre.code { padding: 8px 10px; margin: 6px 0; overflow-x: auto; line-height: 1.5;
 </div>
 <div id="ov" class="ov-root" hidden></div>
 <canvas id="fx" class="fx" aria-hidden="true"></canvas>
+<div id="rest" class="restbar" role="timer" aria-label="Rest timer" hidden><i id="restFill"></i><b class="num" id="restTime">1:30</b><span id="restLabel">Rest</span><button type="button" class="small" data-a="timer-add" aria-label="Add 15 seconds">+15 s</button><button type="button" class="small" data-a="timer-x" aria-label="Dismiss rest timer">×</button></div>
 <div id="toast" class="toast" role="status" hidden></div>
 
 <script>
@@ -451,12 +477,12 @@ const AVATARS = ['', '🏁', '🏎️', '🔥', '⚡', '💪', '🌸', '🌷', '
 
 /* ---------- State ---------- */
 const blankSettings = () => ({ startDate: null, maxed: {}, swaps: {}, goal: GOAL });
-const blankData = () => ({ profile: null, sessions: {}, settings: blankSettings(), food: {}, health: {} });
+const blankData = () => ({ profile: null, sessions: {}, settings: blankSettings(), food: {}, health: {}, weekgoals: {} });
 const state = {
   pid: null,
   data: { tyson: blankData(), jacquie: blankData() },
   customFoods: {},
-  comp: { start: null, stakes: '' },
+  comp: { start: null, stakes: '' },   // also, when set: stakesBy { monday: text }, countdown { date, label, setAt }
   results: {},        // week start -> final result, once a finished week is closed
   draftsBy: { tyson: {}, jacquie: {} },   // date -> unsaved lifting form draft (this device, mirrored to the account)
   acct: {},           // what this signed-in person's account remembers: profile, what has been shown; see prefGet
@@ -566,6 +592,8 @@ const PATH = {
   food: (pid, d) => 'profiles/' + pid + '/food/' + d,
   healthCol: pid => 'profiles/' + pid + '/health',
   health: (pid, d) => 'profiles/' + pid + '/health/' + d,
+  weekgoalsCol: pid => 'profiles/' + pid + '/weekgoals',                             // one snapshot of a person's targets per week
+  weekgoal: (pid, ws) => 'profiles/' + pid + '/weekgoals/' + ws,
   profile: pid => 'profiles/' + pid
 };
 function slot(path) { // where a document lives in state: { map, key } or { obj, field }
@@ -578,6 +606,7 @@ function slot(path) { // where a document lives in state: { map, key } or { obj,
     if (s[2] === 'sessions' && s.length === 4) return { map: D.sessions, key: s[3] };
     if (s[2] === 'food' && s.length === 4) return { map: D.food, key: s[3] };
     if (s[2] === 'health' && s.length === 4) return { map: D.health, key: s[3] };
+    if (s[2] === 'weekgoals' && s.length === 4) return { map: D.weekgoals, key: s[3] };
     if (s[2] === 'settings' && s[3] === 'program') return { obj: D, field: 'settings', dflt: blankSettings };
   }
   if (s[0] === 'foods' && s.length === 2) return { map: state.customFoods, key: s[1] };
@@ -596,7 +625,7 @@ function replaceCol(colPath, entries) {
   if (colPath === 'sessions') { host = state.data.tyson; field = 'sessions'; }
   else if (colPath === 'foods') { host = state; field = 'customFoods'; }
   else if (colPath === 'results') { host = state; field = 'results'; }
-  else if (s[0] === 'profiles' && state.data[s[1]] && (s[2] === 'sessions' || s[2] === 'food' || s[2] === 'health')) { host = state.data[s[1]]; field = s[2]; }
+  else if (s[0] === 'profiles' && state.data[s[1]] && (s[2] === 'sessions' || s[2] === 'food' || s[2] === 'health' || s[2] === 'weekgoals')) { host = state.data[s[1]]; field = s[2]; }
   if (!host) return;
   const m = {}; entries.forEach(e => { m[e[0]] = e[1]; }); host[field] = m; bump();
 }
@@ -658,7 +687,7 @@ const devKey = (() => {
   try { let h = 5381; const s = [navigator.userAgent, screen.width, screen.height, window.devicePixelRatio || 1].join('|'); for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0; return h.toString(36); }
   catch (e) { return 'any'; }
 })();
-const ACCT_KEYS = { 'ml.me': 'me_' + devKey, 'ml.seenWeek': 'seenWeek_' + devKey, 'ml.badges.tyson': 'badgesTyson', 'ml.badges.jacquie': 'badgesJacquie' };
+const ACCT_KEYS = { 'ml.me': 'me_' + devKey, 'ml.seenWeek': 'seenWeek_' + devKey, 'ml.seenFinalWeek': 'seenFinalWeek_' + devKey, 'ml.badges.tyson': 'badgesTyson', 'ml.badges.jacquie': 'badgesJacquie' };
 let acctPath = null, acctDraftsPath = null, acctT = null, draftsT = null, draftsSent = '';
 const acctLocal = {}; // fields set on this device during this visit; they win over what the account says
 function prefGet(k, dflt) { const v = lsGet(k, null); if (v != null) return v; const a = state.acct[ACCT_KEYS[k]]; return a == null ? dflt : a; }
@@ -699,7 +728,7 @@ function rollDay() {
   state.today = t; return true;
 }
 function findLocalOnly() {
-  const docs = localDocs(); const only = Object.keys(docs).filter(p => (/\/\d{4}-\d{2}-\d{2}$/.test(p) || /^profiles\/[a-z]+$/.test(p) || /^foods\/[A-Za-z0-9]+$/.test(p)) && p.indexOf('results/') !== 0 && slot(p) && !getDoc(p));
+  const docs = localDocs(); const only = Object.keys(docs).filter(p => (/\/\d{4}-\d{2}-\d{2}$/.test(p) || /^profiles\/[a-z]+$/.test(p) || /^foods\/[A-Za-z0-9]+$/.test(p)) && p.indexOf('results/') !== 0 && p.indexOf('/weekgoals/') < 0 && slot(p) && !getDoc(p)); // results and week locks are made fresh, never imported
   state.localOnly = only.length ? only : null;
 }
 async function importLocal() {
@@ -754,7 +783,7 @@ async function connect() {
     subOwn(acctPath, d => { state.acct = Object.assign({}, d, acctLocal); });
     subOwn(acctDraftsPath, d => { if (!resolved) state.acctDrafts = d; });
   }
-  PIDS.forEach(pid => { subCol(PATH.sessions(pid)); subCol(PATH.foodCol(pid)); subCol(PATH.healthCol(pid)); subDoc(PATH.settings(pid)); subDoc(PATH.profile(pid)); });
+  PIDS.forEach(pid => { subCol(PATH.sessions(pid)); subCol(PATH.foodCol(pid)); subCol(PATH.healthCol(pid)); subCol(PATH.weekgoalsCol(pid)); subDoc(PATH.settings(pid)); subDoc(PATH.profile(pid)); });
   subCol('foods'); subCol('results'); subDoc('comp/settings');
 }
 
@@ -764,35 +793,39 @@ async function connect() {
 // kettlebells, medicine balls, resistance bands, plyo boxes. Selectorized machines and the cable station
 // are standard at Anytime Fitness clubs; every machine move has a dumbbell/barbell fallback via Swap.
 // `per: 'each hand'` marks dumbbell loads: the weight is one dumbbell, not the pair.
+// `alt` lists substitutes in order of preference. Some are also planned on the same day in a later phase, so a swap
+// is only ever offered to one that is not already in that day's workout (see swapOptions).
 const EX = {
-  chestpress:  { name: 'Chest press machine', equip: 'Machine', sets: 3, lo: 8, hi: 12, inc: 5, start: 70, alt: 'dbbench' },
-  dbbench:     { name: 'Dumbbell bench press', equip: 'Dumbbells + bench', sets: 3, lo: 8, hi: 12, inc: 5, start: 30, per: 'each hand', alt: 'chestpress' },
-  shoulderpress:{ name: 'Shoulder press machine', equip: 'Machine', sets: 3, lo: 8, hi: 12, inc: 5, start: 50, alt: 'dbshoulder' },
-  dbshoulder:  { name: 'Seated dumbbell shoulder press', equip: 'Dumbbells + bench', sets: 3, lo: 8, hi: 12, inc: 5, start: 20, per: 'each hand', alt: 'shoulderpress' },
-  pushdown:    { name: 'Cable triceps pushdown', equip: 'Cable station', sets: 3, lo: 10, hi: 15, inc: 5, start: 40, alt: 'dbtri' },
-  dbtri:       { name: 'Dumbbell overhead triceps extension', equip: 'One dumbbell, both hands', sets: 3, lo: 10, hi: 15, inc: 5, start: 25, alt: 'pushdown' },
-  inclinedb:   { name: 'Incline dumbbell press', equip: 'Dumbbells + incline bench', sets: 3, lo: 8, hi: 12, inc: 5, start: 25, per: 'each hand', alt: 'pecdeck' },
-  pecdeck:     { name: 'Pec deck / chest fly machine', equip: 'Machine', sets: 3, lo: 10, hi: 15, inc: 5, start: 60, alt: 'inclinedb' },
-  latraise:    { name: 'Dumbbell lateral raise', equip: 'Dumbbells', sets: 3, lo: 12, hi: 15, inc: 2.5, start: 10, per: 'each hand', alt: 'cablelat' },
-  cablelat:    { name: 'Cable lateral raise', equip: 'Cable station', sets: 3, lo: 12, hi: 15, inc: 2.5, start: 10, alt: 'latraise' },
-  latpull:     { name: 'Lat pulldown machine', equip: 'Machine', sets: 3, lo: 8, hi: 12, inc: 5, start: 80, alt: 'assistpull' },
-  assistpull:  { name: 'Assisted pull-up machine', equip: 'Machine. Weight = assist; less assist is harder', sets: 3, lo: 8, hi: 12, inc: -5, start: 80, alt: 'latpull' },
-  seatedrow:   { name: 'Seated cable row', equip: 'Cable row station', sets: 3, lo: 8, hi: 12, inc: 5, start: 80, alt: 'dbrow' },
-  dbrow:       { name: 'One-arm dumbbell row', equip: 'Dumbbell + bench', sets: 3, lo: 8, hi: 12, inc: 5, start: 30, per: 'each hand', alt: 'seatedrow' },
-  dbcurl:      { name: 'Dumbbell biceps curl', equip: 'Dumbbells', sets: 3, lo: 10, hi: 12, inc: 2.5, start: 20, per: 'each hand', alt: 'cablecurl' },
-  cablecurl:   { name: 'Cable biceps curl', equip: 'Cable station', sets: 3, lo: 10, hi: 12, inc: 5, start: 40, alt: 'dbcurl' },
-  hammer:      { name: 'Hammer curl', equip: 'Dumbbells', sets: 3, lo: 10, hi: 12, inc: 2.5, start: 20, per: 'each hand', alt: 'dbcurl' },
-  facepull:    { name: 'Cable face pull', equip: 'Cable station + rope', sets: 3, lo: 12, hi: 15, inc: 5, start: 30, alt: 'reardelt' },
-  reardelt:    { name: 'Dumbbell rear-delt fly', equip: 'Dumbbells', sets: 3, lo: 12, hi: 15, inc: 2.5, start: 10, per: 'each hand', alt: 'facepull' },
-  legpress:    { name: 'Leg press machine', equip: 'Machine', sets: 3, lo: 10, hi: 12, inc: 10, start: 140, alt: 'goblet' },
-  goblet:      { name: 'Goblet squat', equip: 'Kettlebell or dumbbell', sets: 3, lo: 10, hi: 12, inc: 5, start: 35, alt: 'legpress' },
-  legext:      { name: 'Leg extension machine', equip: 'Machine', sets: 3, lo: 10, hi: 15, inc: 5, start: 70, alt: 'splitsquat' },
-  splitsquat:  { name: 'Dumbbell split squat', equip: 'Dumbbells', sets: 3, lo: 10, hi: 12, inc: 5, start: 20, per: 'each hand', alt: 'legext' },
-  legcurl:     { name: 'Leg curl machine', equip: 'Machine (seated or lying)', sets: 3, lo: 10, hi: 15, inc: 5, start: 60, alt: 'dbrdl' },
-  dbrdl:       { name: 'Dumbbell Romanian deadlift', equip: 'Dumbbells', sets: 3, lo: 10, hi: 12, inc: 5, start: 30, per: 'each hand', alt: 'legcurl' },
-  calf:        { name: 'Standing calf raise', equip: 'Calf machine or step + dumbbell', sets: 3, lo: 12, hi: 15, inc: 10, start: 90, alt: 'goblet' },
-  squat:       { name: 'Barbell back squat', equip: 'Squat rack', sets: 3, lo: 6, hi: 10, inc: 10, start: 95, alt: 'legpress' },
-  lunge:       { name: 'Walking lunges', equip: 'Dumbbells', sets: 3, lo: 10, hi: 12, inc: 5, start: 15, per: 'each hand', alt: 'splitsquat' },
+  chestpress:  { name: 'Chest press machine', equip: 'Machine', sets: 3, lo: 8, hi: 12, inc: 5, start: 70, alt: ['dbbench'] },
+  dbbench:     { name: 'Dumbbell bench press', equip: 'Dumbbells + bench', sets: 3, lo: 8, hi: 12, inc: 5, start: 30, per: 'each hand', alt: ['chestpress'] },
+  shoulderpress:{ name: 'Shoulder press machine', equip: 'Machine', sets: 3, lo: 8, hi: 12, inc: 5, start: 50, alt: ['dbshoulder'] },
+  dbshoulder:  { name: 'Seated dumbbell shoulder press', equip: 'Dumbbells + bench', sets: 3, lo: 8, hi: 12, inc: 5, start: 20, per: 'each hand', alt: ['shoulderpress'] },
+  pushdown:    { name: 'Cable triceps pushdown', equip: 'Cable station', sets: 3, lo: 10, hi: 15, inc: 5, start: 40, alt: ['dbtri'] },
+  dbtri:       { name: 'Dumbbell overhead triceps extension', equip: 'One dumbbell, both hands', sets: 3, lo: 10, hi: 15, inc: 5, start: 25, alt: ['pushdown'] },
+  inclinedb:   { name: 'Incline dumbbell press', equip: 'Dumbbells + incline bench', sets: 3, lo: 8, hi: 12, inc: 5, start: 25, per: 'each hand', alt: ['pecdeck', 'chestpress', 'dbbench'] },
+  pecdeck:     { name: 'Pec deck / chest fly machine', equip: 'Machine', sets: 3, lo: 10, hi: 15, inc: 5, start: 60, alt: ['inclinedb', 'chestpress', 'dbbench'] },
+  latraise:    { name: 'Dumbbell lateral raise', equip: 'Dumbbells', sets: 3, lo: 12, hi: 15, inc: 2.5, start: 10, per: 'each hand', alt: ['cablelat'] },
+  cablelat:    { name: 'Cable lateral raise', equip: 'Cable station', sets: 3, lo: 12, hi: 15, inc: 2.5, start: 10, alt: ['latraise'] },
+  latpull:     { name: 'Lat pulldown machine', equip: 'Machine', sets: 3, lo: 8, hi: 12, inc: 5, start: 80, alt: ['assistpull'] },
+  assistpull:  { name: 'Assisted pull-up machine', equip: 'Machine. Weight = assist; less assist is harder', sets: 3, lo: 8, hi: 12, inc: -5, start: 80, alt: ['latpull'] },
+  seatedrow:   { name: 'Seated cable row', equip: 'Cable row station', sets: 3, lo: 8, hi: 12, inc: 5, start: 80, alt: ['dbrow'] },
+  dbrow:       { name: 'One-arm dumbbell row', equip: 'Dumbbell + bench', sets: 3, lo: 8, hi: 12, inc: 5, start: 30, per: 'each hand', alt: ['seatedrow'] },
+  dbcurl:      { name: 'Dumbbell biceps curl', equip: 'Dumbbells', sets: 3, lo: 10, hi: 12, inc: 2.5, start: 20, per: 'each hand', alt: ['cablecurl', 'hammer'] },
+  cablecurl:   { name: 'Cable biceps curl', equip: 'Cable station', sets: 3, lo: 10, hi: 12, inc: 5, start: 40, alt: ['dbcurl', 'hammer'] },
+  hammer:      { name: 'Hammer curl', equip: 'Dumbbells', sets: 3, lo: 10, hi: 12, inc: 2.5, start: 20, per: 'each hand', alt: ['dbcurl', 'cablecurl'] },
+  facepull:    { name: 'Cable face pull', equip: 'Cable station + rope', sets: 3, lo: 12, hi: 15, inc: 5, start: 30, alt: ['reardelt'] },
+  reardelt:    { name: 'Dumbbell rear-delt fly', equip: 'Dumbbells', sets: 3, lo: 12, hi: 15, inc: 2.5, start: 10, per: 'each hand', alt: ['facepull'] },
+  legpress:    { name: 'Leg press machine', equip: 'Machine', sets: 3, lo: 10, hi: 12, inc: 10, start: 140, alt: ['goblet'] },
+  goblet:      { name: 'Goblet squat', equip: 'Kettlebell or dumbbell', sets: 3, lo: 10, hi: 12, inc: 5, start: 35, alt: ['legpress'] },
+  legext:      { name: 'Leg extension machine', equip: 'Machine', sets: 3, lo: 10, hi: 15, inc: 5, start: 70, alt: ['splitsquat'] },
+  splitsquat:  { name: 'Dumbbell split squat', equip: 'Dumbbells', sets: 3, lo: 10, hi: 12, inc: 5, start: 20, per: 'each hand', alt: ['legext'] },
+  legcurl:     { name: 'Leg curl machine', equip: 'Machine (seated or lying)', sets: 3, lo: 10, hi: 15, inc: 5, start: 60, alt: ['dbrdl', 'hipthrust'] },
+  dbrdl:       { name: 'Dumbbell Romanian deadlift', equip: 'Dumbbells', sets: 3, lo: 10, hi: 12, inc: 5, start: 30, per: 'each hand', alt: ['legcurl', 'bbrdl', 'hipthrust'] },
+  calf:        { name: 'Standing calf raise', equip: 'Calf machine or step + dumbbell', sets: 3, lo: 12, hi: 15, inc: 10, start: 90, alt: ['goblet'] },
+  squat:       { name: 'Barbell back squat', equip: 'Squat rack', sets: 3, lo: 6, hi: 10, inc: 10, start: 95, alt: ['legpress', 'goblet'] },
+  lunge:       { name: 'Walking lunges', equip: 'Dumbbells', sets: 3, lo: 10, hi: 12, inc: 5, start: 15, per: 'each hand', alt: ['splitsquat', 'legext'] },
+  bbrdl:       { name: 'Barbell Romanian deadlift', equip: 'Barbell', sets: 3, lo: 8, hi: 12, inc: 10, start: 65, alt: ['dbrdl', 'legcurl', 'hipthrust'] },
+  hipthrust:   { name: 'Dumbbell hip thrust', equip: 'Dumbbell + flat bench', sets: 3, lo: 10, hi: 15, inc: 5, start: 30, alt: ['legcurl', 'dbrdl', 'bbrdl'] },
   crunch:      { name: 'Crunches', equip: 'Mat', sets: 3, lo: 15, hi: 20, bw: true },
   legraise:    { name: 'Lying leg raises', equip: 'Mat', sets: 3, lo: 10, hi: 15, bw: true },
   benchtuck:   { name: 'Bench knee tucks', equip: 'Flat bench', sets: 3, lo: 10, hi: 15, bw: true, note: 'Sit on the end of the bench, legs hanging, lean back and pull knees to chest.' }
@@ -807,15 +840,46 @@ const DAYS = {
     phases: { 1: ['legpress', 'legext', 'legcurl'].concat(CORE), 2: ['legpress', 'dbrdl', 'legext', 'legcurl', 'calf'].concat(CORE), 3: ['squat', 'dbrdl', 'lunge', 'legcurl', 'calf'].concat(CORE) } }
 };
 const ROTATION = ['push', 'pull', 'legs'];
+const alts = k => { const a = EX[k] && EX[k].alt; return (Array.isArray(a) ? a : a ? [a] : []).filter(x => EX[x]); };
+// Two slots never land on the same exercise. An old saved swap can point at one that is also planned that day; then
+// the slot whose own planned exercise it is keeps it, and otherwise the earlier slot does, while the other slot goes
+// back to its planned exercise. No slot is ever dropped, so a day always keeps its full count.
+function settleSwaps(slots) {
+  for (let guard = 0; guard <= slots.length; guard++) {
+    const seen = {}; let changed = false;
+    slots.forEach(p => { if (p.key === p.base) seen[p.key] = 1; });
+    slots.forEach(p => { if (p.key === p.base) return; if (seen[p.key]) { p.key = p.base; changed = true; } else seen[p.key] = 1; });
+    if (!changed) break;
+  }
+  return slots;
+}
+const planSlots = (kind, phase, swaps) => settleSwaps((DAYS[kind].phases[phase] || []).map(b => ({ base: b, key: swaps && swaps[b] && EX[swaps[b]] ? swaps[b] : b })));
+// What one slot can be swapped to in a workout: back to its planned exercise, or an alternate, but never an exercise
+// that is planned in another slot or already swapped into one.
+function swapOptions(planned, p) {
+  const taken = {}; planned.forEach(x => { if (x.base !== p.base) { taken[x.base] = 1; taken[x.key] = 1; } });
+  const out = []; if (p.key !== p.base && !taken[p.base]) out.push(p.base);
+  alts(p.base).concat(alts(p.key)).forEach(k => { if (k !== p.key && k !== p.base && !taken[k] && !out.includes(k)) out.push(k); });
+  return out;
+}
+// A default swap applies to every future workout, so "the day's plan" is every phase the exercise appears in.
+function defaultSwapTaken(k) {
+  const sw = state.settings.swaps || {}, taken = {};
+  ROTATION.forEach(r => Object.keys(DAYS[r].phases).forEach(ph => { const list = DAYS[r].phases[ph]; if (!list.includes(k)) return; list.forEach(b => { if (b === k) return; taken[b] = 1; if (sw[b] && EX[sw[b]]) taken[sw[b]] = 1; }); }));
+  return taken;
+}
+const defaultSwapOption = k => { const taken = defaultSwapTaken(k); return alts(k).find(a => !taken[a]) || null; };
 const TREAD_MIN = { 1: 20, 2: 25, 3: 30 };
 
 /* ---------- Records: normalize (content decides the kind, never the tab) ---------- */
+// A day can hold a program entry (sets, treadmill) and activities together. The program content decides the kind;
+// activities next to it are extras. An `acts` list on its own makes an activity day.
+const HK_ACT_ID = 'hk-exercise';                 // the one entry that tops a day up to the Apple Watch's Exercise Minutes
+const isHk = a => !!a && a.id === HK_ACT_ID;
 function normalize(rec) {
-  const base = { day: null, qualifies: false, complete: null, ex: {}, keys: [], mainLogged: 0, legacy: false, ambiguous: false, tm: null, acts: [], minutes: 0, allMin: 0, notes: rec.notes || '', phase: rec.phase || null, planned: null, plannedBase: null, swaps: {}, qualifyOverride: null };
-  if (rec.kind === 'activity' || Array.isArray(rec.acts)) { // pick-your-own day: a list of activities with minutes
-    const acts = (rec.acts || []).filter(a => a && isNum(a.min) && a.min > 0);
-    return Object.assign(base, { kind: acts.length ? 'activity' : 'empty', acts, phase: null, allMin: sum(acts, a => a.min), minutes: sum(acts, a => a.mv === false ? 0 : a.min) });
-  }
+  const base = { day: null, qualifies: false, complete: null, ex: {}, keys: [], mainLogged: 0, legacy: false, ambiguous: false, tm: null, acts: [], minutes: 0, allMin: 0, progMin: 0, actMin: 0, program: false, notes: rec.notes || '', phase: rec.phase || null, planned: null, plannedBase: null, swaps: {}, qualifyOverride: null };
+  const acts = Array.isArray(rec.acts) ? rec.acts.filter(a => a && isNum(a.min) && a.min > 0) : [];
+  const actMin = sum(acts, a => a.mv === false ? 0 : a.min), actAll = sum(acts, a => a.min); // recovery sessions log but are not movement minutes
   const legacy = !(rec.v >= 2);
   const ex = {};
   Object.keys(rec.ex || {}).forEach(k => {
@@ -829,18 +893,23 @@ function normalize(rec) {
   const mainLogged = keys.filter(k => !EX[k].bw).length;
   const tm = rec.treadmill && isNum(rec.treadmill.minutes) ? rec.treadmill : null;
   let kind;
-  if (rec.kind === 'rest') kind = 'rest';
-  else if (keys.length) kind = 'strength';
+  if (keys.length) kind = 'strength';
   else if (tm && (tm.minutes > 0 || rec.kind === 'cardio')) kind = 'cardio';
+  else if (acts.length) kind = 'activity';
+  else if (rec.kind === 'rest') kind = 'rest';
   else kind = 'empty';
-  const ambiguous = legacy && rec.kind === 'strength' && !keys.length;
+  const program = kind === 'strength' || kind === 'cardio';
+  const ambiguous = legacy && rec.kind === 'strength' && !keys.length && !acts.length;
   const qualifies = kind === 'strength' && (legacy ? mainLogged >= QUALIFY_MIN : !!rec.qualifies);
   const planned = Array.isArray(rec.planned) ? rec.planned.filter(k => EX[k]) : null;
   const complete = kind !== 'strength' ? null : planned ? planned.every(k => ex[k]) : null;
   const sets = sum(keys, k => ex[k].reps.filter(r => r != null).length);
-  const minutes = (tm ? tm.minutes : 0) + sets * 3; // lifting time is estimated at 3 minutes a logged set
-  return Object.assign(base, { kind, day: DAYS[rec.day] ? rec.day : null, qualifies, complete, ex, keys, mainLogged, legacy, ambiguous, tm, minutes, allMin: minutes, planned, plannedBase: rec.plannedBase || null, swaps: rec.swaps || {}, qualifyOverride: rec.qualifyOverride == null ? null : rec.qualifyOverride });
+  const progMin = program ? (tm ? tm.minutes : 0) + sets * 3 : 0; // lifting time is estimated at 3 minutes a logged set
+  return Object.assign(base, { kind, day: DAYS[rec.day] ? rec.day : null, qualifies, complete, ex, keys, mainLogged, legacy, ambiguous, tm, acts, program, progMin, actMin, minutes: progMin + actMin, allMin: progMin + actAll,
+    phase: program || kind === 'rest' ? rec.phase || null : null, planned, plannedBase: rec.plannedBase || null, swaps: rec.swaps || {}, qualifyOverride: rec.qualifyOverride == null ? null : rec.qualifyOverride });
 }
+// the part of a day the lifting log owns: a lift, a treadmill entry, a rest day (or an old entry that needs checking)
+const lifted = rec => { if (!rec) return false; const n = normalize(rec); return n.program || n.kind === 'rest' || n.ambiguous; };
 function recordsOf(pid) {
   return cached('recs:' + pid, () => { const s = state.data[pid].sessions; return Object.keys(s).filter(validIso).sort().map(d => ({ date: d, n: normalize(s[d]), rec: s[d] })); });
 }
@@ -864,10 +933,9 @@ function completedWeeks(asOf, pid) {
 const phaseFor = (asOf, pid) => Math.min(3, 1 + completedWeeks(asOf, pid));
 function lastLift(beforeDate, pid) { const l = recordsOf(pid || me()).filter(r => r.date < beforeDate && r.n.qualifies && r.n.day); return l.length ? l[l.length - 1] : null; }
 function nextDayKey(beforeDate, pid) { const p = lastLift(beforeDate, pid); return p ? ROTATION[(ROTATION.indexOf(p.n.day) + 1) % ROTATION.length] : ROTATION[0]; }
-function weekStats(asOf) {
-  const ws = weekStart(asOf), we = addDays(ws, 6);
-  const list = records().filter(r => r.date >= ws && r.date <= we);
-  return { activity: list.filter(r => r.n.kind === 'strength' || r.n.kind === 'cardio' || r.n.kind === 'activity').length, lifts: list.filter(r => r.n.qualifies).length, goal: state.settings.goal || GOAL };
+function weekStats(asOf, pid) { // the top strip: the same days and the same goals the score uses
+  pid = pid || me(); const ws = weekStart(asOf), sc = weekScore(pid, ws), g = weekGoals(pid, ws);
+  return { activity: sc.active, lifts: sc.lifts, minutes: sc.minutes, goal: g.goal, liftGoal: g.liftGoal, plan: g.plan };
 }
 function lastLog(key, beforeDate) {
   const l = records().filter(r => r.date < beforeDate && r.n.ex[key]);
@@ -946,12 +1014,11 @@ function plannedFor(date, kind, m) {
   // a saved lift day keeps the exercises it was saved with: today's default swaps apply to new workouts only
   const own = n && n.kind === 'strength' && n.day === kind;
   const dflt = own ? (n.swaps || {}) : (state.settings.swaps || {});
-  const seen = {};
-  return bases.map(b => {
+  return settleSwaps(bases.map(b => {
     let key = m.swaps[b] != null ? m.swaps[b] : (dflt[b] || b);
     if (!EX[key]) key = b;
     return { base: b, key };
-  }).filter(p => seen[p.key] ? false : (seen[p.key] = true));
+  }));
 }
 function setCount(key, m, date) {
   const sg = suggest(key, date);
@@ -964,8 +1031,15 @@ function parseDraft(date, m) {
   const kind = kindFor(date, m);
   const phase = phaseOf(date);
   const existing = state.sessions[date];
-  const doc = { v: SCHEMA, date, phase, savedAt: existing && existing.savedAt || new Date().toISOString(), updatedAt: new Date().toISOString() };
-  if (kind === 'rest') { doc.kind = 'rest'; doc.notes = m.notes.trim(); return { doc, errors, kind: 'rest' }; }
+  const now = new Date().toISOString();
+  const doc = { v: SCHEMA, date, phase, savedAt: existing && existing.savedAt || now, updatedAt: now, progAt: now };
+  // activities already logged on the day stay with it. The Watch top-up does not: next to a lift or treadmill entry the Watch minutes are shown, not added.
+  const kept = existing && Array.isArray(existing.acts) ? existing.acts.filter(a => a && !isHk(a)) : [];
+  if (kind === 'rest') {
+    if (kept.length) errors.push('This day has activities logged, so it is not a rest day. Remove them first, or leave the day as it is.');
+    doc.kind = 'rest'; doc.notes = m.notes.trim(); return { doc, errors, kind: 'rest' };
+  }
+  if (kept.length) doc.acts = kept;
   const min = m.tm.minutes === '' ? null : Number(m.tm.minutes);
   if (min != null && (!isFinite(min) || min < 0 || min !== Math.floor(min))) errors.push('Treadmill minutes must be a whole number, 0 or more.');
   if (min != null || m.tm.title.trim()) doc.treadmill = { minutes: min == null ? 0 : min, title: m.tm.title.trim() };
@@ -1035,7 +1109,7 @@ function adoptAccount() {
     const mine = state.draftsBy[pid], kept = theirs[pid] && typeof theirs[pid] === 'object' ? theirs[pid] : {};
     Object.keys(kept).forEach(date => {
       const d = kept[date]; if (!validIso(date) || !draftShaped(d)) return;
-      const rec = state.data[pid].sessions[date], saved = rec ? Date.parse(rec.updatedAt || rec.savedAt || '') || 0 : 0;
+      const rec = state.data[pid].sessions[date], saved = lifted(rec) ? Date.parse(rec.progAt || rec.updatedAt || rec.savedAt || '') || 0 : 0; // an activity logged later does not make a lifting draft stale
       if (saved >= (d.updatedAt || 0)) return;
       const cur = mine[date];
       if (cur && cur.blind) { fillDraft(cur, d); return; }        // typed before the log loaded: keep that, add the rest
@@ -1052,7 +1126,7 @@ function reconcileBlindDrafts() {
     Object.keys(ds).forEach(date => {
       const d = ds[date]; if (!d.blind) return;
       const rec = state.data[pid].sessions[date];
-      if (rec && !Array.isArray(rec.acts)) { fillDraft(d, seedFromRecord(rec)); d.fromRecord = true; }
+      if (lifted(rec)) { fillDraft(d, seedFromRecord(rec)); d.fromRecord = true; }
       delete d.blind;
     });
   });
@@ -1060,10 +1134,13 @@ function reconcileBlindDrafts() {
 }
 async function removeRecord(date) {
   if (!state.ready) { toast('Still loading your log. Try again in a moment.'); return; }
-  const pid = me(), path = PATH.session(pid, date), had = getDoc(path);
+  const pid = me(), path = PATH.session(pid, date), had = getDoc(path), n = had ? normalize(had) : null, now = new Date().toISOString();
   delete state.draftsBy[pid][date]; state.confirmRemove = null; persistDrafts();
-  applyDoc(path, null); render();
-  try { await del(path); toast('Removed ' + nice(date)); }
+  // On a day that also has activities only the lift or treadmill part goes. With that part gone, Watch minutes can top the day up again.
+  const acts = n && n.program ? watchTopUp(pid, date, n.acts.filter(a => !isHk(a)), false) : [];
+  const next = acts.length ? { v: SCHEMA, date, kind: 'activity', acts, savedAt: had.savedAt || now, updatedAt: now } : null;
+  applyDoc(path, next); render();
+  try { if (next) await put(path, next); else await del(path); toast(next ? 'Removed the ' + (n.kind === 'strength' ? 'lift' : 'treadmill entry') + '. Your activities for ' + nice(date) + ' are kept.' : 'Removed ' + nice(date), next ? 3200 : 2200); }
   catch (e) { applyDoc(path, had); toast('Could not remove ' + nice(date) + '. Try again.'); render(); }
   settle();
 }
@@ -1104,7 +1181,7 @@ const ACTS = {
   dance:      { name: 'Dance', cat: 'cardio', icon: '💃', min: 15, impact: 2, stress: ['knee', 'ankle'], desc: 'A Fitness+ dance session or three songs in the kitchen. Keep jumps out of it.' },
   bwbasics:   { name: 'Bodyweight basics', cat: 'strength', icon: '🧍', min: 10, impact: 2, stress: ['knee', 'wrist'], desc: 'Sit-to-stand from a chair, wall push-ups, glute bridges, standing calf raises. Two rounds of 8 to 10.' },
   bands:      { name: 'Resistance band circuit', cat: 'strength', icon: '🎗️', min: 15, impact: 2, stress: ['shoulder'], desc: 'Rows, pull-aparts, presses and side steps with a light band. Smooth, controlled reps.' },
-  machines:   { name: 'Machine circuit, light', cat: 'strength', icon: '🏢', min: 20, impact: 2, stress: [], desc: 'At Anytime Fitness: leg press, seated row, chest press, lat pulldown. One or two easy sets each. Machines guide the path, which helps around old injuries.' },
+  machines:   { name: 'Machine circuit, light', cat: 'strength', icon: '🏢', min: 20, impact: 2, stress: [], desc: 'At the gym: leg press, seated row, chest press, lat pulldown. One or two easy sets each. Machines guide the path, which helps around old injuries.' },
   lightdb:    { name: 'Light dumbbells', cat: 'strength', icon: '🏋️', min: 15, impact: 2, stress: ['shoulder', 'wrist', 'back'], desc: 'Curls, overhead press, rows and goblet sit-to-stand with a weight you could lift 15 times.' },
   corebasics: { name: 'Core basics', cat: 'strength', icon: '🎯', min: 10, impact: 1, stress: ['back'], desc: 'Dead bug, bird dog, glute bridge, side plank from the knees. Slow and steady, stop if the back complains.' },
   pilates:    { name: 'Pilates (Fitness+)', cat: 'strength', icon: '🤸', min: 15, impact: 2, stress: ['neck', 'wrist'], desc: 'A beginner mat session. Support your head with a hand if your neck tires.' },
@@ -1147,17 +1224,44 @@ function surpriseActivity(pid) {
 const actName = a => a.name || (ACTS[a.a] ? ACTS[a.a].name : 'Activity');
 const actIcon = a => a.src === 'health' ? '⌚' : ACTS[a.a] ? ACTS[a.a].icon : '✏️';
 
+// The Watch's Exercise Minutes for a day live on that day's health doc. Movement logged by hand counts first; the
+// top-up entry holds only what the Watch saw beyond it, so the same walk never counts twice. Every change to a
+// day's activities passes through here, in the same write. On a lift or treadmill day Watch minutes are shown, not added.
+function watchTopUp(pid, date, acts, program) {
+  const h = state.data[pid].health[date], rest = acts.filter(a => a && !isHk(a)), had = acts.find(isHk);
+  if (program) return rest;
+  if (!h || !isNum(h.exercise)) return acts.filter(Boolean); // no Watch total on record: leave the day as it is
+  if (h.topUp === false) return rest;                        // the top-up was turned down for this day
+  const manual = sum(rest.filter(a => a.mv !== false && isNum(a.min)), a => a.min), extra = Math.max(0, Math.round(h.exercise - manual));
+  if (!extra) return rest;
+  return rest.concat([{ id: HK_ACT_ID, a: 'other', name: 'Apple Watch exercise', min: extra, feel: null, hurt: false, note: 'From Apple Health', mv: true, src: 'health', at: had && had.at || new Date().toISOString() }]);
+}
+// Adds or updates one activity. Next to a lift or treadmill entry it joins the same day; on its own it makes an
+// activity day (and replaces a rest day).
 async function logActivity(date, entry) {
-  const pid = me(), path = PATH.session(pid, date), cur = getDoc(path), now = new Date().toISOString();
-  if (cur && !Array.isArray(cur.acts) && ['strength', 'cardio'].includes(normalize(cur).kind)) { toast('This day already holds a lifting-program entry. Remove it first, or pick another day.', 3400); return false; }
-  const acts = cur && Array.isArray(cur.acts) ? cur.acts.slice() : [];
+  const pid = me(), path = PATH.session(pid, date), cur = getDoc(path), now = new Date().toISOString(), n = cur ? normalize(cur) : null, program = !!(n && n.program);
+  let acts = cur && Array.isArray(cur.acts) ? cur.acts.filter(Boolean) : [];
   const i = acts.findIndex(x => x.id === entry.id); if (i >= 0) acts[i] = entry; else acts.push(entry);
-  return write(path, { v: SCHEMA, date, kind: 'activity', acts, savedAt: cur && cur.savedAt || now, updatedAt: now });
+  acts = watchTopUp(pid, date, acts, program);
+  return write(path, program ? Object.assign({}, cur, { acts, updatedAt: now }) : { v: SCHEMA, date, kind: 'activity', acts, savedAt: cur && cur.savedAt || now, updatedAt: now });
 }
 async function removeActivity(date, id) {
   const pid = me(), path = PATH.session(pid, date), cur = getDoc(path); if (!cur || !Array.isArray(cur.acts)) return false;
-  const acts = cur.acts.filter(x => x.id !== id);
-  return write(path, acts.length ? Object.assign({}, cur, { acts, updatedAt: new Date().toISOString() }) : null);
+  const n = normalize(cur), acts = watchTopUp(pid, date, cur.acts.filter(x => x && x.id !== id), n.program), next = Object.assign({}, cur, { acts, updatedAt: new Date().toISOString() });
+  if (n.program && !acts.length) delete next.acts;
+  return write(path, n.program || acts.length ? next : null);
+}
+// After an import (or turning the top-up off): bring the top-up entry in line with the day's Watch total.
+// Resolves 'added', 'removed', 'same', or false when the save was refused.
+async function syncWatch(date) {
+  const pid = me(), path = PATH.session(pid, date), cur = getDoc(path), n = cur ? normalize(cur) : null, now = new Date().toISOString();
+  const before = cur && Array.isArray(cur.acts) ? cur.acts.filter(Boolean) : [], after = watchTopUp(pid, date, before, !!(n && n.program));
+  const a = before.find(isHk), b = after.find(isHk);
+  if ((a ? a.min : 0) === (b ? b.min : 0)) return 'same';
+  let doc;
+  if (n && n.program) { doc = Object.assign({}, cur, { updatedAt: now }); if (after.length) doc.acts = after; else delete doc.acts; }
+  else doc = after.length ? { v: SCHEMA, date, kind: 'activity', acts: after, savedAt: cur && cur.savedAt || now, updatedAt: now } : null;
+  return (await write(path, doc)) ? (b ? 'added' : 'removed') : false;
 }
 async function logRest(date) {
   const now = new Date().toISOString();
@@ -1165,42 +1269,94 @@ async function logRest(date) {
 }
 
 /* ---- 30-score.js ---- */
+/* ---------- Weekly targets, locked per week ---------- */
+// Each person's targets are frozen for a week the first time the app is opened in it (profiles/<pid>/weekgoals/<monday>).
+// Everything that scores a week reads that snapshot, so changing a goal, a workout style or body numbers mid-week
+// cannot move this week's race: the change starts next Monday. The earliest snapshot wins and is never rewritten,
+// with one exception: a week locked on placeholder calorie targets takes the person's first real ones right away.
+const RULES_V2_FROM = '2026-11-23';     // the first Monday scored with protein in Fuel (scoring version 2)
+const LEGACY_STAKES_WS = '2026-11-16';  // stakes saved before they were kept per week belong to this week
+const scoringFor = ws => ws >= RULES_V2_FROM ? 2 : 1;
+const planOf = pid => P(pid).plan === 'program' ? 'program' : 'choice';
+function liveGoals(pid) { // what the settings say right now: the numbers next week will lock
+  return cached('lg:' + pid, () => {
+    const p = P(pid), g = goalsFor(pid), plan = planOf(pid);
+    return { plan, goal: plan === 'program' ? clamp(state.data[pid].settings.goal || GOAL, 3, 7) : clamp(p.move.goalDays || 3, 1, 7), liftGoal: LIFT_GOAL,
+      minMin: plan === 'program' ? 10 : clamp(p.move.minMinutes || 10, 5, 60), kcal: g.kcal, lo: g.lo, hi: g.hi, waterOz: g.waterOz, protein: g.protein, placeholder: !g.ready };
+  });
+}
+function weekGoals(pid, ws) { // the targets a week is scored against
+  return cached('wg:' + pid + ':' + ws, () => {
+    const all = state.data[pid].weekgoals || {}, live = liveGoals(pid), cur = weekStart(todayIso());
+    let s = all[ws]; const exact = !!s;
+    // a past week from before targets were locked: the earliest lock after it stands in, so it never moves again
+    if (!s && ws < cur) { const later = Object.keys(all).filter(k => validIso(k) && k > ws).sort()[0]; if (later) s = all[later]; }
+    const num = (k, lo, hi) => s && isNum(s[k]) ? clamp(s[k], lo, hi) : live[k];
+    const g = { ws, locked: exact, plan: s && (s.plan === 'program' || s.plan === 'choice') ? s.plan : live.plan, goal: num('goal', 1, 7), liftGoal: num('liftGoal', 1, 7), minMin: num('minMin', 5, 60) };
+    const nut = s && !(s.placeholder && !live.placeholder) ? s : null; // locked on placeholders: the first real targets apply right away
+    ['kcal', 'lo', 'hi', 'waterOz', 'protein'].forEach(k => { g[k] = nut && isNum(nut[k]) && nut[k] > 0 ? nut[k] : live[k]; });
+    g.placeholder = nut ? !!nut.placeholder : live.placeholder;
+    g.scoring = exact && isNum(s.scoring) ? s.scoring : scoringFor(ws);
+    return g;
+  });
+}
+const thisWeek = pid => weekGoals(pid, weekStart(todayIso()));
+const minMin = pid => thisWeek(pid).minMin;   // minutes that make a day count, this week
+const moveGoal = pid => thisWeek(pid).goal;   // active days that fill Move, this week
+const nextMonday = () => addDays(weekStart(todayIso()), 7);
+const startsNote = () => 'Starts ' + nice(nextMonday());
+const macroGuide = (kcal, protein) => { const fat = Math.round(kcal * 0.3 / 9); return { fat, carbs: Math.max(0, Math.round((kcal - protein * 4 - fat * 9) / 4)) }; };
+// Creates missing snapshots: this week, plus any finished week whose result is not final yet. Never called from render.
+async function lockWeeks() {
+  if (!state.ready || state.cantWrite) return;
+  const cur = weekStart(todayIso()), weeks = [cur].concat(compWeeks().filter(w => !w.final).map(w => w.ws)).filter((w, i, a) => a.indexOf(w) === i);
+  for (const pid of PIDS) for (const ws of weeks) {
+    const path = PATH.weekgoal(pid, ws), have = getDoc(path), l = liveGoals(pid), now = new Date().toISOString();
+    try {
+      if (!have) await put(path, { v: 1, ws, plan: l.plan, goal: l.goal, liftGoal: l.liftGoal, minMin: l.minMin, kcal: l.kcal, lo: l.lo, hi: l.hi, waterOz: l.waterOz, protein: l.protein, placeholder: l.placeholder, scoring: scoringFor(ws), lockedAt: now });
+      else if (have.placeholder && !l.placeholder) await put(path, Object.assign({}, have, { kcal: l.kcal, lo: l.lo, hi: l.hi, waterOz: l.waterOz, protein: l.protein, placeholder: false, targetsAt: now }));
+    } catch (e) { return; }
+  }
+}
+
 /* ---------- Weekly score: each person is measured against their own goals ---------- */
 // Move 50 + Fuel 20 + Water 15 + Bonus 15 = 100. A 10-minute walk that completes Jacquie's day is worth
 // exactly what a lift day is worth to Tyson, because both are a share of a personal weekly goal.
-const blankInfo = () => ({ active: false, lift: false, minutes: 0, kinds: [], rest: false, logged: false });
-const minMin = pid => clamp(P(pid).move.minMinutes || 10, 5, 60);
-function moveGoal(pid) { const p = P(pid); return p.plan === 'program' ? clamp(state.data[pid].settings.goal || GOAL, 3, 7) : clamp(p.move.goalDays || 3, 1, 7); }
+const blankInfo = () => ({ active: false, lift: false, minutes: 0, kinds: [], rest: false, logged: false, hk: false });
+const actKind = a => a.a === 'other' ? 'other:' + String(a.name || '').toLowerCase() : a.a;
 function dayInfo(pid, date) {
   return cached('di:' + pid + ':' + date, () => {
     const rec = state.data[pid].sessions[date]; const o = blankInfo(); if (!rec) return o;
-    const n = normalize(rec); o.logged = n.kind !== 'empty';
+    const n = normalize(rec), moving = n.acts.filter(a => a.mv !== false); o.logged = n.kind !== 'empty';
+    // the Watch top-up is minutes, not a kind of activity: it never earns variety
+    const kinds = Array.from(new Set(moving.filter(a => !isHk(a)).map(actKind))); o.hk = moving.some(isHk);
+    o.minutes = n.minutes;
     if (n.kind === 'rest') o.rest = true;
-    else if (n.kind === 'strength') { o.active = true; o.lift = n.qualifies; o.minutes = n.minutes; o.kinds = [n.day || 'lift'].concat(n.tm && n.tm.minutes > 0 ? ['treadmill'] : []); }
-    else if (n.kind === 'cardio') { o.active = true; o.minutes = n.minutes; o.kinds = ['treadmill']; }
-    else if (n.kind === 'activity') {
-      o.minutes = n.minutes; o.active = n.minutes >= minMin(pid);
-      o.kinds = Array.from(new Set(n.acts.filter(a => a.mv !== false).map(a => a.a === 'other' ? 'other:' + String(a.name || '').toLowerCase() : a.a)));
-    }
+    else if (n.kind === 'strength') { o.active = true; o.lift = n.qualifies; o.kinds = [n.day || 'lift'].concat(n.tm && n.tm.minutes > 0 ? ['treadmill'] : [], kinds); }
+    else if (n.kind === 'cardio') { o.active = true; o.kinds = ['treadmill'].concat(kinds); }
+    else if (n.kind === 'activity') { o.active = n.minutes >= weekGoals(pid, weekStart(date)).minMin; o.kinds = kinds; }
     return o;
   });
 }
 function weekFacts(pid, ws) {
   return cached('wf:' + pid + ':' + ws, () => {
-    const t = todayIso(), days = [];
+    const t = todayIso(), days = [], g = weekGoals(pid, ws);
     for (let i = 0; i < 7; i++) {
-      const d = addDays(ws, i), future = d > t, di = future ? blankInfo() : dayInfo(pid, d);
-      days.push({ date: d, future, active: di.active, lift: di.lift, minutes: di.minutes, kinds: di.kinds.slice(), rest: di.rest, fuel: future ? 0 : fuelUnit(pid, d), water: future ? 0 : waterFrac(pid, d) });
+      const d = addDays(ws, i), future = d > t, di = future ? blankInfo() : dayInfo(pid, d), fp = future ? { cal: 0, prot: 0 } : fuelParts(pid, d);
+      // weeks scored under the first rules keep counting an imported Watch entry as its own kind, as they did then
+      days.push({ date: d, future, active: di.active, lift: di.lift, minutes: di.minutes, kinds: di.kinds.concat(g.scoring < 2 && di.hk ? ['other:apple watch exercise'] : []), rest: di.rest, cal: fp.cal, prot: fp.prot, water: future ? 0 : waterFrac(pid, d) });
     }
     let lastMin = 0; for (let i = 1; i <= 7; i++) lastMin += dayInfo(pid, addDays(ws, -i)).minutes;
-    return { pid, ws, plan: P(pid).plan, goal: moveGoal(pid), days, lastMin };
+    return { pid, ws, plan: g.plan, goal: g.goal, liftGoal: g.liftGoal, scoring: g.scoring, days, lastMin };
   });
 }
+// Fuel for one day. Scoring 1: the calorie range is the whole day. Scoring 2: 0.7 for the calorie range, 0.3 for protein.
+const fuelDay = (f, d) => f.scoring >= 2 ? 0.7 * d.cal + 0.3 * d.prot : d.cal;
 function scoreFacts(f) {
-  const active = f.days.filter(d => d.active).length, lifts = f.days.filter(d => d.lift).length, minutes = sum(f.days, d => d.minutes);
+  const active = f.days.filter(d => d.active).length, lifts = f.days.filter(d => d.lift).length, minutes = sum(f.days, d => d.minutes), liftGoal = f.liftGoal || LIFT_GOAL;
   const kinds = new Set(); f.days.forEach(d => d.kinds.forEach(k => kinds.add(k)));
-  const move = f.plan === 'program' ? 30 * Math.min(1, active / f.goal) + 20 * Math.min(1, lifts / LIFT_GOAL) : 50 * Math.min(1, active / f.goal);
-  const fuel = 20 * Math.min(1, sum(f.days, d => d.fuel) / 5);
+  const move = f.plan === 'program' ? 30 * Math.min(1, active / f.goal) + 20 * Math.min(1, lifts / liftGoal) : 50 * Math.min(1, active / f.goal);
+  const fuel = 20 * Math.min(1, Math.round(sum(f.days, d => fuelDay(f, d)) * 100) / 100 / 5);
   const water = 15 * Math.min(1, sum(f.days, d => d.water) / 5);
   const pb = minutes > 0 && minutes > f.lastMin ? 5 : 0, variety = kinds.size >= 3 ? 5 : 0, weekend = (f.days[5].active || f.days[6].active) ? 5 : 0;
   const raw = move + fuel + water + pb + variety + weekend;
@@ -1208,40 +1364,52 @@ function scoreFacts(f) {
 }
 const weekScore = (pid, ws) => scoreFacts(weekFacts(pid, ws || weekStart(todayIso())));
 const cloneFacts = f => Object.assign({}, f, { days: f.days.map(d => Object.assign({}, d, { kinds: d.kinds.slice() })) });
+// what is left to fill a person's Move score this week, in words ('' when it is full)
+function moveNeed(pid, ws) {
+  const f = weekFacts(pid, ws), sc = scoreFacts(f), a = Math.max(0, f.goal - sc.active), l = f.plan === 'program' ? Math.max(0, f.liftGoal - sc.lifts) : 0, bits = [];
+  if (a) bits.push(a + ' more ' + (f.plan === 'program' ? 'activity' : 'active') + ' day' + (a === 1 ? '' : 's'));
+  if (l) bits.push(l + ' more lift day' + (l === 1 ? '' : 's'));
+  return bits.join(' and ');
+}
 
 /* ---------- Coach: what would add points, and by how much ---------- */
 function coach(pid) {
-  const t = todayIso(), ws = weekStart(t), f = weekFacts(pid, ws), base = scoreFacts(f), i = (dow(t) + 6) % 7, d = f.days[i], g = goalsFor(pid), tips = [];
+  const t = todayIso(), ws = weekStart(t), f = weekFacts(pid, ws), base = scoreFacts(f), i = (dow(t) + 6) % 7, d = f.days[i], g = weekGoals(pid, ws), tot = dayTotals(pid, t), tips = [];
   const add = (group, text, sub, tab, mut) => { const c = cloneFacts(f); mut(c); const gain = scoreFacts(c).total - base.total; if (gain > 0) tips.push({ group, text, sub, tab, gain, mut }); };
   if (!d.active) {
     if (f.plan === 'program') {
       const k = nextDayKey(t, pid);
-      add('move', 'Log your ' + DAYS[k].name + ' lift day', 'Treadmill plus at least ' + QUALIFY_MIN + ' lifts', 'train', c => { const x = c.days[i]; x.active = true; x.lift = true; x.minutes += 45; x.kinds = [k, 'treadmill']; });
-      add('move', 'Treadmill only today', 'Any Fitness+ treadmill workout', 'train', c => { const x = c.days[i]; x.active = true; x.minutes += 20; x.kinds = ['treadmill']; });
+      add('move', 'Log your ' + DAYS[k].name + ' lift day', 'Treadmill plus at least ' + QUALIFY_MIN + ' lifts', 'train', c => { const x = c.days[i]; x.active = true; x.lift = true; x.minutes += 45; x.kinds = x.kinds.concat([k, 'treadmill']); });
+      add('move', 'Treadmill only today', 'Any Fitness+ treadmill workout, or a ' + g.minMin + '-minute walk', 'train', c => { const x = c.days[i]; x.active = true; x.minutes += 20; x.kinds = x.kinds.concat(['treadmill']); });
     } else {
-      const need = Math.max(1, minMin(pid) - d.minutes);
+      const need = Math.max(1, g.minMin - d.minutes);
       // no new kind is assumed here: repeating something already done this week earns no variety bonus
-      add('move', d.minutes ? need + ' more minutes of movement today' : 'Move for ' + minMin(pid) + ' minutes today', 'A walk, a stretch, anything on your list', 'train', c => { const x = c.days[i]; x.active = true; x.minutes += need; });
+      add('move', d.minutes ? need + ' more minutes of movement today' : 'Move for ' + g.minMin + ' minutes today', 'A walk, a stretch, anything on your list', 'train', c => { const x = c.days[i]; x.active = true; x.minutes += need; });
     }
   }
   if (f.plan !== 'program' && !base.variety && base.kinds === 2) add('variety', 'Try something you have not done this week', 'A third kind of activity earns the variety bonus', 'train', c => { c.days[i].kinds.push('__new'); });
   if (!base.pb && f.lastMin > 0) { const need = f.lastMin - base.minutes + 1; add('pb', need + ' more active minutes this week', 'Beats last week\'s ' + f.lastMin + ' minutes', 'train', c => { c.days[i].minutes += need; }); }
-  if (d.water < 1) { const need = Math.max(1, Math.ceil(g.waterOz - dayTotals(pid, t).water)); add('water', 'Drink ' + need + ' more oz of water', 'Reaches today\'s ' + g.waterOz + ' oz', 'fuel', c => { c.days[i].water = 1; }); }
-  const overToday = dayTotals(pid, t).kcal > g.hi; // already past the range: nothing eaten later can bring today back into it
-  if (d.fuel < 1 && !overToday) add('fuel', 'Log today\'s food and land in range', commas(g.lo) + ' to ' + commas(g.hi) + ' calories', 'fuel', c => { c.days[i].fuel = 1; });
+  if (d.water < 1) { const need = Math.max(1, Math.ceil(g.waterOz - tot.water)); add('water', 'Drink ' + need + ' more oz of water', 'Reaches today\'s ' + g.waterOz + ' oz', 'fuel', c => { c.days[i].water = 1; }); }
+  const overToday = tot.kcal > g.hi; // already past the range: nothing eaten later can bring today back into it
+  if (d.cal < 1 && !overToday) add('fuel', 'Log today\'s food and land in range', commas(g.lo) + ' to ' + commas(g.hi) + ' calories', 'fuel', c => { c.days[i].cal = 1; });
+  if (f.scoring >= 2 && d.prot < 1) { const need = Math.max(1, Math.ceil(g.protein - tot.n[1])); add('protein', 'Eat ' + need + ' g more protein today', 'Reaches your ' + g.protein + ' g target', 'fuel', c => { c.days[i].prot = 1; }); }
   tips.sort((a, b) => b.gain - a.gain);
   // best case from here: every remaining day goes perfectly
   const best = cloneFacts(f);
-  best.days.forEach((x, j) => { if (j >= i) { x.active = true; if (f.plan === 'program') x.lift = true; x.minutes += 30; if (!(j === i && overToday)) x.fuel = 1; x.water = 1; x.kinds.push('__k' + j); } });
+  best.days.forEach((x, j) => { if (j >= i) { x.active = true; if (f.plan === 'program') x.lift = true; x.minutes += 30; if (!(j === i && overToday)) x.cal = 1; x.prot = 1; x.water = 1; x.kinds.push('__k' + j); } });
   const bestMin = sum(best.days, x => x.minutes); if (bestMin <= f.lastMin) best.days[i].minutes += f.lastMin - bestMin + 1; // a perfect finish also beats last week's minutes
   const max = scoreFacts(best).total;
   // shortest list of today's actions that passes the other profile
-  const other = weekScore(otherPid(pid), ws).total; let plan = null;
+  const op = otherPid(pid), other = weekScore(op, ws).total; let plan = null;
   if (base.total <= other) {
     const c = cloneFacts(f), used = [], seen = {};
     for (const tip of tips) { if (seen[tip.group]) continue; seen[tip.group] = 1; tip.mut(c); used.push(tip); if (scoreFacts(c).total > other) { plan = { used, total: scoreFacts(c).total }; break; } }
   }
-  return { base, tips, max, other, plan, daysLeft: 6 - i };
+  // the race you can both win: each filling your own Move score in the same week
+  const theirs = weekScore(op, ws).moveFull, open = k => f.days.filter((x, j) => j >= i && !x[k]).length; // days from today on that could still count
+  const can = base.moveFull || (Math.max(0, f.goal - base.active) <= open('active') && (f.plan !== 'program' || Math.max(0, f.liftGoal - base.lifts) <= open('lift')));
+  const team = { mine: base.moveFull, theirs, can, locked: (base.moveFull ? 1 : 0) + (theirs ? 1 : 0), need: moveNeed(pid, ws), theirNeed: moveNeed(op, ws) };
+  return { base, tips, max, other, plan, daysLeft: 6 - i, team, outOfReach: base.total < other && max <= other };
 }
 
 /* ---------- Competition history ---------- */
@@ -1253,23 +1421,61 @@ function compStart() {
   return both.length ? both[0] : weekStart(todayIso());
 }
 const GRACE_DAYS = 2; // a finished week stays open for late entries through Tuesday, then its result is final
+const finalResult = ws => { const r = state.results[ws]; return r && isNum(r.tyson) && isNum(r.jacquie) ? r : null; };
+// What is on the line belongs to one week. A closed week carries its own copy; an open one reads the shared settings.
+function stakesFor(ws) {
+  const r = finalResult(ws); if (r) return typeof r.stakes === 'string' ? r.stakes : '';
+  const by = state.comp.stakesBy; if (by && typeof by === 'object') return typeof by[ws] === 'string' ? by[ws] : '';
+  return ws === LEGACY_STAKES_WS && typeof state.comp.stakes === 'string' ? state.comp.stakes : '';
+}
 function liveWeek(ws) {
   const a = weekScore('tyson', ws).total, b = weekScore('jacquie', ws).total;
-  return { ws, tyson: a, jacquie: b, winner: a === b ? null : a > b ? 'tyson' : 'jacquie', played: a + b > 0, final: false };
+  return { ws, tyson: a, jacquie: b, winner: a === b ? null : a > b ? 'tyson' : 'jacquie', played: a + b > 0, final: false, stakes: stakesFor(ws) };
 }
 function compWeeks() { // finished weeks, oldest first: the stored final result where there is one, otherwise worked out from the logs
   return cached('compWeeks', () => {
     const cur = weekStart(todayIso()), out = []; let ws = compStart(), guard = 0;
-    while (ws < cur && guard++ < 156) { const r = state.results[ws]; out.push(r && isNum(r.tyson) && isNum(r.jacquie) ? Object.assign({ ws, played: r.tyson + r.jacquie > 0 }, r, { final: true }) : liveWeek(ws)); ws = addDays(ws, 7); }
+    while (ws < cur && guard++ < 156) { const r = finalResult(ws); out.push(r ? Object.assign({ ws, played: r.tyson + r.jacquie > 0 }, r, { final: true, stakes: stakesFor(ws) }) : liveWeek(ws)); ws = addDays(ws, 7); }
     return out;
   });
 }
-async function closeWeeks() { // store the result of each week whose late-entry window has passed, so later goal changes cannot rewrite it
-  const t = todayIso();
+// Stores the result of each week whose late-entry window has passed, with what was on the line and whether it was a
+// team week, so nothing later can rewrite it. A stored result is never touched again. Returns how many it stored.
+async function closeWeeks() {
+  const t = todayIso(); let n = 0;
   for (const w of compWeeks()) {
     if (w.final || t < addDays(w.ws, 7 + GRACE_DAYS)) continue;
-    try { await put('results/' + w.ws, { ws: w.ws, tyson: w.tyson, jacquie: w.jacquie, winner: w.winner, played: w.played, final: true, closedAt: new Date().toISOString() }); } catch (e) { return; }
+    const doc = { ws: w.ws, tyson: w.tyson, jacquie: w.jacquie, winner: w.winner, played: w.played, final: true, teamWeek: teamWeekLive(w.ws), closedAt: new Date().toISOString() };
+    if (w.stakes) doc.stakes = w.stakes;
+    try { await put('results/' + w.ws, doc); n++; } catch (e) { return n; }
   }
+  return n;
+}
+const leadLine = w => w.winner ? P(w.winner).name + ' leads ' + Math.max(w.tyson, w.jacquie) + '–' + Math.min(w.tyson, w.jacquie) : 'tied at ' + w.tyson;
+const provisionalText = w => 'Provisional: ' + leadLine(w) + ' · late entries count through Tuesday';
+// who owes what for a finished week, in words ('' when nothing was on the line)
+function stakesLine(w) {
+  if (!w.stakes) return '';
+  if (!w.final) return 'On the line: ' + w.stakes;
+  return w.winner ? P(w.winner).name + ' won · ' + P(otherPid(w.winner)).name + ' owes: ' + w.stakes : 'Tied · on the line was: ' + w.stakes;
+}
+
+/* ---------- Team: the race you win together ---------- */
+const teamWeekLive = ws => PIDS.every(p => weekScore(p, ws).moveFull);
+const isTeamWeek = ws => { const r = finalResult(ws); return r && typeof r.teamWeek === 'boolean' ? r.teamWeek : teamWeekLive(ws); };
+function countdown() { // the shared date you are both working toward
+  const c = state.comp.countdown; if (!c || !validIso(c.date)) return null;
+  const label = String(c.label || '').trim() || 'Wedding', days = Math.round((toUTC(c.date) - toUTC(todayIso())) / 86400000);
+  return { date: c.date, label, days, setWs: validIso(c.setAt) ? weekStart(c.setAt) : null, phrase: label.toLowerCase() === 'wedding' ? 'the wedding' : label };
+}
+function teamStats() {
+  return cached('team', () => {
+    const cur = weekStart(todayIso()), done = compWeeks().map(w => w.ws), locked = PIDS.filter(p => weekScore(p, cur).moveFull).length, all = done.filter(isTeamWeek).concat(locked === 2 ? [cur] : []);
+    let streak = locked === 2 ? 1 : 0; for (let i = done.length - 1; i >= 0 && isTeamWeek(done[i]); i--) streak++;
+    let best = 0, run = 0; done.concat([cur]).forEach(ws => { run = all.includes(ws) ? run + 1 : 0; best = Math.max(best, run); });
+    const cd = countdown();
+    return { locked, streak, best, total: all.length, banked: cd && cd.setWs ? all.filter(ws => ws >= cd.setWs).length : null };
+  });
 }
 
 /* ---------- Achievements: all derived from the saved logs ---------- */
@@ -1302,16 +1508,16 @@ function statsFor(pid) {
       if (sc.moveFull) { s.goalWeeks++; grun++; s.goalRun = Math.max(s.goalRun, grun); } else if (ws < cur) grun = 0;
       s.bestScore = Math.max(s.bestScore, sc.total);
       if (f.days.filter(d => d.water >= 1).length >= 5) s.water5 = true;
-      if (f.days.filter(d => d.fuel >= 1).length >= 5) s.fuel5 = true;
-      if (f.days.some(d => d.active && d.fuel >= 1 && d.water >= 1)) s.triple = true;
+      if (f.days.filter(d => d.cal >= 1).length >= 5) s.fuel5 = true;
+      if (f.days.some(d => d.active && d.cal >= 1 && d.water >= 1)) s.triple = true;
       if (f.days.some((d, j) => d.active && of.days[j].active)) s.teamDay = true;
       if (sc.moveFull && scoreFacts(of).moveFull) s.teamWeek = true;
       ws = addDays(ws, 7);
     }
-    const weeks = compWeeks();
+    const weeks = compWeeks().filter(w => w.final); // a win is a win once the week is final; a provisional lead can still flip
     s.wins = weeks.filter(w => w.winner === pid).length;
     s.photo = weeks.some(w => w.tyson > 0 && w.jacquie > 0 && Math.abs(w.tyson - w.jacquie) <= 3);
-    s.pr = liftPR(pid); s.phase = phaseFor(t, pid);
+    s.pr = liftPR(pid); s.phase = phaseFor(t, pid); s.teamRun = teamStats().best;
     return s;
   });
 }
@@ -1344,7 +1550,9 @@ const BADGES = [
   { id: 'win3', icon: '🍾', name: 'Podium Regular', desc: 'Win three weekly competitions.', has: s => s.wins >= 3, prog: s => s.wins + '/3' },
   { id: 'photo', icon: '📸', name: 'Photo Finish', desc: 'A week decided by three points or fewer.', has: s => s.photo },
   { id: 'teamday', icon: '🤝', name: 'Team Day', desc: 'Both of you active on the same day.', has: s => s.teamDay },
-  { id: 'teamweek', icon: '💞', name: 'Double Podium', desc: 'Both of you fill your Move score in the same week.', has: s => s.teamWeek }
+  { id: 'teamweek', icon: '💞', name: 'Double Podium', desc: 'Both of you fill your Move score in the same week.', has: s => s.teamWeek },
+  { id: 'team2', icon: '🚥', name: 'Two-Week Tandem', desc: 'Two team weeks in a row: both Move scores filled, back to back.', has: s => s.teamRun >= 2, prog: s => Math.min(s.teamRun, 2) + '/2' },
+  { id: 'team4', icon: '💍', name: 'Four-Week Tandem', desc: 'Four team weeks in a row.', has: s => s.teamRun >= 4, prog: s => Math.min(s.teamRun, 4) + '/4' }
 ];
 function badgesFor(pid) { // earned = true now, or recorded on the profile earlier: a badge once earned is kept
   const s = statsFor(pid), p = P(pid), kept = p.badges;
@@ -1410,14 +1618,19 @@ function dayTotals(pid, date) {
     return { n, kcal: n[0], count: (d.items || []).length, water: d.water || 0 };
   });
 }
-// 1 = logged and inside the calorie range, 0.5 = a real day of logging that missed the range, 0 = little or nothing logged
-function fuelUnit(pid, date) {
-  const t = dayTotals(pid, date); if (!t.count) return 0;
-  const g = goalsFor(pid);
-  if (t.kcal >= g.lo && t.kcal <= g.hi) return 1;
-  return t.kcal >= g.kcal * 0.5 ? 0.5 : 0;
+// A day's food against the targets locked for its week.
+// cal: 1 = logged and inside the calorie range, 0.5 = a real day of logging that missed the range, 0 = little or nothing logged.
+// prot: 1 = at least 90% of the protein target (a quick add with no protein entered counts as 0 g).
+// unit: what the day is worth to Fuel. Weeks on scoring 2 count 0.7 for calories and 0.3 for protein; earlier weeks count calories only.
+function fuelParts(pid, date) {
+  return cached('fp:' + pid + ':' + date, () => {
+    const t = dayTotals(pid, date), g = weekGoals(pid, weekStart(date)); if (!t.count) return { cal: 0, prot: 0, unit: 0, scoring: g.scoring };
+    const cal = t.kcal >= g.lo && t.kcal <= g.hi ? 1 : t.kcal >= g.kcal * 0.5 ? 0.5 : 0, prot = g.protein > 0 && t.n[1] >= g.protein * 0.9 ? 1 : 0;
+    return { cal, prot, unit: g.scoring >= 2 ? Math.round((0.7 * cal + 0.3 * prot) * 100) / 100 : cal, scoring: g.scoring };
+  });
 }
-const waterFrac = (pid, date) => Math.min(1, (dayTotals(pid, date).water || 0) / goalsFor(pid).waterOz);
+const fuelUnit = (pid, date) => fuelParts(pid, date).unit;
+const waterFrac = (pid, date) => Math.min(1, (dayTotals(pid, date).water || 0) / weekGoals(pid, weekStart(date)).waterOz);
 function mealByClock() { const h = Number(tzHour.format(new Date())) % 24; return h < 11 ? 'b' : h < 15 ? 'l' : h < 21 ? 'd' : 's'; }
 async function addFoodItem(date, item) {
   const path = PATH.food(me(), date), cur = getDoc(path) || { v: 1, date, items: [], water: 0 };
@@ -1531,7 +1744,6 @@ function factsHTML(n, serving) {
 //   weight: 198.4
 // Any subset, in any order, with or without units. Apple's built-in actions expose daily totals
 // (Exercise Minutes, Steps, ...) but not the list of workouts, so movement comes from Exercise Minutes.
-const HK_ACT_ID = 'hk-exercise';
 const HK_KEYS = {
   date: 'date', day: 'date',
   exercise: 'exercise', exerciseminutes: 'exercise', exercisemin: 'exercise', exercisemins: 'exercise', exercisetime: 'exercise', minutesexercised: 'exercise',
@@ -1607,18 +1819,14 @@ function healthPlan(pid, parsed, fallbackDate) {
   if (!Object.keys(v).length) return { date, rows, err: parsed.lines ? 'Nothing here looks like Health numbers. Run the shortcut again, then paste.' : null };
   if (date > t) return { date, rows, err: 'This is dated ' + nice(date) + ', which has not happened yet.' };
   if (v.exercise != null) {
-    const title = 'Watch exercise: ' + v.exercise + ' min';
-    if (p.plan !== 'choice') rows.push({ k: 'move', can: false, title, sub: 'Shown with your day. Treadmill minutes and lifts are still logged by hand.' });
+    const title = 'Watch exercise: ' + v.exercise + ' min', rec = state.data[pid].sessions[date], n = rec ? normalize(rec) : null;
+    if (n && n.program) rows.push({ k: 'move', can: false, title, sub: 'This day has a ' + (n.kind === 'strength' ? 'lift' : 'treadmill entry') + ', so the Watch minutes are shown with it, not added on top.' });
     else {
-      const rec = state.data[pid].sessions[date], n = rec ? normalize(rec) : null;
-      if (n && (n.kind === 'strength' || n.kind === 'cardio')) rows.push({ k: 'move', can: false, title, sub: 'This day holds a lifting-program entry, so no minutes are added.' });
-      else {
-        const acts = n ? n.acts : [], had = acts.find(a => a.id === HK_ACT_ID) || null;
-        const manual = sum(acts.filter(a => a.id !== HK_ACT_ID && a.mv !== false), a => a.min), extra = Math.max(0, v.exercise - manual);
-        if (extra > 0 && (!had || had.min !== extra)) rows.push({ k: 'move', can: true, extra, title, sub: manual ? 'You logged ' + manual + ' min by hand, so ' + extra + ' more are added.' : 'Adds ' + extra + ' min of movement to the day.' });
-        else if (extra === 0 && had) rows.push({ k: 'move', can: true, extra: 0, title, sub: 'Now covered by the ' + manual + ' min you logged by hand. Removes the ' + had.min + ' imported earlier.' });
-        else rows.push({ k: 'move', can: false, title, sub: extra > 0 ? 'Already imported.' : manual ? 'Already covered by the ' + manual + ' min you logged by hand.' : 'No exercise minutes yet today.' });
-      }
+      const acts = n ? n.acts : [], had = acts.find(isHk) || null;
+      const manual = sum(acts.filter(a => !isHk(a) && a.mv !== false), a => a.min), extra = Math.max(0, v.exercise - manual);
+      if (extra > 0 && (!had || had.min !== extra)) rows.push({ k: 'move', can: true, extra, title, sub: manual ? 'You logged ' + manual + ' min by hand, so ' + extra + ' more are added.' : 'Adds ' + extra + ' min of movement to the day.' });
+      else if (extra === 0 && had) rows.push({ k: 'move', can: true, extra: 0, title, sub: 'Now covered by the ' + manual + ' min you logged by hand. Removes the ' + had.min + ' imported earlier.' });
+      else rows.push({ k: 'move', can: false, title, sub: extra > 0 ? 'Already imported.' : manual ? 'Already covered by the ' + manual + ' min you logged by hand.' : 'No exercise minutes yet today.' });
     }
   }
   if (v.water != null) {
@@ -1636,12 +1844,19 @@ function healthPlan(pid, parsed, fallbackDate) {
 }
 async function applyHealthImport(pid, plan, parsed, use) {
   const date = plan.date, v = parsed.vals, now = new Date().toISOString(), did = [];
+  const move = plan.rows.find(r => r.k === 'move' && r.can), wantMove = !!move && use.move !== false;
+  let stats = false;
+  if (plan.stats) { // the day's totals go first: the top-up is worked out from the Watch total saved here
+    const path = PATH.health(pid, date), doc = Object.assign({ v: 1, date }, getDoc(path), { importedAt: now });
+    ['steps', 'exercise', 'active', 'distance'].forEach(k => { if (v[k] != null) doc[k] = v[k]; });
+    if (wantMove) delete doc.topUp; else if (move && move.extra > 0) doc.topUp = false; // turning the minutes down sticks until an import adds them
+    stats = await write(path, doc);
+    if (!stats) return did;
+  }
+  if (wantMove) { const r = await syncWatch(date); if (r === 'added') did.push(move.extra + ' min of movement'); else if (r === 'removed') did.push('movement updated'); }
   for (const row of plan.rows) {
     if (!row.can || use[row.k] === false) continue;
-    if (row.k === 'move') {
-      const ok = row.extra > 0 ? await logActivity(date, { id: HK_ACT_ID, a: 'other', name: 'Apple Watch exercise', min: row.extra, feel: null, hurt: false, note: 'From Apple Health', mv: true, src: 'health', at: now }) : await removeActivity(date, HK_ACT_ID);
-      if (ok) did.push(row.extra > 0 ? row.extra + ' min of movement' : 'movement updated');
-    } else if (row.k === 'water') {
+    if (row.k === 'water') {
       const path = PATH.food(pid, date), cur = getDoc(path) || { v: 1, date, items: [], water: 0 };
       if (await write(path, Object.assign({}, cur, { water: v.water, updatedAt: now }))) did.push(v.water + ' oz of water');
     } else if (row.k === 'weight') {
@@ -1649,11 +1864,7 @@ async function applyHealthImport(pid, plan, parsed, use) {
       if (await saveProfile(pid, patch)) did.push('weight ' + v.weight + ' lb');
     }
   }
-  if (plan.stats) {
-    const path = PATH.health(pid, date), doc = Object.assign({ v: 1, date }, getDoc(path), { importedAt: now });
-    ['steps', 'exercise', 'active', 'distance'].forEach(k => { if (v[k] != null) doc[k] = v[k]; });
-    if (await write(path, doc)) did.push('activity totals');
-  }
+  if (stats) did.push('activity totals');
   return did;
 }
 
@@ -1744,23 +1955,49 @@ function celebrate(msg, opts) {
   checkBadges(pid).slice(0, 3).forEach(b => queueOv({ type: 'badge', pid, badge: b }));
   return gained;
 }
-function announce() { // on opening the app: badges and last week's result this device has not shown yet
+// On opening the app: badges, then last week's result. A finished week stays open for late entries through Tuesday,
+// so until its result is stored it only gets a quiet "provisional" line. The winner is announced, once per phone,
+// when the final result exists (ml.seenFinalWeek: the newest final week this phone has shown).
+function announce() {
   const pid = me();
   checkBadges(pid).slice(0, 3).forEach(b => queueOv({ type: 'badge', pid, badge: b }));
-  const weeks = compWeeks(), w = weeks[weeks.length - 1];
-  if (w && w.played && String(prefGet('ml.seenWeek', '')) < w.ws) { prefSet('ml.seenWeek', w.ws); queueOv({ type: 'weekwin', week: w }); }
+  const weeks = compWeeks(), finals = weeks.filter(w => w.final && w.played), last = weeks[weeks.length - 1];
+  let seen = prefGet('ml.seenFinalWeek', null);
+  if (seen == null) { // first run with final-result tracking: what the old announcement already showed, or anything already final, is old news
+    const old = prefGet('ml.seenWeek', null);
+    // a week the old code announced while it was still open gets its real announcement once it is final
+    seen = typeof old === 'string' && validIso(old) ? (finalResult(old) ? old : addDays(old, -7)) : finals.length ? finals[finals.length - 1].ws : '';
+    prefSet('ml.seenFinalWeek', seen);
+  }
+  const fresh = finals.filter(w => w.ws > seen).slice(-2);
+  if (fresh.length) { prefSet('ml.seenFinalWeek', fresh[fresh.length - 1].ws); fresh.forEach(w => queueOv({ type: 'weekwin', week: w })); }
+  if (last && !last.final && last.played && String(prefGet('ml.seenWeek', '')) < last.ws) { prefSet('ml.seenWeek', last.ws); toast(provisionalText(last), 5200); }
 }
 // With no profile on this device the page waits for the account to say which one this person uses, and asks only
 // when the account does not know either (or cannot be reached).
 function askWho() { if (!state.pid && !(state.ov && state.ov.type === 'who')) openOv({ type: 'who', first: true }); }
 function onReady() {
-  state.ready = true; adoptAccount(); reconcileBlindDrafts(); settle();
-  PIDS.forEach(pid => { if (prefGet('ml.badges.' + pid, null) == null) checkBadges(pid, true); });
+  state.ready = true; adoptAccount(); reconcileBlindDrafts();
   applySkin();
-  if (!state.pid) askWho(); else announce();
-  acctFlush(); // anything chosen before the account could be reached
-  closeWeeks();
+  if (!state.pid) askWho();
   render();
+  openWeek(true);
+}
+// Start-of-visit and start-of-day housekeeping, in order: lock this week's targets, then announce, then close any
+// week whose late-entry window has passed and announce that result too. All of it writes, so none of it runs in render.
+let openingWeek = null;
+function openWeek(first) {
+  const run = async () => {
+    await lockWeeks();
+    if (first) { settle(); PIDS.forEach(pid => { if (prefGet('ml.badges.' + pid, null) == null) checkBadges(pid, true); }); }
+    if (state.pid) announce();
+    acctFlush(); // anything chosen before the account could be reached
+    const closed = await closeWeeks();
+    if (closed && state.pid) announce();
+    render();
+  };
+  openingWeek = (openingWeek || Promise.resolve()).then(run, run);
+  return openingWeek;
 }
 
 OV.badge = {
@@ -1780,12 +2017,54 @@ OV.lead = {
 OV.weekwin = {
   center: true,
   html: o => {
-    const w = o.week, win = w.winner;
+    const w = o.week, win = w.winner, owes = stakesLine(w);
     const line = win ? esc(P(win).name) + ' wins, ' + Math.max(w.tyson, w.jacquie) + ' to ' + Math.min(w.tyson, w.jacquie) : 'Dead heat at ' + w.tyson;
-    return '<div class="ov" role="dialog" aria-modal="true" aria-label="Last week\'s result"><div class="eyebrow">Week of ' + shortDate(w.ws) + '</div><div class="pop">' + (win ? avatarHTML(win, 'lg') : '<div class="medal lg">🤝</div>') + '</div><h2>' + line + '</h2><p class="muted">' + (win ? 'A new week is already running. Scores reset every Monday.' : 'Nobody gets bragging rights. Settle it this week.') + '</p><div class="row" style="width:100%"><button type="button" class="primary" data-a="ov-close">On to this week</button></div></div>';
+    return '<div class="ov" role="dialog" aria-modal="true" aria-label="Final result"><div class="eyebrow">Final · week of ' + shortDate(w.ws) + '</div><div class="pop">' + (win ? avatarHTML(win, 'lg') : '<div class="medal lg">🤝</div>') + '</div><h2>' + line + '</h2>' + (owes ? '<p><b>' + esc(owes) + '</b></p>' : '') + '<p class="muted">' + (win ? 'Late entries are in and the result is final. A new week is already running.' : 'Nobody gets bragging rights. Settle it this week.') + '</p><div class="row" style="width:100%"><button type="button" class="primary" data-a="ov-close">On to this week</button></div></div>';
   },
   after: o => { if (o.week.winner) burst({ pid: o.week.winner, kind: 'flags', y: 0.5, count: 140 }); }
 };
+
+/* ---- 55-rest.js ---- */
+/* ---------- Rest timer: its own bar outside the page, so it never touches the render loop ---------- */
+// Logging a set for today starts a countdown. Everything here writes straight to the #rest element (like the toast),
+// never through render(), so it cannot disturb typing or a pending re-render. No sound: a flash, and a buzz where
+// the browser supports vibration.
+const restT = { end: 0, total: 0, tick: 0, hide: 0, done: false };
+const restSeconds = () => { const v = Number(state.settings.rest); return v === 60 || v === 120 ? v : 90; }; // main lifts; set on the Program tab
+const restFor = key => EX[key] && (EX[key].bw || CORE.includes(key)) ? 60 : restSeconds();                   // core and bodyweight moves rest 60 s
+function restDraw() {
+  const bar = $('#rest'); if (!bar || bar.hidden) return;
+  const ms = restT.end - Date.now(), left = Math.max(0, Math.ceil(ms / 1000)), sb = $('#savebar');
+  $('#restTime').textContent = Math.floor(left / 60) + ':' + String(left % 60).padStart(2, '0');
+  $('#restFill').style.width = (restT.total ? clamp(1 - ms / (restT.total * 1000), 0, 1) * 100 : 0).toFixed(1) + '%';
+  // sit just above the save bar while it is pinned to the bottom of the screen; otherwise at the bottom edge
+  bar.style.setProperty('--lift', (sb && sb.getBoundingClientRect().bottom >= window.innerHeight - 2 ? sb.offsetHeight : 0) + 'px');
+  if (left <= 0 && !restT.done) {
+    restT.done = true; bar.classList.add('done'); $('#restLabel').textContent = 'Rest over · next set';
+    try { if (navigator.vibrate) navigator.vibrate([180, 90, 180]); } catch (e) { /* not supported */ }
+    clearInterval(restT.tick); restT.tick = 0; restT.hide = setTimeout(restStop, 8000);
+  }
+}
+function restStart(sec, label) {
+  const bar = $('#rest'); if (!bar) return;
+  clearInterval(restT.tick); clearTimeout(restT.hide);
+  restT.total = sec; restT.end = Date.now() + sec * 1000; restT.done = false;
+  bar.hidden = false; bar.classList.remove('done'); document.body.classList.add('resting'); $('#restLabel').textContent = 'Rest · ' + label;
+  restDraw(); restT.tick = setInterval(restDraw, 250);
+}
+function restStop() {
+  const bar = $('#rest'); clearInterval(restT.tick); clearTimeout(restT.hide); restT.tick = 0; restT.end = 0;
+  if (bar) { bar.hidden = true; bar.classList.remove('done'); } document.body.classList.remove('resting');
+}
+ACT['timer-add'] = () => {
+  if (!restT.end) return;
+  restT.end = Math.max(restT.end, Date.now()) + 15000; restT.total += 15;
+  if (restT.done) { restT.done = false; clearTimeout(restT.hide); $('#rest').classList.remove('done'); $('#restLabel').textContent = 'Rest'; restT.tick = setInterval(restDraw, 250); }
+  restDraw();
+};
+ACT['timer-x'] = () => restStop();
+// tapping the bar must not take focus from the set field being typed in (on a phone that would close the keyboard)
+(function () { const bar = $('#rest'); if (bar) bar.addEventListener('pointerdown', e => e.preventDefault()); })();
 
 /* ---- 60-ui-train.js ---- */
 /* ---------- Train: shared pieces ---------- */
@@ -1817,7 +2096,7 @@ function dateHead(label, mode) {
 const hkLineHTML = date => { const t = healthLine(me(), date); return t ? '<p class="tiny muted" id="hkLine" style="margin-top:-4px">' + esc(t) + '</p>' : ''; };
 function statusText(date) {
   if (!state.ready) return state.storage === 'nodb' ? 'Log unreachable · inputs kept on this phone' : 'Loading your log…';
-  const rec = state.sessions[date]; const d = state.drafts[date]; const st = state.status[date];
+  const all = state.sessions[date], rec = lifted(all) ? all : null; const d = state.drafts[date]; const st = state.status[date];
   if (st && st.s === 'saving') return 'Saving…';
   if (st && st.s === 'failed') return 'Save failed · inputs kept';
   const hasDraft = d && draftHasContent(d);
@@ -1825,7 +2104,7 @@ function statusText(date) {
   if (rec && st && st.s === 'local') return 'Saved in this browser' + (hasDraft ? ' · unsaved changes' : '');
   if (rec) return 'Saved' + (hasDraft ? ' · unsaved changes' : '');
   if (hasDraft) return (d.recovered ? 'Recovered draft' : 'Draft') + ' · on this phone';
-  return 'New entry';
+  return all && normalize(all).acts.length ? 'Activities logged · no lift or treadmill yet' : 'New entry';
 }
 
 /* ---------- Train: lifting program ---------- */
@@ -1847,13 +2126,13 @@ function renderTrain() {
     '<p class="tiny muted" id="whyLine" style="margin-top:-4px">' + esc(why) + '</p>' + hkLineHTML(date);
   if (d && d.recovered && draftHasContent(d)) h += '<div class="banner"><span>Unsaved draft from ' + tzTime.format(new Date(d.updatedAt)) + ' restored. Not saved until you tap Save.</span><div class="row"><button type="button" class="small" id="discardDraft">Discard draft</button></div></div>';
   if (n && n.ambiguous) h += '<div class="banner">Saved as a ' + (DAYS[rec.day] ? DAYS[rec.day].name : 'lift') + ' day by the earlier version but has no lifting sets. It counts as ' + (n.kind === 'cardio' ? 'treadmill only' : 'no activity') + '. Add sets or re-save to confirm.</div>';
-  if (n && n.kind === 'activity') h += '<div class="banner">This day has pick-your-own activities logged (' + n.allMin + ' min). Saving a lift here replaces them.</div>';
   h += '</section>';
+  const saved = lifted(rec) ? rec : null; // the save bar speaks for the lift, treadmill or rest part of the day only
 
   if (kind === 'rest') {
     h += '<section class="sheet"><div class="blk"><div class="bhead"><h3>Rest day</h3></div><p class="tiny muted">Doesn\'t count as activity and doesn\'t move the rotation.</p>' +
       '<label class="f">Notes<input type="text" id="notes" data-field="notes" value="' + esc(m.notes) + '" placeholder="Optional"></label></div></section>';
-    h += renderSaveBar(date, m, rec);
+    h += extrasHTML(date) + renderSaveBar(date, m, saved);
     h += renderMorning(phase, kind);
     return h;
   }
@@ -1876,8 +2155,19 @@ function renderTrain() {
       '<p class="tiny muted" style="margin-top:6px">A counted lift day advances the rotation and earns lift credit. Full rules on the Program tab.</p></details>';
   }
   h += '</form>';
-  h += renderSaveBar(date, m, rec);
+  h += extrasHTML(date) + renderSaveBar(date, m, saved);
   h += renderMorning(phase, kind);
+  return h;
+}
+// Activities logged on a day: tap one to change it. The Watch top-up is worked out, so it opens an explanation instead.
+const actRowsHTML = acts => acts.map(a => '<button type="button" data-a="' + (isHk(a) ? 'hk-info' : 'act-edit') + '" data-id="' + esc(a.id) + '"><span>' + actIcon(a) + ' ' + esc(actName(a)) + (a.hurt ? ' <span class="chip warn">pain noted</span>' : '') + (a.mv === false ? ' <span class="chip">recovery</span>' : '') + '</span><span class="muted num">' + a.min + ' min' + (a.feel && FEELS[a.feel] ? ' · ' + FEELS[a.feel] : '') + '</span></button>').join('');
+// On the lifting log: a walk, a hike or a travel day goes on the same date as the lift, or stands on its own.
+function extrasHTML(date) {
+  const rec = state.sessions[date], n = rec ? normalize(rec) : null, acts = n ? n.acts : [], mm = weekGoals(me(), weekStart(date)).minMin;
+  let h = '<section class="card stack" id="extras">';
+  if (acts.length) h += '<div class="row between"><h3>Also ' + (rel(date) === nice(date) ? 'on ' + nice(date) : rel(date).toLowerCase()) + '</h3><span class="tiny muted num">' + n.actMin + ' min</span></div><div class="done-list">' + actRowsHTML(acts) + '</div>';
+  h += '<div class="row"><button type="button" class="small" data-a="act-pick">+ Add a walk or other activity</button></div>' +
+    '<p class="tiny muted">' + (n && n.program ? 'Saved on the same day as your ' + (n.kind === 'strength' ? 'lift' : 'treadmill entry') + '. The minutes count; the day is already an activity day.' : 'On a day with no lift or treadmill, ' + mm + ' minutes of anything makes it an activity day.') + '</p></section>';
   return h;
 }
 function exSummary(key, e, nSets) {
@@ -1901,13 +2191,14 @@ function renderExercise(p, m, date) {
   const rx = ex.sets + ' sets · ' + ex.lo + '–' + ex.hi + ' reps' + (ex.bw ? ' · bodyweight' : ex.per ? ' · lb per hand' : '');
   const useHidden = ex.bw || String(e.w) === String(sg.w);
   h += '<div class="exrx"><span>' + esc(rx) + '</span>' + (ex.bw ? '' : '<button type="button" class="small" data-usew="' + key + '" data-val="' + sg.w + '"' + (useHidden ? ' hidden' : '') + '>Use ' + sg.w + ' lb</button>') + '</div>';
-  if (sg.last) h += '<div class="exlast" data-last="' + key + '">Last · ' + nice(sg.last.date) + ': <b>' + esc((sg.last.w != null ? fmtW(key, sg.last.w) + ' × ' : '') + fmtReps(sg.last.reps)) + '</b></div>';
+  const qf = quickFills(key, e, nSets, sg);
+  if (sg.last) h += '<div class="exlast" data-last="' + key + '"><span>Last · ' + nice(sg.last.date) + ': <b>' + esc((sg.last.w != null ? fmtW(key, sg.last.w) + ' × ' : '') + fmtReps(sg.last.reps)) + '</b></span><button type="button" class="small" data-same="' + key + '"' + (qf.same ? '' : ' hidden') + '>Same as last time</button></div>';
   if (maxed) h += '<div class="exhold" data-hold="' + key + '">Holding weight · progress by reps, then a 4th set</div>';
   h += '<div class="logrow">';
   if (!ex.bw) h += '<label class="f w">Weight (lb)<input type="number" inputmode="decimal" min="0" step="2.5" id="w-' + key + '" data-field="w" data-ex="' + key + '" value="' + esc(e.w) + '" placeholder="–"></label>';
   for (let i = 0; i < nSets; i++) h += '<label class="f">Set ' + (i + 1) + '<input type="number" inputmode="numeric" pattern="[0-9]*" min="0" step="1" id="r-' + key + '-' + i + '" data-field="rep" data-ex="' + key + '" data-i="' + i + '" value="' + esc(e.reps[i] == null ? '' : e.reps[i]) + '" placeholder="–"></label>';
   h += '</div>';
-  h += '<div class="exprog" data-prog="' + key + '"' + (sm.loggedN ? '' : ' hidden') + '><span><b>' + sm.loggedN + '/' + nSets + '</b> sets logged</span>' + (sm.done ? '<button type="button" class="quiet" data-collapse="' + key + '">Collapse</button>' : '') + '</div>';
+  h += '<div class="exprog" data-prog="' + key + '"' + (sm.loggedN ? '' : ' hidden') + '>' + exProgHTML(key, sm, nSets, qf) + '</div>';
   if (state.details[key]) {
     h += '<div class="exdetails" id="details-' + key + '"><div><b>Equipment:</b> ' + esc(ex.equip) + (ex.per ? '. Weight is one dumbbell, not the pair.' : '') + '</div>';
     if (ex.note) h += '<div>' + esc(ex.note) + '</div>';
@@ -1918,19 +2209,29 @@ function renderExercise(p, m, date) {
   h += '</section>';
   return h;
 }
+// the line under the set fields: how many are logged, the "repeat" shortcut while later sets are empty, then Collapse
+const exProgHTML = (key, sm, nSets, qf) => '<span><b>' + sm.loggedN + '/' + nSets + '</b> sets logged</span>' + (qf.repeat ? '<button type="button" class="small" data-repeat="' + key + '">Repeat for all sets</button>' : '') + (sm.done ? '<button type="button" class="quiet" data-collapse="' + key + '">Collapse</button>' : '');
+// Which one-tap fills are worth showing: "Same as last time" when last session has something an empty field could
+// take, "Repeat for all sets" once set 1 has reps and a later set is still empty.
+function quickFills(key, e, nSets, sg) {
+  const ex = EX[key], last = sg.last, reps = e.reps || [], blank = i => reps[i] == null || reps[i] === '';
+  let same = false;
+  if (last) { for (let i = 0; i < nSets; i++) if (blank(i) && last.reps[i] != null) same = true; if (!ex.bw && e.w === '' && sg.w != null) same = true; }
+  let repeat = false;
+  if (!blank(0)) for (let i = 1; i < nSets; i++) if (blank(i)) repeat = true;
+  return { same, repeat };
+}
 function renderMenu(key, p, m, date, menu) {
   if (!menu) return '';
   const ex = EX[key]; const maxed = !!(state.settings.maxed || {})[key]; const nSets = setCount(key, m, date);
+  const opts = swapOptions(plannedFor(date, kindFor(date, m), m), p);
   let h = '<div class="menu" role="menu" aria-label="Options for ' + esc(ex.name) + '" data-menufor="' + key + '">';
   if (menu.view === 'swap') {
     h += '<div class="mh">Swap exercise</div>';
-    const opts = [];
-    if (key === p.base && ex.alt && EX[ex.alt]) opts.push(ex.alt);
-    if (key !== p.base) { opts.push(p.base); if (ex.alt && EX[ex.alt] && ex.alt !== p.base) opts.push(ex.alt); }
     opts.forEach(k => { h += '<button type="button" role="menuitem" data-act="swapto" data-key="' + key + '" data-base="' + p.base + '" data-to="' + k + '">' + esc(EX[k].name) + (k === p.base ? '<span class="sub">back to the planned exercise</span>' : '<span class="sub">' + esc(EX[k].equip) + (EX[k].per ? ' · lb per hand' : '') + '</span>') + '</button>'; });
     h += '<button type="button" role="menuitem" data-act="back" data-key="' + key + '">Cancel</button>';
   } else {
-    h += '<button type="button" role="menuitem" data-act="swap" data-key="' + key + '">Swap exercise<span class="sub">this workout only</span></button>';
+    h += '<button type="button" role="menuitem" data-act="swap" data-key="' + key + '"' + (opts.length ? '' : ' disabled') + '>Swap exercise<span class="sub">' + (opts.length ? 'this workout only' : alts(p.base).length ? 'unavailable: its alternates are already in today\'s workout' : 'no alternate for this one') + '</span></button>';
     if (!ex.bw) h += '<button type="button" role="menuitem" data-act="hold" data-key="' + key + '">' + (maxed ? 'Allow weight increases' : 'Can\'t go higher') + '<span class="sub">' + (maxed ? 'resume weight suggestions' : 'hold weight, progress by reps') + '</span></button>';
     h += '<button type="button" role="menuitem" data-act="addset" data-key="' + key + '"' + (nSets >= MAX_SETS ? ' disabled' : '') + '>Add a set<span class="sub">' + (nSets >= MAX_SETS ? 'at the maximum of ' + MAX_SETS : nSets + ' of ' + MAX_SETS + ' shown') + '</span></button>';
     h += '<button type="button" role="menuitem" data-act="details" data-key="' + key + '">' + (state.details[key] ? 'Hide exercise details' : 'Exercise details') + '<span class="sub">equipment, why this weight</span></button>';
@@ -1966,42 +2267,40 @@ function renderSaveBar(date, m, rec) {
 function renderMorning(phase, kind) {
   return '<details class="card plain" data-dk="morning"><summary>Morning plan · at IMS by 9</summary><div class="sched" style="margin-top:8px">' +
     '<span class="t num">10:30</span><span>Lights out. Bag packed, Fitness+ workout picked.</span>' +
-    '<span class="t num">6:00</span><span>Up. Water, small bite, drive to Avon.</span>' +
+    '<span class="t num">6:00</span><span>Up. Water, small bite, drive to ' + esc(P(me()).place || 'the gym') + '.</span>' +
     '<span class="t num">6:30</span><span>Treadmill ' + TREAD_MIN[phase] + ' min, then ' + (DAYS[kind] ? DAYS[kind].name + ' day' : 'lift') + ' (about 30 min).</span>' +
     '<span class="t num">7:35</span><span>Shower. Out the door by 8:25.</span></div>' +
     '<p class="tiny muted" style="margin-top:8px">Missed a morning? Nothing shifts. The next lift is still the next one in the rotation.</p></details>';
 }
 
 /* ---------- Train: pick-your-own ---------- */
+function actGridHTML(pid) { // the activity menu: filters and the grid, shared by the Train screen and the picker sheet
+  const f = state.filter, list = actList(pid, f);
+  const chip = (on, a, extra, label) => '<button type="button" data-a="' + a + '" ' + extra + ' class="' + (on ? 'on' : '') + '" aria-pressed="' + on + '">' + label + '</button>';
+  return '<div class="chips" aria-label="Filter activities">' + chip(f.cat === 'all', 'filter', 'data-cat="all"', 'All') + ACT_CATS.map(c => chip(f.cat === c[0], 'filter', 'data-cat="' + c[0] + '"', c[1])).join('') + '</div>' +
+    '<div class="chips">' + chip(f.quick, 'filter-quick', '', '10 min or less') + chip(f.fav, 'filter-fav', '', 'Favorites') + '</div>' +
+    '<div class="acts">' + list.map(k => {
+      const a = ACTS[k], caution = actCaution(pid, k), fav = P(pid).favorites.includes(k);
+      return '<button type="button" class="act' + (fav ? ' fav' : '') + '" data-a="act" data-k="' + k + '"><span class="ai" aria-hidden="true">' + a.icon + '</span><span class="an">' + esc(a.name) + '</span><span class="am">' + a.min + ' min · ' + (a.mv === false ? 'recovery' : IMPACT[a.impact]) + '</span>' + (caution.length ? '<span class="aw">Go easy: ' + caution.map(x => AREAS[x].toLowerCase()).join(', ') + '</span>' : '') + '</button>';
+    }).join('') + '</div>' + (list.length ? '' : '<p class="muted tiny">Nothing matches those filters.</p>');
+}
 function renderMove() {
-  const pid = me(), date = state.selDate, rec = state.sessions[date], n = rec ? normalize(rec) : null, di = dayInfo(pid, date), mm = minMin(pid), f = state.filter;
-  const acts = n && n.kind === 'activity' ? n.acts : [];
-  const program = n && (n.kind === 'strength' || n.kind === 'cardio');
+  const pid = me(), date = state.selDate, rec = state.sessions[date], n = rec ? normalize(rec) : null, di = dayInfo(pid, date), mm = weekGoals(pid, weekStart(date)).minMin;
+  const acts = n ? n.acts : [], program = !!(n && n.program), rest = !!(n && n.kind === 'rest');
+  const progText = program ? (n.kind === 'strength' ? (n.day ? DAYS[n.day].name + ' lift' : 'Lift') : 'Treadmill') + ' · ' + n.progMin + ' min' : '';
   let status = 'Nothing logged for this day';
-  if (n && n.kind === 'rest') status = 'Rest day logged';
-  else if (program) status = 'Lifting-program entry · counts as an active day';
+  if (rest) status = 'Rest day logged';
+  else if (program) status = progText + (acts.length ? ' + ' + n.actMin + ' min of activities' : '') + ' · counts as an active day';
   else if (acts.length) status = n.allMin + ' min logged · ' + (di.active ? 'counts as an active day' : (mm - di.minutes) + ' more min of movement to count');
-  let h = '<section class="card sess">' + dateHead('Logging for') + '<div class="status"><span id="statusLine">' + esc(status) + '</span>' + healthButton() + '</div>' + hkLineHTML(date);
-  if (program) h += '<div class="banner">This day was logged on the lifting program. Switch workout style under Me to edit it, or use History to remove it.</div>';
-  h += '</section>';
-  if (acts.length || (n && n.kind === 'rest')) {
-    h += '<section class="card"><div class="row between"><h3>Logged ' + (rel(date) === nice(date) ? nice(date) : rel(date).toLowerCase()) + '</h3>' + (n.kind === 'rest' ? '<span class="chip">rest</span>' : di.active ? '<span class="chip good">active day</span>' : '<span class="chip warn">' + di.minutes + ' of ' + mm + ' min</span>') + '</div><div class="done-list" style="margin-top:4px">';
-    if (n.kind === 'rest') h += '<button type="button" data-a="rest-undo"><span>🛌 Rest day</span><span class="muted">tap to remove</span></button>';
-    acts.forEach(a => { h += '<button type="button" data-a="act-edit" data-id="' + esc(a.id) + '"><span>' + actIcon(a) + ' ' + esc(actName(a)) + (a.hurt ? ' <span class="chip warn">pain noted</span>' : '') + (a.mv === false ? ' <span class="chip">recovery</span>' : '') + '</span><span class="muted num">' + a.min + ' min' + (a.feel && FEELS[a.feel] ? ' · ' + FEELS[a.feel] : '') + '</span></button>'; });
-    h += '</div></section>';
+  let h = '<section class="card sess">' + dateHead('Logging for') + '<div class="status"><span id="statusLine">' + esc(status) + '</span>' + healthButton() + '</div>' + hkLineHTML(date) + '</section>';
+  if (acts.length || rest || program) {
+    h += '<section class="card"><div class="row between"><h3>Logged ' + (rel(date) === nice(date) ? nice(date) : rel(date).toLowerCase()) + '</h3>' + (rest ? '<span class="chip">rest</span>' : di.active ? '<span class="chip good">active day</span>' : '<span class="chip warn">' + di.minutes + ' of ' + mm + ' min</span>') + '</div><div class="done-list" style="margin-top:4px">';
+    if (rest) h += '<button type="button" data-a="rest-undo"><span>🛌 Rest day</span><span class="muted">tap to remove</span></button>';
+    if (program) h += '<button type="button" data-a="go-history"><span>🏋️ ' + esc(progText.split(' · ')[0]) + ' <span class="chip">lifting log</span></span><span class="muted num">' + n.progMin + ' min</span></button>';
+    h += actRowsHTML(acts) + '</div>' + (program ? '<p class="tiny muted" style="margin-top:6px">The lift or treadmill entry is edited from History. Anything you add below is saved on the same day.</p>' : '') + '</section>';
   }
-  if (!program) {
-    const chip = (on, a, extra, label) => '<button type="button" data-a="' + a + '" ' + extra + ' class="' + (on ? 'on' : '') + '" aria-pressed="' + on + '">' + label + '</button>';
-    const list = actList(pid, f);
-    h += '<section class="card stack"><div class="row between"><h3>Pick your move</h3><button type="button" class="small" data-a="surprise">Surprise me</button></div>' +
-      '<div class="chips" aria-label="Filter activities">' + chip(f.cat === 'all', 'filter', 'data-cat="all"', 'All') + ACT_CATS.map(c => chip(f.cat === c[0], 'filter', 'data-cat="' + c[0] + '"', c[1])).join('') + '</div>' +
-      '<div class="chips">' + chip(f.quick, 'filter-quick', '', '10 min or less') + chip(f.fav, 'filter-fav', '', 'Favorites') + '</div>' +
-      '<div class="acts">' + list.map(k => {
-        const a = ACTS[k], caution = actCaution(pid, k), fav = P(pid).favorites.includes(k);
-        return '<button type="button" class="act' + (fav ? ' fav' : '') + '" data-a="act" data-k="' + k + '"><span class="ai" aria-hidden="true">' + a.icon + '</span><span class="an">' + esc(a.name) + '</span><span class="am">' + a.min + ' min · ' + (a.mv === false ? 'recovery' : IMPACT[a.impact]) + '</span>' + (caution.length ? '<span class="aw">Go easy: ' + caution.map(x => AREAS[x].toLowerCase()).join(', ') + '</span>' : '') + '</button>';
-      }).join('') + '</div>' + (list.length ? '' : '<p class="muted tiny">Nothing matches those filters.</p>') +
-      (!acts.length && !(n && n.kind === 'rest') ? '<div class="row"><button type="button" class="small" data-a="rest">Log a rest day instead</button></div>' : '') + '</section>';
-  }
+  h += '<section class="card stack"><div class="row between"><h3>Pick your move</h3><button type="button" class="small" data-a="surprise">Surprise me</button></div>' + actGridHTML(pid) +
+    (!acts.length && !rest && !program ? '<div class="row"><button type="button" class="small" data-a="rest">Log a rest day instead</button></div>' : '') + '</section>';
   h += renderWeekDots(pid);
   return h;
 }
@@ -2009,12 +2308,20 @@ function renderWeekDots(pid) {
   const t = todayIso(), ws = weekStart(t), f = weekFacts(pid, ws), sc = scoreFacts(f), c = coach(pid), rival = P(otherPid(pid)).name;
   const race = sc.total > c.other ? 'You lead ' + rival + ' ' + sc.total + ' to ' + c.other + '.'
     : c.plan ? rival + ' has ' + c.other + ', you have ' + sc.total + '. To pass today: ' + c.plan.used.map(x => x.text.charAt(0).toLowerCase() + x.text.slice(1)).join(', then ') + '.'
-    : sc.total === c.other ? 'Level with ' + rival + ' at ' + sc.total + '.' : rival + ' leads ' + c.other + ' to ' + sc.total + '.';
+    : sc.total === c.other ? 'Level with ' + rival + ' at ' + sc.total + '.' : rival + ' leads ' + c.other + ' to ' + sc.total + '.' + (c.outOfReach ? ' ' + teamPointer(c) : '');
   return '<section class="card stack"><div class="row between"><h3>This week</h3><span class="tiny muted num">' + sc.active + ' of ' + f.goal + ' active days · ' + sc.minutes + ' min</span></div><div class="weekdots">' +
     f.days.map(d => '<span class="' + (d.active ? 'on' : d.rest ? 'rest' : '') + (d.date === t ? ' today' : '') + '">' + DOW[dow(d.date)] + '<i></i></span>').join('') + '</div>' +
     '<p class="tiny muted">' + (sc.active >= f.goal ? 'Weekly goal met. Extra days still add minutes toward your personal best.' : (f.goal - sc.active) + ' more active day' + (f.goal - sc.active === 1 ? '' : 's') + ' fills your Move score. A day counts at ' + minMin(pid) + ' minutes.') + '</p>' +
     '<p class="tiny" id="raceLine"><a href="#compete">' + esc(race) + '</a></p></section>';
 }
+// when the points race is out of reach this week, the team week is the thing still worth chasing
+const teamPointer = c => c.team.locked === 2 ? 'The team week is locked in: you both filled your Move score.' : !c.team.can ? 'The team week is out of reach this week as well.' : 'The team week is still on: ' + (c.team.mine ? 'your Move score is full' : c.team.need + ' fills your Move score') + (c.team.theirs ? '.' : c.team.mine ? ', and it needs theirs too.' : '.');
+OV.actpick = { // the same menu, from the lifting log
+  html: o => '<div class="ov tall" role="dialog" aria-modal="true" aria-label="Add an activity">' + ovHead('Add an activity', rel(o.date) + ' · saved on the same day as your lift') + '<div class="stack">' + actGridHTML(me()) + '</div></div>'
+};
+ACT['act-pick'] = () => openOv({ type: 'actpick', date: state.selDate });
+ACT['go-history'] = () => { location.hash = 'history'; };
+const redrawPicker = () => { render(); if (state.ov && state.ov.type === 'actpick') renderOv(); };
 OV.act = {
   html: o => {
     const a = ACTS[o.k], pid = me(), caution = actCaution(pid, o.k), fav = P(pid).favorites.includes(o.k), min = Number(o.min) || 0;
@@ -2052,13 +2359,13 @@ ACT['act-log'] = async () => {
   const ok = await logActivity(o.date, entry); if (!ok) return;
   closeOv(); render();
   const di = dayInfo(me(), o.date);
-  celebrate(min + ' min of ' + name.toLowerCase() + ' logged. ' + (a.mv === false ? 'Recovery counts for you, not for points.' : di.active ? 'That is an active day.' : (minMin(me()) - di.minutes) + ' more min makes it count.'), { force: di.active, before });
+  celebrate(min + ' min of ' + name.toLowerCase() + ' logged. ' + (a.mv === false ? 'Recovery counts for you, not for points.' : di.active ? 'That is an active day.' : (weekGoals(me(), weekStart(o.date)).minMin - di.minutes) + ' more min makes it count.'), { force: di.active, before });
 };
 ACT['act-del'] = async () => { const o = state.ov; const ok = await removeActivity(o.date, o.id); if (!ok) return; closeOv(); settle(); render(); toast('Removed'); };
 ACT.surprise = () => { const k = surpriseActivity(me()); const a = ACTS[k]; openOv({ type: 'act', k, date: state.selDate, min: String(a.min), feel: null, hurt: false, note: '', name: '' }); burst({ count: 24, y: 0.35 }); };
-ACT.filter = el => { state.filter.cat = el.dataset.cat; render(); };
-ACT['filter-quick'] = () => { state.filter.quick = !state.filter.quick; render(); };
-ACT['filter-fav'] = () => { state.filter.fav = !state.filter.fav; render(); };
+ACT.filter = el => { state.filter.cat = el.dataset.cat; redrawPicker(); };
+ACT['filter-quick'] = () => { state.filter.quick = !state.filter.quick; redrawPicker(); };
+ACT['filter-fav'] = () => { state.filter.fav = !state.filter.fav; redrawPicker(); };
 ACT.rest = async () => { const before = scoreSnapshot(); const ok = await logRest(state.selDate); if (!ok) return; render(); celebrate('Rest day logged. Recovery is part of the plan.', { before }); };
 ACT['rest-undo'] = async () => { await write(PATH.session(me(), state.selDate), null); settle(); render(); };
 
@@ -2066,12 +2373,12 @@ ACT['rest-undo'] = async () => { await write(PATH.session(me(), state.selDate), 
 function renderProgram() {
   const t = todayIso(); const phase = phaseFor(t); const cw = completedWeeks(t); const ws = weekStats(t);
   let h = '<section class="card"><div class="eyebrow">How the rotation works</div><h2>Push → Pull → Legs, repeat</h2>' +
-    '<p style="margin-top:8px">Days aren\'t tied to weekdays. The next lift is the one after your last <b>counted</b> lift day. Skip a morning and nothing goes out of sync. Every session opens with a Fitness+ treadmill workout. Aim for ' + ws.goal + ' activity mornings a week: ' + LIFT_GOAL + ' lifts, the rest treadmill-only.</p></section>';
+    '<p style="margin-top:8px">Days aren\'t tied to weekdays. The next lift is the one after your last <b>counted</b> lift day. Skip a morning and nothing goes out of sync. Every session opens with a Fitness+ treadmill workout. Aim for ' + ws.goal + ' activity days a week: ' + LIFT_GOAL + ' lifts, the rest treadmill-only or any ' + minMin(me()) + '-minute activity.</p></section>';
   const upcoming = nextDayKey(addDays(t, 1)); const lastL = lastLift(addDays(t, 1));
   h += '<section class="card"><div class="row between"><div><div class="eyebrow">Progress</div><h3 style="font-family:var(--display);font-size:1.25rem">Week ' + (cw + 1) + ' · Phase ' + phase + (phase === 3 ? ' (full)' : '') + '</h3></div><span class="chip ' + (ws.lifts >= LIFT_GOAL ? 'good' : '') + '">' + ws.lifts + '/' + LIFT_GOAL + ' lift days this week</span></div>' +
     '<p style="margin-top:8px" id="nextLift"><b>Next lift day: ' + DAYS[upcoming].name + '</b>' + (lastL ? ' <span class="muted tiny">after ' + DAYS[lastL.n.day].name + ' on ' + nice(lastL.date) + '</span>' : ' <span class="muted tiny">first lift of the program</span>') + '</p>' +
     '<ul class="rules" style="margin-top:8px">' +
-    '<li><b>Activity day:</b> a saved entry with treadmill minutes or any logged set. Rest entries don\'t count.</li>' +
+    '<li><b>Activity day:</b> a saved entry with treadmill minutes or any logged set, or ' + minMin(me()) + ' minutes of any other activity (a walk, a hike) on a day with no lift. Rest entries don\'t count.</li>' +
     '<li><b>Lift day:</b> a saved entry where at least ' + QUALIFY_MIN + ' lifts (core moves don\'t count) have a logged set. Only lift days advance the rotation and earn lift credit. Session options under the notes field can override this either way.</li>' +
     '<li><b>Finished vs partial:</b> finished means every planned exercise has a logged set. Partial sessions still save and can still count.</li>' +
     '<li><b>Week complete:</b> ' + LIFT_GOAL + ' lift days Mon–Sun. Each completed week unlocks the next phase: Phase 2 adds exercises, Phase 3 swaps in squats, lunges and flys. Phase 3 is the full program.</li>' +
@@ -2080,8 +2387,8 @@ function renderProgram() {
     const d = DAYS[k];
     h += '<section class="card"><div class="row between"><h3>' + d.name + ' day</h3><span class="muted tiny">' + d.sub + '</span></div><div class="plan"><ul>';
     h += '<li><span>Treadmill (Apple Fitness+)</span><span class="muted num">' + TREAD_MIN[phase] + ' min</span></li>';
-    d.phases[phase].forEach(bk => {
-      const key = (state.settings.swaps || {})[bk] && EX[state.settings.swaps[bk]] ? state.settings.swaps[bk] : bk; const ex = EX[key];
+    planSlots(k, phase, state.settings.swaps).forEach(sl => {
+      const bk = sl.base, key = sl.key, ex = EX[key];
       h += '<li><span>' + esc(ex.name) + (key !== bk ? ' <span class="chip">default swap</span>' : '') + '<br><span class="tiny muted">' + esc(ex.equip) + (ex.per ? ' · weight per hand' : '') + '</span></span><span class="muted num">' + ex.sets + ' × ' + ex.lo + '–' + ex.hi + '</span></li>';
     });
     h += '</ul></div>';
@@ -2089,9 +2396,11 @@ function renderProgram() {
     h += '</section>';
   });
   h += '<section class="card"><h3>Default swaps</h3><p class="tiny muted" style="margin-top:4px">Swap here to change every future workout. Swap from an exercise\'s ··· menu on the Log screen to change one workout only. Saved workouts keep whatever you did.</p><div class="plan" style="margin-top:8px"><ul>';
-  Object.keys(EX).filter(k => EX[k].alt && !EX[k].bw && ROTATION.some(r => Object.values(DAYS[r].phases).some(p => p.includes(k)))).forEach(k => {
-    const cur = (state.settings.swaps || {})[k] && EX[state.settings.swaps[k]] ? state.settings.swaps[k] : k;
-    h += '<li><span>' + esc(EX[k].name) + (cur !== k ? ' → <b>' + esc(EX[cur].name) + '</b>' : '') + '</span><button type="button" class="small" data-gswap="' + k + '" data-to="' + (cur === k ? EX[k].alt : k) + '">' + (cur === k ? 'Use ' + esc(EX[EX[k].alt].name) : 'Undo') + '</button></li>';
+  Object.keys(EX).filter(k => alts(k).length && !EX[k].bw && ROTATION.some(r => Object.values(DAYS[r].phases).some(p => p.includes(k)))).forEach(k => {
+    const cur = (state.settings.swaps || {})[k] && EX[state.settings.swaps[k]] ? state.settings.swaps[k] : k, opt = defaultSwapOption(k), clash = cur !== k && defaultSwapTaken(k)[cur];
+    h += '<li data-swaprow="' + k + '"><span>' + esc(EX[k].name) + (cur !== k ? ' → <b>' + esc(EX[cur].name) + '</b>' : '') +
+      (clash ? '<br><span class="tiny" style="color:var(--warn)">' + esc(EX[cur].name) + ' is already in that day\'s workout in some phases. There, ' + esc(EX[k].name) + ' stays.</span>' : cur === k && !opt ? '<br><span class="tiny muted">No swap: its alternates are already in that day\'s workout.</span>' : '') + '</span>' +
+      (cur !== k ? '<button type="button" class="small" data-gswap="' + k + '" data-to="' + k + '">Undo</button>' : opt ? '<button type="button" class="small" data-gswap="' + k + '" data-to="' + opt + '">Use ' + esc(EX[opt].name) + '</button>' : '<button type="button" class="small" disabled>Unavailable</button>') + '</li>';
   });
   h += '</ul></div></section>';
   h += '<section class="card"><h3>Weight rules</h3><ul class="rules">' +
@@ -2102,18 +2411,28 @@ function renderProgram() {
     '<li>Dumbbell moves marked <b>per hand</b> track one dumbbell\'s weight. Machines track the stack. Each exercise and each substitute keeps its own history; a swap never carries a weight across.</li>' +
     '<li><b>Can\'t go higher</b> (in an exercise\'s ··· menu) holds that exercise\'s weight: suggestions ask for one more rep per set, then a 4th set once every set is 3 past the top. It changes suggestions only, never saved entries.</li>' +
     '<li>Assisted pull-up is the one inverted machine: the weight is assistance, so "up" means less of it.</li></ul>' +
-    '<div class="row" style="margin-top:10px"><label class="f" style="flex:1">Weekly activity goal<input type="number" id="goalIn" inputmode="numeric" min="3" max="7" value="' + (state.settings.goal || GOAL) + '"></label></div></section>';
+    '<div class="row" style="margin-top:10px"><label class="f" style="flex:1">Weekly activity goal<input type="number" id="goalIn" inputmode="numeric" min="3" max="7" value="' + (state.settings.goal || GOAL) + '"></label></div>' +
+    lockNote(me(), 'goal', v => v + ' activity days') + '</section>';
+  const rs = restSeconds();
+  h += '<section class="card stack" id="restCard"><h3>Rest timer</h3><p class="tiny muted">Logging a set for today starts a countdown: this long for main lifts, 60 seconds for core and bodyweight moves. It shows above the Save button with +15 s and a dismiss button, and never makes a sound.</p>' +
+    '<div class="seg">' + [60, 90, 120].map(v => '<button type="button" data-a="rest-len" data-v="' + v + '" class="' + (rs === v ? 'on' : '') + '" aria-pressed="' + (rs === v) + '">' + v + ' s</button>').join('') + '</div></section>';
   return h;
+}
+// A changed setting does not touch the week already being raced. Next to it: when it starts, and what this week keeps.
+function lockNote(pid, key, words) {
+  const live = liveGoals(pid), wk = thisWeek(pid);
+  if (live.plan !== wk.plan || live[key] === wk[key]) return '';
+  return '<p class="tiny locknote" data-lock="' + key + '"><span class="chip accent">' + startsNote() + '</span> This week stays at ' + words(wk[key]) + ', so the race already running does not change.</p>';
 }
 const WEEK_SLOTS = { 1: [2], 2: [1, 4], 3: [0, 2, 5], 4: [0, 2, 4, 5], 5: [0, 1, 3, 4, 5], 6: [0, 1, 2, 4, 5, 6], 7: [0, 1, 2, 3, 4, 5, 6] };
 function renderPlanChoice() {
-  const pid = me(), p = P(pid), g = moveGoal(pid), mm = minMin(pid);
+  const pid = me(), p = P(pid), live = liveGoals(pid), g = live.goal, mm = live.minMin; // the settings as chosen: they lock in each Monday
   const pool = ['walkeasy', 'stretchfull', 'walkpair', 'recbike', 'chairyoga', 'walkdinner', 'machines'].filter(k => !actCaution(pid, k).length);
   const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   let h = '<section class="card stack"><div><div class="eyebrow">Your plan</div><h2>Move ' + g + ' day' + (g === 1 ? '' : 's') + ' a week</h2></div>' +
     '<p>You choose what to do each time. A day counts once you log <b>' + mm + ' minutes</b> of movement, from one activity or several added together. Rest days are part of the plan and cost nothing.</p>' +
-    '<div><div class="eyebrow">Active days each week</div><div class="seg" style="margin-top:4px">' + [2, 3, 4, 5, 6, 7].map(v => '<button type="button" data-a="move-goal" data-v="' + v + '" class="' + (g === v ? 'on' : '') + '" aria-pressed="' + (g === v) + '">' + v + '</button>').join('') + '</div></div>' +
-    '<div><div class="eyebrow">Minutes that make a day count</div><div class="seg" style="margin-top:4px">' + [5, 10, 15, 20, 30].map(v => '<button type="button" data-a="move-min" data-v="' + v + '" class="' + (mm === v ? 'on' : '') + '" aria-pressed="' + (mm === v) + '">' + v + '</button>').join('') + '</div></div>' +
+    '<div><div class="eyebrow">Active days each week</div><div class="seg" style="margin-top:4px">' + [2, 3, 4, 5, 6, 7].map(v => '<button type="button" data-a="move-goal" data-v="' + v + '" class="' + (g === v ? 'on' : '') + '" aria-pressed="' + (g === v) + '">' + v + '</button>').join('') + '</div>' + lockNote(pid, 'goal', v => v + ' active day' + (v === 1 ? '' : 's')) + '</div>' +
+    '<div><div class="eyebrow">Minutes that make a day count</div><div class="seg" style="margin-top:4px">' + [5, 10, 15, 20, 30].map(v => '<button type="button" data-a="move-min" data-v="' + v + '" class="' + (mm === v ? 'on' : '') + '" aria-pressed="' + (mm === v) + '">' + v + '</button>').join('') + '</div>' + lockNote(pid, 'minMin', v => v + ' minutes') + '</div>' +
     '<p class="tiny muted">Set these where you can win most weeks. The competition scores each of you against your own goal, so an honest goal you hit beats an ambitious one you miss. Raise it after two or three good weeks.</p></section>';
   h += '<section class="card stack"><h3>Go easy on</h3><p class="tiny muted">Mark any area with an old injury. Activities that load it are flagged and sorted lower, and Surprise me skips them.</p><div class="chips wrapc">' +
     Object.keys(AREAS).map(k => { const on = (p.move.protect || []).includes(k); return '<button type="button" data-a="protect" data-k="' + k + '" class="' + (on ? 'on' : '') + '" aria-pressed="' + on + '">' + AREAS[k] + '</button>'; }).join('') + '</div></section>';
@@ -2126,6 +2445,7 @@ function renderPlanChoice() {
 }
 ACT['move-goal'] = async el => { await saveProfile(me(), { move: { goalDays: Number(el.dataset.v) } }); settle(); render(); };
 ACT['move-min'] = async el => { await saveProfile(me(), { move: { minMinutes: Number(el.dataset.v) } }); settle(); render(); };
+ACT['rest-len'] = async el => { await saveSettings({ rest: Number(el.dataset.v) }); };
 ACT.protect = async el => { const cur = P(me()).move.protect || [], k = el.dataset.k; await saveProfile(me(), { move: { protect: cur.includes(k) ? cur.filter(x => x !== k) : cur.concat([k]) } }); render(); };
 
 /* ---------- History ---------- */
@@ -2140,21 +2460,24 @@ function renderHistory() {
     if (n.kind === 'rest') { what = 'Rest'; chip = '<span class="chip">no credit</span>'; }
     else if (n.kind === 'cardio') { what = 'Treadmill'; chip = '<span class="chip good">activity</span>'; }
     else if (n.kind === 'strength') { what = (n.day ? DAYS[n.day].name : 'Lift') + ' · ' + (n.complete === true ? 'finished' : n.complete === false ? 'partial' : 'lift'); chip = n.qualifies ? '<span class="chip accent">lift day</span>' : '<span class="chip warn">partial · no lift credit</span>'; }
-    else if (n.kind === 'activity') { const names = n.acts.map(actName); what = names.slice(0, 2).join(' + ') + (names.length > 2 ? ' +' + (names.length - 2) : ''); chip = di.active ? '<span class="chip good">active day</span>' : '<span class="chip warn">under ' + minMin(pid) + ' min</span>'; }
+    else if (n.kind === 'activity') { const names = n.acts.map(actName); what = names.slice(0, 2).join(' + ') + (names.length > 2 ? ' +' + (names.length - 2) : ''); chip = di.active ? '<span class="chip good">active day</span>' : '<span class="chip warn">under ' + weekGoals(pid, weekStart(r.date)).minMin + ' min</span>'; }
     else { what = 'No activity recorded'; chip = '<span class="chip bad">check</span>'; }
+    if (n.program && n.acts.length) { const names = n.acts.map(actName); what += ' + ' + names[0] + (names.length > 1 ? ' +' + (names.length - 1) : ''); }
     const line = [];
     if (n.kind === 'activity') line.push(n.allMin + ' min');
     if (n.tm) line.push(n.tm.minutes > 0 ? n.tm.minutes + ' min treadmill' : 'treadmill, minutes not entered');
     if (n.keys.length) line.push(n.keys.length + ' exercise' + (n.keys.length === 1 ? '' : 's'));
+    if (n.program && n.acts.length) line.push(n.actMin + ' min of activities');
     if (n.phase) line.push('Phase ' + n.phase);
     h += '<details class="hi" data-hdate="' + r.date + '"><summary><div class="hdate num">' + nice(r.date).replace(/^(\w+) /, '$1<br>') + '</div><div><b>' + esc(what) + '</b><div class="tiny muted">' + esc(line.join(' · ') || '—') + '</div></div>' + chip + '</summary><div class="hbody">';
     if (n.ambiguous) h += '<p class="tiny" style="color:var(--warn)">Saved as a lift day by the earlier version, but it has no lifting sets. Treated as ' + (n.kind === 'cardio' ? 'treadmill only' : 'no activity') + ' until you edit it.</p>';
     if (n.legacy && n.keys.length) h += '<p class="tiny muted">Saved by the earlier version: blank sets were stored as 0 and are shown as not logged.</p>';
     if (n.tm && n.tm.title) h += '<p>' + esc(n.tm.title) + '</p>';
-    if (n.kind === 'activity') {
-      h += '<div class="tbl"><table>' + n.acts.map(a => '<tr><td>' + actIcon(a) + ' ' + esc(actName(a)) + (a.hurt ? '<br><span class="tiny" style="color:var(--warn)">pain noted</span>' : '') + (a.note ? '<br><span class="tiny muted">' + esc(a.note) + '</span>' : '') + '</td><td>' + a.min + ' min' + (a.feel && FEELS[a.feel] ? ' · ' + FEELS[a.feel] : '') + '</td></tr>').join('') + '</table></div>';
+    if (n.acts.length) {
+      h += (n.program ? '<div class="eyebrow">Activities</div>' : '') + '<div class="tbl"><table>' + n.acts.map(a => '<tr><td>' + actIcon(a) + ' ' + esc(actName(a)) + (a.hurt ? '<br><span class="tiny" style="color:var(--warn)">pain noted</span>' : '') + (a.note ? '<br><span class="tiny muted">' + esc(a.note) + '</span>' : '') + '</td><td>' + a.min + ' min' + (a.feel && FEELS[a.feel] ? ' · ' + FEELS[a.feel] : '') + '</td></tr>').join('') + '</table></div>';
     }
     if (n.keys.length) {
+      if (n.acts.length) h += '<div class="eyebrow">' + (n.day ? DAYS[n.day].name + ' lift' : 'Lift') + '</div>';
       const order = n.planned ? n.planned.filter(k => n.ex[k]).concat(n.keys.filter(k => !n.planned.includes(k))) : n.keys;
       h += '<div class="tbl"><table>' + order.map(k => {
         const e = n.ex[k]; const base = n.plannedBase && n.planned ? n.plannedBase[n.planned.indexOf(k)] : null;
@@ -2164,7 +2487,7 @@ function renderHistory() {
       if (n.qualifyOverride != null) h += '<p class="tiny muted">Lift credit set by hand: ' + (n.qualifyOverride ? 'counted' : 'not counted') + '.</p>';
     }
     if (n.notes) h += '<p>“' + esc(n.notes) + '”</p>';
-    h += '<div class="row"><button type="button" class="small" data-edit="' + r.date + '">Edit ' + nice(r.date) + '</button><button type="button" class="small ' + (state.confirmRemove === r.date ? 'danger' : '') + '" data-remove="' + r.date + '">' + (state.confirmRemove === r.date ? 'Tap again to remove ' + nice(r.date) : 'Remove') + '</button></div>';
+    h += '<div class="row"><button type="button" class="small" data-edit="' + r.date + '">Edit ' + nice(r.date) + '</button><button type="button" class="small ' + (state.confirmRemove === r.date ? 'danger' : '') + '" data-remove="' + r.date + '">' + (state.confirmRemove === r.date ? 'Tap again to remove ' + (n.program && n.acts.length ? 'the ' + (n.kind === 'strength' ? 'lift' : 'treadmill entry') + ' (activities stay)' : nice(r.date)) : n.program && n.acts.length ? 'Remove ' + (n.kind === 'strength' ? 'lift' : 'treadmill') : 'Remove') + '</button></div>';
     h += '</div></details>';
   });
   h += '</div></section>';
@@ -2198,16 +2521,20 @@ function ringSVG(frac, cls) {
 const fmtQty = q => (Math.round(q * 100) / 100).toString();
 const portionText = p => p.label + (p.grams && !/\d\s?g$/.test(p.label) ? ' (' + Math.round(p.grams) + ' g)' : '');
 function renderFuel() {
-  const pid = me(), date = state.selDate, g = goalsFor(pid), t = dayTotals(pid, date), day = foodDay(pid, date);
+  // the targets locked for the week this day belongs to; `live` is what the settings say now (next week's numbers)
+  const pid = me(), date = state.selDate, live = goalsFor(pid), g = weekGoals(pid, weekStart(date)), mg = macroGuide(g.kcal, g.protein), t = dayTotals(pid, date), day = foodDay(pid, date);
+  const prot = Math.round(t.n[1]), protAt = Math.ceil(g.protein * 0.9), changed = live.kcal !== g.kcal || live.waterOz !== g.waterOz || live.protein !== g.protein;
   const left = g.kcal - t.kcal, over = t.kcal > g.hi, inRange = t.count > 0 && t.kcal >= g.lo && t.kcal <= g.hi, water = Math.round(t.water);
   let h = '<section class="card sess">' + dateHead('Food and water for', 'fuel') + '<div class="status"><span>' + (t.count ? t.count + ' item' + (t.count === 1 ? '' : 's') + ' logged' : 'Nothing logged yet') + '</span>' + healthButton() + '</div></section>';
-  if (!g.ready) h += '<div class="banner accent"><span>These targets are placeholders: 2,000 calories and ' + g.waterOz + ' oz of water. Add your numbers, or your doctor\'s, to get your own.</span><div class="row"><button type="button" class="small" data-a="go-body">Set my targets</button></div></div>';
+  if (!live.ready) h += '<div class="banner accent"><span>These targets are placeholders: 2,000 calories and ' + g.waterOz + ' oz of water. Add your numbers, or your doctor\'s, to get your own.</span><div class="row"><button type="button" class="small" data-a="go-body">Set my targets</button></div></div>';
   h += '<section class="card stack"><div class="rings">' +
     '<div class="ringbox">' + ringSVG(t.kcal / g.kcal, over ? 'over' : '') + '<div class="ringtxt"><b id="kcalLeft">' + commas(Math.abs(left)) + '</b><span>' + (left >= 0 ? 'calories left' : 'over target') + '</span></div><div class="tiny muted num">' + commas(t.kcal) + ' of ' + commas(g.kcal) + '</div></div>' +
     '<div class="ringbox">' + ringSVG(t.water / g.waterOz, 'water') + '<div class="ringtxt"><b id="waterNow">' + water + '</b><span>of ' + g.waterOz + ' oz</span></div><div class="tiny muted">' + (t.water >= g.waterOz ? 'Water goal met' : Math.ceil(g.waterOz - t.water) + ' oz to go') + '</div></div></div>' +
     '<div class="waterbtns" aria-label="Add water">' + [[8, '+8 oz'], [12, '+12'], [16.9, '+Bottle 16.9'], [24, '+24'], [32, '+32']].map(w => '<button type="button" data-a="water" data-oz="' + w[0] + '">' + w[1] + '</button>').join('') + (t.water > 0 ? '<button type="button" data-a="water" data-oz="-8" aria-label="Remove 8 ounces">−8</button>' : '') + '</div>' +
-    '<div class="macros">' + [['Protein', 1, g.protein], ['Carbs', 3, g.carbs], ['Fat', 2, g.fat]].map(m => '<div class="macro"><span class="muted">' + m[0] + '</span><div class="bar"><i style="width:' + Math.round(clamp(t.n[m[1]] / (m[2] || 1), 0, 1) * 100) + '%"></i></div><span><b>' + Math.round(t.n[m[1]]) + '</b> / ' + m[2] + ' g</span></div>').join('') + '</div>' +
-    '<p class="tiny muted">' + (inRange ? '<span class="chip good">in range</span> ' : '') + 'A day counts for the competition between ' + commas(g.lo) + ' and ' + commas(g.hi) + ' calories. ' + (g.kcalSrc === 'doctor' ? 'Target from your doctor.' : g.kcalSrc === 'estimate' ? 'Target estimated from your numbers.' : '') + '</p></section>';
+    '<div class="protline" id="protLine"><div class="row between"><span><b>' + prot + '</b> of <b>' + g.protein + '</b> g protein</span><span class="chip' + (prot >= protAt ? ' good' : '') + '">' + (prot >= protAt ? (prot >= g.protein ? 'target met' : 'counts today') : (g.protein - prot) + ' g to go') + '</span></div><div class="bar" role="img" aria-label="Protein: ' + prot + ' of ' + g.protein + ' grams"><i style="width:' + Math.round(clamp(prot / (g.protein || 1), 0, 1) * 100) + '%"></i><em style="left:90%"></em></div>' +
+    '<span class="tiny muted">' + (g.scoring >= 2 ? 'Reaching ' + protAt + ' g (90% of your target) earns the protein share of today\'s Fuel points.' : 'Protein joins the Fuel score from the week of ' + nice(RULES_V2_FROM) + ': 90% of your target, ' + Math.ceil(liveGoals(pid).protein * 0.9) + ' g, will count.') + '</span></div>' +
+    '<div class="macros two">' + [['Carbs', 3, mg.carbs], ['Fat', 2, mg.fat]].map(m => '<div class="macro"><span class="muted">' + m[0] + '</span><div class="bar"><i style="width:' + Math.round(clamp(t.n[m[1]] / (m[2] || 1), 0, 1) * 100) + '%"></i></div><span><b>' + Math.round(t.n[m[1]]) + '</b> / ' + m[2] + ' g</span></div>').join('') + '</div>' +
+    '<p class="tiny muted">' + (inRange ? '<span class="chip good">in range</span> ' : '') + 'A day counts for the competition between ' + commas(g.lo) + ' and ' + commas(g.hi) + ' calories. ' + (changed ? 'These are the targets locked for that week. Your new ones start ' + nice(nextMonday()).replace(/^\w+ /, 'Mon ') + '.' : live.kcalSrc === 'doctor' ? 'Target from your doctor.' : live.kcalSrc === 'estimate' ? 'Target estimated from your numbers.' : '') + '</p></section>';
   h += '<section class="card">';
   MEALS.forEach(m => {
     const items = (day.items || []).filter(it => it.meal === m[0]), kc = sum(items, it => (it.n && it.n[0]) || 0);
@@ -2221,7 +2548,7 @@ function renderFuel() {
 }
 ACT['go-body'] = () => { state.scrollTo = 'bodyCard'; if (state.tab === 'me') render(); else location.hash = 'me'; };
 ACT.water = async el => {
-  const pid = me(), date = state.selDate, oz = Number(el.dataset.oz), g = goalsFor(pid), had = dayTotals(pid, date).water, before = scoreSnapshot();
+  const pid = me(), date = state.selDate, oz = Number(el.dataset.oz), g = weekGoals(pid, weekStart(date)), had = dayTotals(pid, date).water, before = scoreSnapshot();
   const ok = await addWater(date, oz); if (!ok) return;
   render();
   const now = dayTotals(pid, date).water, hit = had < g.waterOz && now >= g.waterOz;
@@ -2289,8 +2616,11 @@ OV.fooditem = {
     h += editing ? '<label class="f">Portion<input type="text" value="' + esc(o.item.unit) + '" disabled></label>'
       : '<label class="f">Portion<select id="fPortion" data-ovf="pi">' + o.food.portions.map((p, i) => '<option value="' + i + '"' + (Number(o.pi) === i ? ' selected' : '') + '>' + esc(portionText(p)) + '</option>').join('') + '</select></label>';
     h += '</div>' + mealSeg(o) + '<div id="factsBox">' + factsHTML(ovNutrients(o), ovServing(o)) + '</div>' +
-      '<div class="row"><button type="button" class="primary" id="foodAdd" data-a="food-save"' + (Number(o.qty) > 0 ? '' : ' disabled') + '>' + ovAddLabel(o) + '</button>' + (editing ? '<button type="button" class="small danger" data-a="food-del">Remove</button>' : '<button type="button" class="small" data-a="food-back">Back</button>') + '</div></div>';
-    return h;
+      '<div class="row"><button type="button" class="primary" id="foodAdd" data-a="food-save"' + (Number(o.qty) > 0 ? '' : ' disabled') + '>' + ovAddLabel(o) + '</button>' + (editing ? '<button type="button" class="small danger" data-a="food-del">Remove</button>' : '<button type="button" class="small" data-a="food-back">Back</button>') + '</div>';
+    // a food one of you created can be fixed or removed by either of you; what is already logged keeps its own numbers
+    if (!editing && o.food.customId) h += '<div class="row" id="customTools"><button type="button" class="small" data-a="custom-edit">Edit this food</button><button type="button" class="small danger" data-a="custom-del">' + (o.confirmDel ? 'Tap again to delete it' : 'Delete this food') + '</button></div>' +
+      '<p class="tiny muted">Editing or deleting changes the saved food for both of you. Anything already logged keeps the nutrition it was logged with.</p>';
+    return h + '</div>';
   }
 };
 ACT['food-back'] = () => { const b = state.ov.back; if (b) openOv(b); else closeOv(); };
@@ -2326,11 +2656,23 @@ ACT['quick-save'] = async () => {
   closeOv(); render(); celebrate('Added to ' + MEAL_NAME[o.meal] + ': ' + name + '.', { before });
 };
 OV.custom = {
-  html: o => '<div class="ov" role="dialog" aria-modal="true" aria-label="Create a food">' + ovHead('Create a food', 'Saved for both of you, searchable by name') +
+  html: o => '<div class="ov" role="dialog" aria-modal="true" aria-label="' + (o.id ? 'Edit food' : 'Create a food') + '">' + ovHead(o.id ? 'Edit food' : 'Create a food', o.id ? 'Changes the saved food for both of you' : 'Saved for both of you, searchable by name') +
     '<div class="formgrid"><div class="wide">' + ovField(o, 'name', 'Name', { text: true, ph: 'Mom\'s chili' }) + '</div><div class="wide">' + ovField(o, 'serving', 'One serving is', { text: true, ph: '1 bowl' }) + '</div>' +
     ovField(o, 'kcal', 'Calories') + ovField(o, 'p', 'Protein g') + ovField(o, 'c', 'Carbs g') + ovField(o, 'f', 'Fat g') + ovField(o, 'fiber', 'Fiber g') + ovField(o, 'sugar', 'Sugars g') + ovField(o, 'sat', 'Sat fat g') + ovField(o, 'na', 'Sodium mg') + '</div>' +
     '<p class="tiny muted">Per serving. Calories are required; leave anything else blank if you do not know it.</p>' +
-    '<div class="row"><button type="button" class="primary" data-a="custom-save">Save food</button><button type="button" class="small" data-a="food-back">Back</button></div></div>'
+    '<div class="row"><button type="button" class="primary" data-a="custom-save">' + (o.id ? 'Save changes' : 'Save food') + '</button><button type="button" class="small" data-a="food-back">Back</button></div></div>'
+};
+ACT['custom-edit'] = () => {
+  const o = state.ov, id = o.food && o.food.customId, c = id && state.customFoods[id]; if (!c) { toast('That food is no longer saved.'); return; }
+  const n = c.n || [], s = i => n[i] == null ? '' : String(n[i]);
+  openOv({ type: 'custom', id, meal: o.meal, date: o.date, name: c.name || '', serving: c.serving || '1 serving', kcal: s(NI.kcal), p: s(NI.protein), c: s(NI.carbs), f: s(NI.fat), fiber: s(NI.fiber), sugar: s(NI.sugar), sat: s(NI.satfat), na: s(NI.sodium), back: Object.assign({}, o, { confirmDel: false }), list: o.back });
+};
+ACT['custom-del'] = async () => {
+  const o = state.ov, id = o.food && o.food.customId; if (!id) return;
+  if (!o.confirmDel) { o.confirmDel = true; renderOv(); return; }
+  const ok = await write('foods/' + id, null); if (!ok) return;
+  if (o.back) openOv(o.back); else closeOv();
+  toast('Food deleted. Anything already logged keeps its numbers.', 3200);
 };
 ACT['food-custom'] = () => { const o = state.ov; openOv({ type: 'custom', meal: o.meal, date: o.date, name: String(o.q || '').trim(), serving: '1 serving', kcal: '', p: '', c: '', f: '', fiber: '', sugar: '', sat: '', na: '', back: { type: 'food', meal: o.meal, date: o.date, q: o.q } }); };
 ACT['custom-save'] = async () => {
@@ -2340,10 +2682,11 @@ ACT['custom-save'] = async () => {
   if (v.kcal == null || Number.isNaN(v.kcal) || v.kcal > 10000) { toast('Enter calories per serving, 0 to 10,000.'); return; }
   if (Object.keys(v).some(k => Number.isNaN(v[k]))) { toast('Nutrition values must be numbers, or blank.'); return; }
   const n = NKEYS.map(() => null); n[NI.kcal] = Math.round(v.kcal); n[NI.protein] = v.p; n[NI.carbs] = v.c; n[NI.fat] = v.f; n[NI.fiber] = v.fiber; n[NI.sugar] = v.sugar; n[NI.satfat] = v.sat; n[NI.sodium] = v.na;
-  const id = uid();
-  const ok = await write('foods/' + id, { name, serving: String(o.serving || '').trim() || '1 serving', n, by: me(), createdAt: new Date().toISOString() }); if (!ok) return;
-  openOv({ type: 'fooditem', food: customFood(id), meal: o.meal, date: o.date, qty: '1', pi: 0, back: o.back });
-  toast('Saved. It now shows up in search.');
+  const id = o.id || uid(), prev = o.id ? state.customFoods[o.id] : null, now = new Date().toISOString();
+  const doc = Object.assign({}, prev, { name, serving: String(o.serving || '').trim() || '1 serving', n, by: prev && prev.by || me(), createdAt: prev && prev.createdAt || now }, prev ? { updatedAt: now, updatedBy: me() } : {});
+  const ok = await write('foods/' + id, doc); if (!ok) return;
+  openOv({ type: 'fooditem', food: customFood(id), meal: o.meal, date: o.date, qty: '1', pi: 0, back: o.id ? o.list : o.back });
+  toast(o.id ? 'Food updated. Past logs keep their numbers.' : 'Saved. It now shows up in search.', 3000);
 };
 
 /* ---- 72-ui-health.js ---- */
@@ -2409,20 +2752,58 @@ ACT['hk-import'] = async () => {
   closeOv(); render();
   celebrate(did.length ? 'Imported for ' + hkWhen(plan.date) + ': ' + did.join(', ') + '.' : 'Nothing new to import.', { ms: 3600, before });
 };
+// The Watch top-up is worked out, not typed: its sheet explains the number and can turn it off for the day.
+OV.hkinfo = {
+  html: o => {
+    const pid = me(), h = healthDay(pid, o.date) || {}, rec = state.sessions[o.date], n = rec ? normalize(rec) : null, top = n ? n.acts.find(isHk) : null;
+    const manual = n ? sum(n.acts.filter(a => !isHk(a) && a.mv !== false), a => a.min) : 0;
+    return '<div class="ov" role="dialog" aria-modal="true" aria-label="Apple Watch top-up">' + ovHead('⌚ Apple Watch top-up', rel(o.date)) +
+      '<p>' + (isNum(h.exercise) ? 'Your Watch counted <b>' + h.exercise + ' exercise minutes</b>. ' : '') + 'You logged <b>' + manual + ' min</b> of movement by hand, so <b>' + (top ? top.min : 0) + ' min</b> ' + (top && top.min === 1 ? 'is' : 'are') + ' added on top.</p>' +
+      '<p class="tiny muted">Log, change or remove an activity and this adjusts by itself, so the same minutes never count twice.</p>' +
+      '<div class="row"><button type="button" class="small danger" data-a="hk-off">Remove the top-up for this day</button><button type="button" class="small" data-a="ov-close">Close</button></div></div>';
+  }
+};
+ACT['hk-info'] = () => openOv({ type: 'hkinfo', date: state.selDate });
+ACT['hk-off'] = async () => {
+  const o = state.ov, pid = me(), path = PATH.health(pid, o.date), cur = getDoc(path);
+  if (cur) { if (!(await write(path, Object.assign({}, cur, { topUp: false })))) return; if ((await syncWatch(o.date)) === false) return; }
+  else if (!(await removeActivity(o.date, HK_ACT_ID))) return;
+  closeOv(); settle(); render(); toast('Top-up removed for ' + hkWhen(o.date) + '.');
+};
 
 /* ---- 75-ui-compete.js ---- */
-/* ---------- Compete: the weekly race ---------- */
+/* ---------- Compete: the weekly race, and the team week you win together ---------- */
+// one person's Move rule in words, built from their own plan and the goals locked for this week
+// When a setting was changed mid-week, the line shows this week's locked rule first and then the one that starts Monday.
+function fairLine(pid) {
+  const wk = thisWeek(pid), live = liveGoals(pid), nm = '<b>' + esc(P(pid).name) + '</b>';
+  const rule = g => g.plan === 'program'
+    ? ', on the lifting program: 30 for activity days (goal ' + g.goal + ' a week) plus 20 for lift days (goal ' + g.liftGoal + ' a week). A day with no lift still counts as an activity day with a treadmill entry or ' + g.minMin + ' minutes of anything else.'
+    : ', on pick-your-own: 50 for active days of ' + g.minMin + ' minutes or more (goal ' + g.goal + ' a week).';
+  const changed = ['plan', 'goal', 'liftGoal', 'minMin'].some(k => live[k] !== wk[k]);
+  return nm + rule(wk) + (changed ? ' <span class="chip accent">' + startsNote() + '</span> ' + nm + rule(live) : '');
+}
+function moveProgress(pid, sc) { // "2 of 5 activity days · 1 of 3 lifts"
+  const g = thisWeek(pid);
+  return sc.moveFull ? 'Move score full' : Math.min(sc.active, g.goal) + ' of ' + g.goal + (g.plan === 'program' ? ' activity days · ' + Math.min(sc.lifts, g.liftGoal) + ' of ' + g.liftGoal + ' lifts' : ' active days');
+}
+function countdownText(cd, banked) {
+  const d = cd.days, when = d > 1 ? d + ' days to ' + cd.phrase : d === 1 ? '1 day to ' + cd.phrase : d === 0 ? 'Today: ' + cd.phrase : cd.phrase.charAt(0).toUpperCase() + cd.phrase.slice(1) + ' was ' + (-d) + ' day' + (d === -1 ? '' : 's') + ' ago';
+  return when + (banked != null ? ' · ' + banked + ' team week' + (banked === 1 ? '' : 's') : '');
+}
 function renderCompete() {
-  const pid = me(), other = otherPid(pid), t = todayIso(), ws = weekStart(t), A = weekScore(pid, ws), B = weekScore(other, ws), c = coach(pid), pa = P(pid), pb = P(other);
-  const diff = A.total - B.total, left = c.daysLeft;
+  const pid = me(), other = otherPid(pid), t = todayIso(), ws = weekStart(t), A = weekScore(pid, ws), B = weekScore(other, ws), c = coach(pid), pa = P(pid), pb = P(other), ga = thisWeek(pid);
+  const diff = A.total - B.total, left = c.daysLeft, stakes = stakesFor(ws), all = compWeeks(), prev = all[all.length - 1];
   const lead = diff === 0 ? (A.total === 0 ? 'Green flag. First points take the lead.' : 'Dead heat.') : diff > 0 ? 'You lead by ' + diff + '.' : pb.name + ' leads by ' + (-diff) + '.';
   const lane = (p, sc) => '<div class="lane" style="' + avStyle(p) + ';--p:' + (clamp(sc.total, 0, 100) / 100).toFixed(3) + '" role="img" aria-label="' + esc(P(p).name) + ': ' + sc.total + ' of 100 points"><div class="fill"></div><div class="car">' + avatarHTML(p) + '</div></div>';
   let h = '<section class="card stack"><div class="row between"><div><div class="eyebrow">Week of ' + shortDate(ws) + '</div><h2>' + (left === 0 ? 'Final day' : left + ' day' + (left === 1 ? '' : 's') + ' left') + '</h2></div><span class="chip">resets Monday</span></div>' +
     '<div class="vs"><div class="side">' + avatarHTML(pid, 'lg') + '<b>' + esc(pa.name) + '</b><span class="pts" id="myPts">' + A.total + '</span></div><div class="mid">VS</div><div class="side">' + avatarHTML(other, 'lg') + '<b>' + esc(pb.name) + '</b><span class="pts" id="theirPts">' + B.total + '</span></div></div>' +
     '<div class="race">' + lane(pid, A) + lane(other, B) + '</div>' +
     '<p id="leadLine"><b>' + esc(lead) + '</b> <span class="muted">Out of 100. Each of you is scored against your own goals.</span></p>';
-  if (state.forms.stakes) h += '<div class="row" style="flex-wrap:nowrap"><input type="text" id="stakesIn" data-form="stakes" data-k="text" maxlength="80" value="' + esc(state.forms.stakes.text || '') + '" placeholder="Loser cooks Sunday dinner" aria-label="What is on the line"><button type="button" class="small" data-a="stakes-save">Save</button></div>';
-  else h += state.comp.stakes ? '<p class="tiny">On the line: <b>' + esc(state.comp.stakes) + '</b> <button type="button" class="quiet" data-a="stakes-edit">Change</button></p>' : '<div><button type="button" class="quiet" data-a="stakes-edit">Add what is on the line this week</button></div>';
+  // last week stays open for late entries through Tuesday: until then its result is only provisional, and says so quietly
+  if (prev && !prev.final && prev.played) h += '<p class="tiny muted" id="provLine">Last week · ' + esc(provisionalText(prev)) + '. The winner is announced once it is final.</p>';
+  if (state.forms.stakes) h += '<div class="row" style="flex-wrap:nowrap"><input type="text" id="stakesIn" data-form="stakes" data-k="text" maxlength="80" value="' + esc(state.forms.stakes.text || '') + '" placeholder="Loser cooks Sunday dinner" aria-label="What is on the line this week"><button type="button" class="small" data-a="stakes-save">Save</button></div>';
+  else h += stakes ? '<p class="tiny" id="stakesLine">On the line this week: <b>' + esc(stakes) + '</b> <button type="button" class="quiet" data-a="stakes-edit">Change</button></p>' : '<div id="stakesLine"><button type="button" class="quiet" data-a="stakes-edit">Add what\'s on the line this week</button></div>';
   h += '</section>';
 
   const cell = (p, sc, key, max) => '<span class="cell" style="' + avStyle(p) + '"><span class="bar"><i style="width:' + Math.round(clamp(sc[key] / max, 0, 1) * 100) + '%"></i></span><b class="num">' + Math.round(sc[key]) + '</b></span>';
@@ -2430,38 +2811,72 @@ function renderCompete() {
   const tick = v => v ? '✓' : '–';
   const waterWeek = p => sum(weekFacts(p, ws).days, d => d.future ? 0 : dayTotals(p, d.date).water);
   h += '<section class="card stack"><div class="mini"><span></span><b>' + esc(pa.name) + '</b><b>' + esc(pb.name) + '</b>' + cat('Move', 'move', 50) + cat('Fuel', 'fuel', 20) + cat('Water', 'water', 15) + cat('Bonus', 'bonus', 15) + '</div>' +
-    '<p class="tiny muted">You: ' + A.active + ' of ' + moveGoal(pid) + ' active days' + (pa.plan === 'program' ? ', ' + A.lifts + ' of ' + LIFT_GOAL + ' lift days' : '') + ', ' + A.minutes + ' min. Bonus: personal best ' + tick(A.pb) + ' · variety ' + tick(A.variety) + ' · weekend ' + tick(A.weekend) + '.</p>' +
+    '<p class="tiny muted">You: ' + A.active + ' of ' + ga.goal + ' active days' + (ga.plan === 'program' ? ', ' + A.lifts + ' of ' + ga.liftGoal + ' lift days' : '') + ', ' + A.minutes + ' min. Bonus: personal best ' + tick(A.pb) + ' · variety ' + tick(A.variety) + ' · weekend ' + tick(A.weekend) + '.</p>' +
     '<p class="tiny muted">Together this week: ' + (A.active + B.active) + ' active days and ' + Math.round(waterWeek(pid) + waterWeek(other)) + ' oz of water.</p></section>';
+
+  // the team week: both of you fill your own Move score. Nobody has to lose for it to count.
+  const ts = teamStats(), cd = countdown(), f = state.forms.cd;
+  const trow = (p, sc) => '<div class="trow" style="' + avStyle(p) + '">' + avatarHTML(p, 'sm') + '<span class="tn"><b>' + esc(P(p).name) + '</b><br><span class="tiny muted">' + esc(moveProgress(p, sc)) + '</span></span><span class="bar"><i style="width:' + Math.round(clamp(sc.move / 50, 0, 1) * 100) + '%"></i></span><span class="chip' + (sc.moveFull ? ' good' : '') + '">' + (sc.moveFull ? 'locked in' : Math.round(sc.move) + '/50') + '</span></div>';
+  h += '<section class="card stack" id="teamCard"><div class="row between"><div><div class="eyebrow">Together</div><h3>Team week</h3></div><span class="chip' + (ts.locked === 2 ? ' good' : '') + '" id="teamLock">Team week: ' + ts.locked + ' of 2 locked in</span></div>' +
+    trow(pid, A) + trow(other, B) +
+    '<p class="tiny muted">A team week is one where you both fill your own Move score. It runs next to the race, and you win it together.</p>' +
+    '<div class="kv"><span>Team streak</span><b id="teamStreak">' + ts.streak + ' week' + (ts.streak === 1 ? '' : 's') + ' in a row</b><span class="muted">Team weeks so far</span><b class="muted">' + ts.total + '</b></div>';
+  if (f) h += '<div class="formgrid" id="cdForm"><label class="f">Counting down to<input type="text" data-form="cd" data-k="label" maxlength="24" value="' + esc(f.label == null ? '' : f.label) + '" placeholder="Wedding"></label><label class="f">Date<input type="date" data-form="cd" data-k="date" value="' + esc(f.date || '') + '" min="' + t + '"></label>' +
+    '<div class="wide row"><button type="button" class="small" data-a="cd-save">Save countdown</button><button type="button" class="quiet" data-a="cd-cancel">Cancel</button>' + (cd ? '<button type="button" class="quiet" data-a="cd-clear">Remove countdown</button>' : '') + '</div></div>';
+  else h += cd ? '<p id="cdLine"><b>' + esc(countdownText(cd, ts.banked)) + '</b> <button type="button" class="quiet" data-a="cd-edit">Change</button></p>' : '<div><button type="button" class="quiet" data-a="cd-edit">Add a countdown you are both working toward</button></div>';
+  h += '</section>';
 
   let planLine;
   if (diff > 0) planLine = 'You are ahead. These keep you there.';
   else if (c.plan) planLine = 'To pass ' + pb.name + ' today: ' + c.plan.used.map(x => x.text.charAt(0).toLowerCase() + x.text.slice(1)).join(', then ') + '. That puts you at ' + c.plan.total + ' to ' + c.other + '.';
   else if (c.max > c.other) planLine = 'Today alone will not pass ' + pb.name + '. Bank these and keep going; your best case this week is ' + c.max + '.';
-  else planLine = pb.name + ' is out of reach on points this week. Bank the habit; a fresh race starts Monday.';
+  else planLine = pb.name + ' is out of reach on points this week. ' + teamPointer(c) + ' A fresh race starts Monday.';
   h += '<section class="card stack"><div><h3>Ways to gain today</h3><p class="tiny muted" id="planLine" style="margin-top:2px">' + esc(planLine) + '</p></div>' +
-    (c.tips.length ? '<div class="tips">' + c.tips.map(tip => '<a class="tip" href="#' + tip.tab + '"><span><b>' + esc(tip.text) + '</b><br><span class="tiny muted">' + esc(tip.sub) + '</span></span><span class="gain">+' + tip.gain + '</span></a>').join('') + '</div>' : '<p class="muted">Everything available today is banked. Nice.</p>') +
+    (c.tips.length ? '<div class="tips">' + c.tips.map(tip => '<a class="tip" href="#' + tip.tab + '" data-tip="' + tip.group + '"><span><b>' + esc(tip.text) + '</b><br><span class="tiny muted">' + esc(tip.sub) + '</span></span><span class="gain">+' + tip.gain + '</span></a>').join('') + '</div>' : '<p class="muted">Everything available today is banked. Nice.</p>') +
     '<p class="tiny muted">Best case from here: ' + c.max + ' points this week.</p></section>';
 
-  h += '<details class="card plain" data-dk="fair"><summary>How scoring stays fair</summary><ul class="rules" style="margin-top:8px">' +
-    '<li><b>Move, 50 points.</b> Your share of your own weekly goal. ' + esc(P('tyson').name) + ': 30 for activity days plus 20 for lift days. ' + esc(P('jacquie').name) + ': 50 for active days of ' + minMin('jacquie') + ' minutes or more. Each of you sets your own goal, so a short walk that completes a day is worth as much as a lift day.</li>' +
-    '<li><b>Fuel, 20 points.</b> Days logged inside your calorie range. Five such days fills it; a logged day outside the range earns half.</li>' +
+  const v2 = ga.scoring >= 2;
+  h += '<details class="card plain" data-dk="fair"><summary>How scoring stays fair</summary><ul class="rules" id="fairRules" style="margin-top:8px">' +
+    '<li><b>Move, 50 points.</b> Your share of your own weekly goal, so a short walk that completes a day is worth as much as a lift day.<br>' + fairLine('tyson') + '<br>' + fairLine('jacquie') + '</li>' +
+    '<li><b>Fuel, 20 points.</b> ' + (v2 ? 'Each' : 'From the week of ' + nice(RULES_V2_FROM) + ': each') + ' day counts 0.7 for landing in your calorie range (a logged day outside it earns half of that) plus 0.3 for reaching at least 90% of your own protein target. Five full days fills it. A quick add with no protein entered counts as 0 g.' + (v2 ? '' : ' Until then, a day is the calorie range alone.') + '</li>' +
     '<li><b>Water, 15 points.</b> Each day earns the share of your water goal you drank. Five full days fills it.</li>' +
-    '<li><b>Bonus, 15 points.</b> Five each for more active minutes than your own last week, three different kinds of activity, and moving on Saturday or Sunday.</li>' +
+    '<li><b>Bonus, 15 points.</b> Five each for more active minutes than your own last week, three different kinds of activity, and moving on Saturday or Sunday. Watch minutes add time, not a new kind.</li>' +
+    '<li><b>Your goals lock each Monday.</b> Changing a goal, a workout style or your body numbers never moves the week already running. The change starts the next Monday.</li>' +
     '<li>Rest days cost nothing. Body weight and calorie totals never appear here, only points.</li>' +
     '<li>Scores are worked out from the saved logs, so editing an entry updates the race and nothing counts twice.</li>' +
-    '<li>A finished week stays open through Tuesday for anything you forgot to log. After that its result is final, and later goal changes cannot rewrite it.</li></ul></details>';
+    '<li>A finished week stays open through Tuesday for anything you forgot to log. Until then its result is provisional. On Wednesday it is final, the winner is announced, and nothing can rewrite it.</li></ul></details>';
 
-  const weeks = compWeeks().filter(w => w.played).slice().reverse(), wins = p => weeks.filter(w => w.winner === p).length, ties = weeks.filter(w => !w.winner).length;
-  h += '<section class="card stack"><div class="row between"><h3>Season</h3><span class="num">' + esc(pa.name) + ' <b>' + wins(pid) + '</b> – <b>' + wins(other) + '</b> ' + esc(pb.name) + (ties ? ' · ' + ties + ' tied' : '') + '</span></div>' +
-    (weeks.length ? '<div class="weeks">' + weeks.slice(0, 10).map(w => '<div class="wk"><span>Week of ' + shortDate(w.ws) + (w.final ? '' : ' <span class="chip">open through Tue</span>') + '</span><span class="num">' + (w.winner ? '<b>' + esc(P(w.winner).name) + '</b> ' : 'Tie ') + w[pid] + '–' + w[other] + '</span></div>').join('') + '</div>' : '<p class="muted tiny">The first result posts on Monday, when this week closes.</p>') + '</section>';
+  const weeks = all.filter(w => w.played).slice().reverse(), finals = weeks.filter(w => w.final), wins = p => finals.filter(w => w.winner === p).length, ties = finals.filter(w => !w.winner).length;
+  h += '<section class="card stack" id="seasonCard"><div class="row between"><h3>Season</h3><span class="num">' + esc(pa.name) + ' <b>' + wins(pid) + '</b> – <b>' + wins(other) + '</b> ' + esc(pb.name) + (ties ? ' · ' + ties + ' tied' : '') + '</span></div>' +
+    (weeks.length ? '<div class="weeks">' + weeks.slice(0, 10).map(w => { const sl = stakesLine(w); return '<div class="wk" data-wk="' + w.ws + '"><span>Week of ' + shortDate(w.ws) + (w.final ? (isTeamWeek(w.ws) ? ' <span class="chip good">team week</span>' : '') : ' <span class="chip">provisional · open through Tue</span>') + (sl ? '<br><span class="tiny muted">' + esc(sl) + '</span>' : '') + '</span><span class="num">' + (w.final ? (w.winner ? '<b>' + esc(P(w.winner).name) + '</b> ' : 'Tie ') : '') + w[pid] + '–' + w[other] + '</span></div>'; }).join('') + '</div>' : '<p class="muted tiny">The first result posts once a week has finished.</p>') +
+    '<p class="tiny muted">Wins count once a week is final.</p></section>';
   return h;
 }
-ACT['stakes-edit'] = () => { state.forms.stakes = { text: state.comp.stakes || '' }; render('#stakesIn'); };
+ACT['stakes-edit'] = () => { state.forms.stakes = { text: stakesFor(weekStart(todayIso())) }; render('#stakesIn'); };
 ACT['stakes-save'] = async () => {
-  const text = String((state.forms.stakes || {}).text || '').trim().slice(0, 80);
+  const text = String((state.forms.stakes || {}).text || '').trim().slice(0, 80), cur = weekStart(todayIso()), c = state.comp;
+  // stakes are kept per week; ones saved before that (one text, no week) are filed under the week they were set in
+  const by = Object.assign({}, c.stakesBy && typeof c.stakesBy === 'object' ? c.stakesBy : (c.stakes ? { [LEGACY_STAKES_WS]: c.stakes } : {}));
+  by[cur] = text; Object.keys(by).sort().slice(0, -8).forEach(k => { delete by[k]; }); // closed weeks carry their own copy
   typing = false;
-  const ok = await write('comp/settings', Object.assign({}, state.comp, { stakes: text }));
+  const ok = await write('comp/settings', Object.assign({}, c, { stakesBy: by, stakes: text }));
   if (ok) delete state.forms.stakes; // a refused save keeps what was typed
+  render();
+};
+ACT['cd-edit'] = () => { const cd = countdown(); state.forms.cd = { label: cd ? cd.label : 'Wedding', date: cd ? cd.date : '' }; render(); };
+ACT['cd-cancel'] = () => { delete state.forms.cd; render(); };
+ACT['cd-save'] = async () => {
+  const f = state.forms.cd || {}, label = String(f.label || '').trim().slice(0, 24) || 'Wedding', date = String(f.date || ''), old = state.comp.countdown;
+  if (!validIso(date)) { toast('Pick the date you are counting down to.'); return; }
+  typing = false;
+  // team weeks are banked from the day the countdown was first set, so editing the label or date keeps them
+  const ok = await write('comp/settings', Object.assign({}, state.comp, { countdown: { date, label, setAt: old && validIso(old.setAt) ? old.setAt : todayIso() } }));
+  if (ok) delete state.forms.cd;
+  render();
+};
+ACT['cd-clear'] = async () => {
+  const next = Object.assign({}, state.comp); delete next.countdown;
+  const ok = await write('comp/settings', next); if (ok) delete state.forms.cd;
   render();
 };
 
@@ -2491,7 +2906,8 @@ function targetNotes(pid) {
   return out;
 }
 function renderMe() {
-  const pid = me(), p = P(pid), g = goalsFor(pid), bs = badgesFor(pid), earned = bs.filter(b => b.earned).length, sk = p.skin, v = bodyVals(pid);
+  const pid = me(), p = P(pid), g = goalsFor(pid), bs = badgesFor(pid), earned = bs.filter(b => b.earned).length, sk = p.skin, v = bodyVals(pid), wk = thisWeek(pid), live = liveGoals(pid);
+  const lockedDiffer = ['kcal', 'lo', 'hi', 'waterOz', 'protein'].some(k => wk[k] !== live[k]), mon = startsNote();
   const seg = (a, k, cur, opts) => '<div class="seg">' + Object.keys(opts).map(o => '<button type="button" data-a="' + a + '" data-k="' + k + '" data-v="' + o + '" class="' + (cur === o ? 'on' : '') + '" aria-pressed="' + (cur === o) + '">' + (Array.isArray(opts[o]) ? opts[o][0] : opts[o]) + '</button>').join('') + '</div>';
   let h = '<section class="card"><div class="row" style="flex-wrap:nowrap">' + avatarHTML(pid, 'lg') + '<div class="grow"><h2>' + esc(p.name) + '</h2><div class="tiny muted">' + (p.plan === 'program' ? 'Lifting program' : 'Pick-your-own workouts') + ' · ' + earned + ' badge' + (earned === 1 ? '' : 's') + '</div></div><button type="button" class="small" data-a="who">Switch</button></div></section>';
 
@@ -2510,8 +2926,12 @@ function renderMe() {
     '<div class="row" style="flex-wrap:nowrap;align-items:flex-end"><label class="f grow">Display name<input type="text" data-form="name" data-k="name" maxlength="20" value="' + esc('name' in (state.forms.name || {}) ? state.forms.name.name : p.name) + '"></label><button type="button" class="small" data-a="name-save" style="min-height:44px">Save</button></div>' +
     '<p class="tiny muted">Your look applies whenever your profile is active, on any phone.</p></section>';
 
+  h += '<section class="card stack" id="gymCard"><h3>Gym</h3><div class="row" style="flex-wrap:nowrap;align-items:flex-end"><label class="f grow">Where you train<input type="text" data-form="gym" data-k="place" maxlength="40" value="' + esc('place' in (state.forms.gym || {}) ? state.forms.gym.place : (p.place || '')) + '" placeholder="Name of your gym"></label><button type="button" class="small" data-a="gym-save" style="min-height:44px">Save</button></div>' +
+    '<p class="tiny muted">Shown next to the date at the top and in the morning plan. Leave it empty to show no gym.</p></section>';
+
   h += '<section class="card stack" id="bodyCard"><div class="row between"><h3>Daily targets</h3>' + (g.ready ? '<span class="chip good">' + (g.kcalSrc === 'doctor' ? 'doctor' : 'estimate') + '</span>' : '<span class="chip warn">placeholder</span>') + '</div>' +
-    '<div class="kv"><span>Calories</span><b id="tKcal">' + commas(g.kcal) + '</b><span class="muted">Counts between</span><b class="muted">' + commas(g.lo) + '–' + commas(g.hi) + '</b><span>Water</span><b id="tWater">' + g.waterOz + ' oz</b><span class="muted">Protein · carbs · fat guide</span><b class="muted">' + g.protein + ' · ' + g.carbs + ' · ' + g.fat + ' g</b></div>' +
+    '<div class="kv"><span>Calories</span><b id="tKcal">' + commas(g.kcal) + '</b><span class="muted">Counts between</span><b class="muted">' + commas(g.lo) + '–' + commas(g.hi) + '</b><span>Water</span><b id="tWater">' + g.waterOz + ' oz</b><span>Protein</span><b id="tProtein">' + g.protein + ' g</b><span class="muted">Carbs · fat guide</span><b class="muted">' + g.carbs + ' · ' + g.fat + ' g</b></div>' +
+    (lockedDiffer ? '<div class="banner" id="lockedTargets"><span><b>This week, locked:</b> ' + commas(wk.kcal) + ' calories (counts ' + commas(wk.lo) + '–' + commas(wk.hi) + ') · ' + wk.waterOz + ' oz water · ' + wk.protein + ' g protein.</span><span><span class="chip accent">' + mon + '</span> the numbers above. The week already running is scored on the locked ones.</span></div>' : '<p class="tiny muted" id="lockedTargets">These are also this week\'s locked targets. A change here starts the next Monday.</p>') +
     '<div class="tiny muted stack" style="gap:4px">' + targetNotes(pid).map(x => '<p>' + esc(x) + '</p>').join('') + '</div>' +
     '<div><div class="eyebrow">Sex, for the estimate</div><div class="seg" style="margin-top:4px">' + [['m', 'Male'], ['f', 'Female']].map(o => '<button type="button" data-a="form-set" data-form="body" data-k="sex" data-v="' + o[0] + '" class="' + (v.sex === o[0] ? 'on' : '') + '" aria-pressed="' + (v.sex === o[0]) + '">' + o[1] + '</button>').join('') + '</div></div>' +
     '<div class="formgrid">' +
@@ -2537,7 +2957,8 @@ function renderMe() {
     '<div class="row"><button type="button" class="small" data-a="health">Import from Health</button></div>' +
     '<details class="plain" data-dk="hksteps"><summary>Set up the shortcut, once per iPhone</summary><div style="margin-top:8px">' + shortcutStepsHTML() + '</div></details></section>';
   h += '<section class="card stack"><h3>Workout style</h3>' + seg('plan-set', 'plan', p.plan, { program: 'Lifting program', choice: 'Pick-your-own' }) +
-    '<p class="tiny muted">' + (p.plan === 'program' ? 'Push, Pull, Legs rotation with weight suggestions. Weekly goal: ' + moveGoal(pid) + ' activity days, ' + LIFT_GOAL + ' of them lifts.' : 'Choose from a gentle menu each day. Weekly goal: ' + moveGoal(pid) + ' active days of ' + minMin(pid) + ' minutes or more. Adjust it under Train, Plan.') + ' Switching keeps everything already logged.</p></section>';
+    '<p class="tiny muted">' + (p.plan === 'program' ? 'Push, Pull, Legs rotation with weight suggestions. Weekly goal: ' + live.goal + ' activity days, ' + LIFT_GOAL + ' of them lifts. Walks and other activities can be added on any day.' : 'Choose from a gentle menu each day. Weekly goal: ' + live.goal + ' active days of ' + live.minMin + ' minutes or more. Adjust it under Train, Plan.') + ' Switching keeps everything already logged.</p>' +
+    (live.plan !== wk.plan ? '<p class="tiny locknote" id="planLock"><span class="chip accent">' + mon + '</span> for scoring. Your Train tab switches now, but this week is still scored as ' + (wk.plan === 'program' ? 'the lifting program' : 'pick-your-own') + ', so the race already running does not change.</p>' : '') + '</section>';
 
   const sync = state.storage === 'db' ? (state.cantWrite ? 'This account can read the shared log but not save to it.' : 'Saving to the shared log on your Claude account.') : state.storage === 'local' ? 'Saving in this browser only.' : state.storage === 'nodb' ? 'The shared log cannot be reached right now.' : 'Connecting…';
   h += '<section class="card stack"><h3>Two phones, one log</h3><p class="tiny muted">' + sync + '</p><p class="tiny muted">Both profiles live in one shared log. To use it from two phones, open this page\'s Share menu and invite your partner by email as an Editor, or sign in to the same Claude account on both. Your Claude account remembers which profile you use, so you are not asked again; the top-right button switches.</p></section>';
@@ -2555,8 +2976,14 @@ ACT['name-save'] = async () => {
   const ok = await saveProfile(me(), { name }); if (!ok) return; // a refused save keeps what was typed
   delete state.forms.name; render(); toast('Saved');
 };
+ACT['gym-save'] = async () => {
+  const place = String((state.forms.gym || {}).place == null ? (P(me()).place || '') : state.forms.gym.place).trim().slice(0, 40);
+  typing = false;
+  const ok = await saveProfile(me(), { place }); if (!ok) return; // a refused save keeps what was typed
+  delete state.forms.gym; render(); toast(place ? 'Gym set to ' + place + '.' : 'Gym cleared.');
+};
 ACT['form-set'] = el => { const f = el.dataset.form; (state.forms[f] = state.forms[f] || {})[el.dataset.k] = el.dataset.v; render(); };
-ACT['plan-set'] = async el => { if (P(me()).plan === el.dataset.v) return; await saveProfile(me(), { plan: el.dataset.v }); settle(); render(); toast(el.dataset.v === 'program' ? 'Lifting program on. Your Train tab is the Push, Pull, Legs log.' : 'Pick-your-own on. Your Train tab is the activity menu.', 3200); };
+ACT['plan-set'] = async el => { if (P(me()).plan === el.dataset.v) return; await saveProfile(me(), { plan: el.dataset.v }); settle(); render(); toast((el.dataset.v === 'program' ? 'Lifting program on. Your Train tab is the Push, Pull, Legs log.' : 'Pick-your-own on. Your Train tab is the activity menu.') + ' Scoring switches ' + nice(nextMonday()) + '.', 3800); };
 ACT['body-save'] = async () => {
   const pid = me(), v = bodyVals(pid), num = s => { const t = String(s).trim(); return t === '' ? null : Number(t); };
   const age = num(v.age), ft = num(v.ft), inch = num(v.inch), lb = num(v.lb), dkcal = num(v.dkcal), dwater = num(v.dwater);
@@ -2570,10 +2997,13 @@ ACT['body-save'] = async () => {
   const patch = { body: { sex: v.sex === 'm' || v.sex === 'f' ? v.sex : null, age, heightIn, weightLb: lb, activity: ACTIVITY[v.activity] ? v.activity : 'light', pace: PACE[v.pace] ? v.pace : 'maintain' }, doctor: { kcal: dkcal, waterOz: dwater } };
   if (lb != null && lb !== latestWeight(pid)) { patch.weighIns = {}; patch.weighIns[todayIso()] = lb; }
   typing = false;
+  const was = thisWeek(pid);
   const ok = await saveProfile(pid, patch); if (!ok) return;
-  delete state.forms.body; settle(); render();
-  const g = goalsFor(pid);
-  toast(g.ready ? 'Targets set: ' + commas(g.kcal) + ' calories and ' + g.waterOz + ' oz of water a day.' : 'Saved. Add sex, age, height and weight, or a doctor\'s number, to replace the placeholder.', 3600);
+  delete state.forms.body;
+  await lockWeeks(); // a week locked on placeholder targets takes its first real ones now
+  settle(); render();
+  const g = goalsFor(pid), now = thisWeek(pid), waits = g.ready && !was.placeholder && (now.kcal !== g.kcal || now.waterOz !== g.waterOz);
+  toast(g.ready ? 'Targets set: ' + commas(g.kcal) + ' calories and ' + g.waterOz + ' oz of water a day.' + (waits ? ' ' + startsNote() + '; this week keeps its locked targets.' : '') : 'Saved. Add sex, age, height and weight, or a doctor\'s number, to replace the placeholder.', waits ? 4600 : 3600);
 };
 ACT['weigh-save'] = async () => {
   const lb = Number(String((state.forms.weigh || {}).lb || '').trim());
@@ -2595,7 +3025,7 @@ ACT['who-pick'] = el => { switchProfile(el.dataset.pid); closeOv(); };
 function switchProfile(pid) {
   if (!PIDS.includes(pid)) return;
   state.pid = pid; prefSet('ml.me', pid);
-  state.status = {}; state.formError = {}; state.menu = null; state.forms = {}; state.details = {}; state.confirmRemove = null;
+  state.status = {}; state.formError = {}; state.menu = null; state.forms = {}; state.details = {}; state.confirmRemove = null; restStop();
   applySkin(); render();
   if (state.ready) announce();
 }
@@ -2606,11 +3036,12 @@ const main = $('#main');
 let typing = false, pendingRender = false;
 const isTextField = el => !!(el && el.matches && el.matches('input[type=number], input[type=text], input[type=search], textarea') && main.contains(el));
 function stripHTML() {
-  const pid = me(), t = todayIso(), ws = weekStart(t), p = P(pid), sc = weekScore(pid, ws), o = otherPid(pid), os = weekScore(o, ws);
+  const pid = me(), t = todayIso(), ws = weekStart(t), g = weekGoals(pid, ws), sc = weekScore(pid, ws), o = otherPid(pid), os = weekScore(o, ws);
   const pips = (n, of, cls) => '<span class="pips">' + Array.from({ length: of }, (_, i) => '<span class="pip ' + cls + (i < n ? ' on' : '') + '"></span>').join('') + '</span>';
   let h;
-  if (p.plan === 'program') { const w = weekStats(t); h = '<span>Activity <b id="actCount">' + w.activity + '/' + w.goal + '</b>' + pips(w.activity, w.goal, '') + '</span><span>Lifts <b id="liftCount">' + w.lifts + '/' + LIFT_GOAL + '</b>' + pips(w.lifts, LIFT_GOAL, 'lift') + '</span>'; }
-  else { const g = moveGoal(pid); h = '<span>Active days <b id="actCount">' + sc.active + '/' + g + '</b>' + pips(sc.active, g, '') + '</span><span>Minutes <b id="minCount">' + sc.minutes + '</b></span>'; }
+  // the strip counts the same days against the same locked goals as the score, so the two always agree
+  if (g.plan === 'program') { const w = weekStats(t); h = '<span>Activity <b id="actCount">' + w.activity + '/' + w.goal + '</b>' + pips(w.activity, w.goal, '') + '</span><span>Lifts <b id="liftCount">' + w.lifts + '/' + w.liftGoal + '</b>' + pips(w.lifts, w.liftGoal, 'lift') + '</span>'; }
+  else h = '<span>Active days <b id="actCount">' + sc.active + '/' + g.goal + '</b>' + pips(sc.active, g.goal, '') + '</span><span>Minutes <b id="minCount">' + sc.minutes + '</b></span>';
   return h + '<a href="#compete" aria-label="Weekly score">Score <b id="myScore">' + sc.total + '</b> · ' + esc(P(o).name) + ' <b id="theirScore">' + os.total + '</b></a>';
 }
 function renderChrome() {
@@ -2634,7 +3065,7 @@ function banners() {
 // Open <details> are remembered across a redraw of the same tab, so a save from the other phone does not fold them shut.
 const detKey = d => d.dataset.dk || (d.dataset.hdate ? 'h:' + d.dataset.hdate : '');
 let drawnTab = null;
-function newDay() { if (state.ready) { announce(); closeWeeks(); } } // a new day can bring last week's result and close an older week
+function newDay() { if (state.ready) openWeek(false); } // a new day can start a new week, bring last week's result, and close an older week
 function render(focusSel) {
   if (typing) { pendingRender = true; return; }
   pendingRender = false;
@@ -2667,8 +3098,10 @@ function refreshLive(date) {
     const nSets = el.querySelectorAll('[data-field="rep"]').length || setCount(key, m, date);
     const sm = exSummary(key, e, nSets);
     const prog = el.querySelector('[data-prog]');
-    if (prog) { prog.hidden = !sm.loggedN; prog.innerHTML = '<span><b>' + sm.loggedN + '/' + nSets + '</b> sets logged</span>' + (sm.done ? '<button type="button" class="quiet" data-collapse="' + key + '">Collapse</button>' : ''); const cb = prog.querySelector('[data-collapse]'); if (cb) cb.addEventListener('click', onCollapse); }
+    const qf = quickFills(key, e, nSets, suggest(key, date));
+    if (prog) { prog.hidden = !sm.loggedN; prog.innerHTML = exProgHTML(key, sm, nSets, qf); const cb = prog.querySelector('[data-collapse]'); if (cb) cb.addEventListener('click', onCollapse); const rb = prog.querySelector('[data-repeat]'); if (rb) rb.addEventListener('click', () => fillSets(key, 'repeat')); }
     const use = el.querySelector('[data-usew]'); if (use) use.hidden = ex.bw || String(e.w) === String(use.dataset.val);
+    const sb2 = el.querySelector('[data-same]'); if (sb2) sb2.hidden = !qf.same;
     const cs = el.querySelector('[data-sum]'); if (cs) cs.innerHTML = sm.line ? '<b>' + esc(sm.line) + '</b> · ' + sm.loggedN + '/' + nSets + ' logged' : 'Nothing logged';
   });
   document.querySelectorAll('.datebar [data-date]').forEach(b => { const dot = b.querySelector('.dot'); if (dot) dot.className = 'dot ' + dotClass(b.dataset.date, b.parentNode.dataset.mode); });
@@ -2689,6 +3122,24 @@ main.addEventListener('input', e => {
   }
   d.recovered = false; delete state.formError[date]; persistDrafts(); refreshLive(date);
 });
+// a set logged for today starts the rest timer: on change (leaving the field), never on each keystroke
+main.addEventListener('change', e => {
+  const el = e.target; if (!el.dataset || el.dataset.field !== 'rep' || el.value === '' || state.selDate !== todayIso() || !EX[el.dataset.ex]) return;
+  restStart(restFor(el.dataset.ex), EX[el.dataset.ex].name);
+});
+// One-tap fills for an exercise. Both write only into fields that are still empty, in the draft and on screen, without a re-render.
+function fillSets(key, how) {
+  const date = state.selDate, d = draft(date), ex = EX[key], sg = suggest(key, date), e = d.ex[key] = d.ex[key] || { w: '', reps: [] };
+  const n = document.querySelectorAll('[data-field="rep"][data-ex="' + key + '"]').length || setCount(key, d, date);
+  while (e.reps.length < n) e.reps.push('');
+  const set = (i, v) => { if (e.reps[i] !== '' && e.reps[i] != null) return; e.reps[i] = String(v); const inp = document.getElementById('r-' + key + '-' + i); if (inp) inp.value = String(v); };
+  if (how === 'same' && sg.last) {
+    for (let i = 0; i < n; i++) if (sg.last.reps[i] != null) set(i, sg.last.reps[i]);
+    if (!ex.bw && e.w === '' && sg.w != null) { e.w = String(sg.w); const w = document.getElementById('w-' + key); if (w) w.value = e.w; }
+  }
+  if (how === 'repeat' && e.reps[0] !== '' && e.reps[0] != null) for (let i = 1; i < n; i++) set(i, e.reps[0]);
+  d.recovered = false; delete state.formError[date]; persistDrafts(); refreshLive(date);
+}
 // half-filled forms (targets, name, stakes) live in state.forms so a re-render never drops what was typed
 function onFormInput(e) { const el = e.target; if (!el.dataset || !el.dataset.form) return; (state.forms[el.dataset.form] = state.forms[el.dataset.form] || {})[el.dataset.k] = el.value; }
 document.addEventListener('input', onFormInput);
@@ -2704,7 +3155,7 @@ main.addEventListener('focusout', e => {
 // one click handler for every data-a action, in the page and in overlays
 // Actions that save one thing per tap. A second tap while the first is still saving is dropped, so a slow
 // connection cannot log the same food or activity twice. Water is left out on purpose: tapping it twice means two glasses.
-const ONE_AT_A_TIME = ['act-log', 'act-del', 'rest', 'food-save', 'food-again', 'food-del', 'quick-save', 'custom-save', 'hk-import', 'body-save', 'weigh-save', 'name-save', 'stakes-save'];
+const ONE_AT_A_TIME = ['act-log', 'act-del', 'rest', 'food-save', 'food-again', 'food-del', 'quick-save', 'custom-save', 'custom-del', 'hk-import', 'hk-off', 'body-save', 'weigh-save', 'name-save', 'gym-save', 'stakes-save', 'cd-save', 'cd-clear'];
 const busy = {};
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-a]'); if (!el || el.disabled) return;
@@ -2770,6 +3221,8 @@ function bind() {
   document.querySelectorAll('.menu [data-act]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); menuAction(b.dataset.act, b); }));
   document.querySelectorAll('[data-gswap]').forEach(b => b.addEventListener('click', () => { const sw = Object.assign({}, state.settings.swaps || {}); if (b.dataset.to === b.dataset.gswap) delete sw[b.dataset.gswap]; else sw[b.dataset.gswap] = b.dataset.to; saveSettings({ swaps: sw }); }));
   document.querySelectorAll('[data-usew]').forEach(b => b.addEventListener('click', () => { const key = b.dataset.usew; const d = draft(state.selDate); d.ex[key] = d.ex[key] || { w: '', reps: [] }; d.ex[key].w = b.dataset.val; const inp = document.getElementById('w-' + key); if (inp) inp.value = b.dataset.val; d.recovered = false; persistDrafts(); refreshLive(state.selDate); const first = document.getElementById('r-' + key + '-0'); if (first && first.value === '') first.focus({ preventScroll: true }); }));
+  document.querySelectorAll('[data-same]').forEach(b => b.addEventListener('click', () => fillSets(b.dataset.same, 'same')));
+  document.querySelectorAll('[data-repeat]').forEach(b => b.addEventListener('click', () => fillSets(b.dataset.repeat, 'repeat')));
   document.querySelectorAll('[data-collapse]').forEach(b => b.addEventListener('click', onCollapse));
   document.querySelectorAll('[data-expand]').forEach(b => b.addEventListener('click', () => { const key = b.dataset.expand; const d = draft(state.selDate); delete d.closed[key]; persistDrafts(); render('[data-menu="' + key + '"]'); }));
   document.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => { state.selDate = b.dataset.edit; state.confirmRemove = null; persistDrafts(); location.hash = 'train'; if (state.tab === 'train') render(); }));
@@ -2819,7 +3272,8 @@ function route() {
   render();
   if (changed && !jump) window.scrollTo(0, 0);
 }
-window.MorningLaps = { state, P, weekScore, coach, goalsFor, badgesFor, searchFoods, loadFoods, dayTotals, compWeeks, parseHealthPaste, foodCount: () => foodDb.list ? foodDb.list.length : 0 };
+window.MorningLaps = { state, P, weekScore, coach, goalsFor, badgesFor, searchFoods, loadFoods, dayTotals, compWeeks, parseHealthPaste, foodCount: () => foodDb.list ? foodDb.list.length : 0,
+  EX, DAYS, normalize, dayInfo, weekFacts, scoreFacts, weekGoals, liveGoals, fuelParts, plannedFor, planSlots, swapOptions, defaultSwapOption, alts, teamStats, stakesFor, phaseFor, restT };
 (function boot() {
   const saved = lsGet('ml.me', null);
   state.pid = PIDS.includes(saved) ? saved : null;

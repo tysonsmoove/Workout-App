@@ -8,7 +8,6 @@
 //   weight: 198.4
 // Any subset, in any order, with or without units. Apple's built-in actions expose daily totals
 // (Exercise Minutes, Steps, ...) but not the list of workouts, so movement comes from Exercise Minutes.
-const HK_ACT_ID = 'hk-exercise';
 const HK_KEYS = {
   date: 'date', day: 'date',
   exercise: 'exercise', exerciseminutes: 'exercise', exercisemin: 'exercise', exercisemins: 'exercise', exercisetime: 'exercise', minutesexercised: 'exercise',
@@ -84,18 +83,14 @@ function healthPlan(pid, parsed, fallbackDate) {
   if (!Object.keys(v).length) return { date, rows, err: parsed.lines ? 'Nothing here looks like Health numbers. Run the shortcut again, then paste.' : null };
   if (date > t) return { date, rows, err: 'This is dated ' + nice(date) + ', which has not happened yet.' };
   if (v.exercise != null) {
-    const title = 'Watch exercise: ' + v.exercise + ' min';
-    if (p.plan !== 'choice') rows.push({ k: 'move', can: false, title, sub: 'Shown with your day. Treadmill minutes and lifts are still logged by hand.' });
+    const title = 'Watch exercise: ' + v.exercise + ' min', rec = state.data[pid].sessions[date], n = rec ? normalize(rec) : null;
+    if (n && n.program) rows.push({ k: 'move', can: false, title, sub: 'This day has a ' + (n.kind === 'strength' ? 'lift' : 'treadmill entry') + ', so the Watch minutes are shown with it, not added on top.' });
     else {
-      const rec = state.data[pid].sessions[date], n = rec ? normalize(rec) : null;
-      if (n && (n.kind === 'strength' || n.kind === 'cardio')) rows.push({ k: 'move', can: false, title, sub: 'This day holds a lifting-program entry, so no minutes are added.' });
-      else {
-        const acts = n ? n.acts : [], had = acts.find(a => a.id === HK_ACT_ID) || null;
-        const manual = sum(acts.filter(a => a.id !== HK_ACT_ID && a.mv !== false), a => a.min), extra = Math.max(0, v.exercise - manual);
-        if (extra > 0 && (!had || had.min !== extra)) rows.push({ k: 'move', can: true, extra, title, sub: manual ? 'You logged ' + manual + ' min by hand, so ' + extra + ' more are added.' : 'Adds ' + extra + ' min of movement to the day.' });
-        else if (extra === 0 && had) rows.push({ k: 'move', can: true, extra: 0, title, sub: 'Now covered by the ' + manual + ' min you logged by hand. Removes the ' + had.min + ' imported earlier.' });
-        else rows.push({ k: 'move', can: false, title, sub: extra > 0 ? 'Already imported.' : manual ? 'Already covered by the ' + manual + ' min you logged by hand.' : 'No exercise minutes yet today.' });
-      }
+      const acts = n ? n.acts : [], had = acts.find(isHk) || null;
+      const manual = sum(acts.filter(a => !isHk(a) && a.mv !== false), a => a.min), extra = Math.max(0, v.exercise - manual);
+      if (extra > 0 && (!had || had.min !== extra)) rows.push({ k: 'move', can: true, extra, title, sub: manual ? 'You logged ' + manual + ' min by hand, so ' + extra + ' more are added.' : 'Adds ' + extra + ' min of movement to the day.' });
+      else if (extra === 0 && had) rows.push({ k: 'move', can: true, extra: 0, title, sub: 'Now covered by the ' + manual + ' min you logged by hand. Removes the ' + had.min + ' imported earlier.' });
+      else rows.push({ k: 'move', can: false, title, sub: extra > 0 ? 'Already imported.' : manual ? 'Already covered by the ' + manual + ' min you logged by hand.' : 'No exercise minutes yet today.' });
     }
   }
   if (v.water != null) {
@@ -113,12 +108,19 @@ function healthPlan(pid, parsed, fallbackDate) {
 }
 async function applyHealthImport(pid, plan, parsed, use) {
   const date = plan.date, v = parsed.vals, now = new Date().toISOString(), did = [];
+  const move = plan.rows.find(r => r.k === 'move' && r.can), wantMove = !!move && use.move !== false;
+  let stats = false;
+  if (plan.stats) { // the day's totals go first: the top-up is worked out from the Watch total saved here
+    const path = PATH.health(pid, date), doc = Object.assign({ v: 1, date }, getDoc(path), { importedAt: now });
+    ['steps', 'exercise', 'active', 'distance'].forEach(k => { if (v[k] != null) doc[k] = v[k]; });
+    if (wantMove) delete doc.topUp; else if (move && move.extra > 0) doc.topUp = false; // turning the minutes down sticks until an import adds them
+    stats = await write(path, doc);
+    if (!stats) return did;
+  }
+  if (wantMove) { const r = await syncWatch(date); if (r === 'added') did.push(move.extra + ' min of movement'); else if (r === 'removed') did.push('movement updated'); }
   for (const row of plan.rows) {
     if (!row.can || use[row.k] === false) continue;
-    if (row.k === 'move') {
-      const ok = row.extra > 0 ? await logActivity(date, { id: HK_ACT_ID, a: 'other', name: 'Apple Watch exercise', min: row.extra, feel: null, hurt: false, note: 'From Apple Health', mv: true, src: 'health', at: now }) : await removeActivity(date, HK_ACT_ID);
-      if (ok) did.push(row.extra > 0 ? row.extra + ' min of movement' : 'movement updated');
-    } else if (row.k === 'water') {
+    if (row.k === 'water') {
       const path = PATH.food(pid, date), cur = getDoc(path) || { v: 1, date, items: [], water: 0 };
       if (await write(path, Object.assign({}, cur, { water: v.water, updatedAt: now }))) did.push(v.water + ' oz of water');
     } else if (row.k === 'weight') {
@@ -126,10 +128,6 @@ async function applyHealthImport(pid, plan, parsed, use) {
       if (await saveProfile(pid, patch)) did.push('weight ' + v.weight + ' lb');
     }
   }
-  if (plan.stats) {
-    const path = PATH.health(pid, date), doc = Object.assign({ v: 1, date }, getDoc(path), { importedAt: now });
-    ['steps', 'exercise', 'active', 'distance'].forEach(k => { if (v[k] != null) doc[k] = v[k]; });
-    if (await write(path, doc)) did.push('activity totals');
-  }
+  if (stats) did.push('activity totals');
   return did;
 }

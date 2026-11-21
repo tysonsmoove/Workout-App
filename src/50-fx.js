@@ -84,23 +84,49 @@ function celebrate(msg, opts) {
   checkBadges(pid).slice(0, 3).forEach(b => queueOv({ type: 'badge', pid, badge: b }));
   return gained;
 }
-function announce() { // on opening the app: badges and last week's result this device has not shown yet
+// On opening the app: badges, then last week's result. A finished week stays open for late entries through Tuesday,
+// so until its result is stored it only gets a quiet "provisional" line. The winner is announced, once per phone,
+// when the final result exists (ml.seenFinalWeek: the newest final week this phone has shown).
+function announce() {
   const pid = me();
   checkBadges(pid).slice(0, 3).forEach(b => queueOv({ type: 'badge', pid, badge: b }));
-  const weeks = compWeeks(), w = weeks[weeks.length - 1];
-  if (w && w.played && String(prefGet('ml.seenWeek', '')) < w.ws) { prefSet('ml.seenWeek', w.ws); queueOv({ type: 'weekwin', week: w }); }
+  const weeks = compWeeks(), finals = weeks.filter(w => w.final && w.played), last = weeks[weeks.length - 1];
+  let seen = prefGet('ml.seenFinalWeek', null);
+  if (seen == null) { // first run with final-result tracking: what the old announcement already showed, or anything already final, is old news
+    const old = prefGet('ml.seenWeek', null);
+    // a week the old code announced while it was still open gets its real announcement once it is final
+    seen = typeof old === 'string' && validIso(old) ? (finalResult(old) ? old : addDays(old, -7)) : finals.length ? finals[finals.length - 1].ws : '';
+    prefSet('ml.seenFinalWeek', seen);
+  }
+  const fresh = finals.filter(w => w.ws > seen).slice(-2);
+  if (fresh.length) { prefSet('ml.seenFinalWeek', fresh[fresh.length - 1].ws); fresh.forEach(w => queueOv({ type: 'weekwin', week: w })); }
+  if (last && !last.final && last.played && String(prefGet('ml.seenWeek', '')) < last.ws) { prefSet('ml.seenWeek', last.ws); toast(provisionalText(last), 5200); }
 }
 // With no profile on this device the page waits for the account to say which one this person uses, and asks only
 // when the account does not know either (or cannot be reached).
 function askWho() { if (!state.pid && !(state.ov && state.ov.type === 'who')) openOv({ type: 'who', first: true }); }
 function onReady() {
-  state.ready = true; adoptAccount(); reconcileBlindDrafts(); settle();
-  PIDS.forEach(pid => { if (prefGet('ml.badges.' + pid, null) == null) checkBadges(pid, true); });
+  state.ready = true; adoptAccount(); reconcileBlindDrafts();
   applySkin();
-  if (!state.pid) askWho(); else announce();
-  acctFlush(); // anything chosen before the account could be reached
-  closeWeeks();
+  if (!state.pid) askWho();
   render();
+  openWeek(true);
+}
+// Start-of-visit and start-of-day housekeeping, in order: lock this week's targets, then announce, then close any
+// week whose late-entry window has passed and announce that result too. All of it writes, so none of it runs in render.
+let openingWeek = null;
+function openWeek(first) {
+  const run = async () => {
+    await lockWeeks();
+    if (first) { settle(); PIDS.forEach(pid => { if (prefGet('ml.badges.' + pid, null) == null) checkBadges(pid, true); }); }
+    if (state.pid) announce();
+    acctFlush(); // anything chosen before the account could be reached
+    const closed = await closeWeeks();
+    if (closed && state.pid) announce();
+    render();
+  };
+  openingWeek = (openingWeek || Promise.resolve()).then(run, run);
+  return openingWeek;
 }
 
 OV.badge = {
@@ -120,9 +146,9 @@ OV.lead = {
 OV.weekwin = {
   center: true,
   html: o => {
-    const w = o.week, win = w.winner;
+    const w = o.week, win = w.winner, owes = stakesLine(w);
     const line = win ? esc(P(win).name) + ' wins, ' + Math.max(w.tyson, w.jacquie) + ' to ' + Math.min(w.tyson, w.jacquie) : 'Dead heat at ' + w.tyson;
-    return '<div class="ov" role="dialog" aria-modal="true" aria-label="Last week\'s result"><div class="eyebrow">Week of ' + shortDate(w.ws) + '</div><div class="pop">' + (win ? avatarHTML(win, 'lg') : '<div class="medal lg">🤝</div>') + '</div><h2>' + line + '</h2><p class="muted">' + (win ? 'A new week is already running. Scores reset every Monday.' : 'Nobody gets bragging rights. Settle it this week.') + '</p><div class="row" style="width:100%"><button type="button" class="primary" data-a="ov-close">On to this week</button></div></div>';
+    return '<div class="ov" role="dialog" aria-modal="true" aria-label="Final result"><div class="eyebrow">Final · week of ' + shortDate(w.ws) + '</div><div class="pop">' + (win ? avatarHTML(win, 'lg') : '<div class="medal lg">🤝</div>') + '</div><h2>' + line + '</h2>' + (owes ? '<p><b>' + esc(owes) + '</b></p>' : '') + '<p class="muted">' + (win ? 'Late entries are in and the result is final. A new week is already running.' : 'Nobody gets bragging rights. Settle it this week.') + '</p><div class="row" style="width:100%"><button type="button" class="primary" data-a="ov-close">On to this week</button></div></div>';
   },
   after: o => { if (o.week.winner) burst({ pid: o.week.winner, kind: 'flags', y: 0.5, count: 140 }); }
 };

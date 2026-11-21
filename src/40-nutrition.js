@@ -56,14 +56,19 @@ function dayTotals(pid, date) {
     return { n, kcal: n[0], count: (d.items || []).length, water: d.water || 0 };
   });
 }
-// 1 = logged and inside the calorie range, 0.5 = a real day of logging that missed the range, 0 = little or nothing logged
-function fuelUnit(pid, date) {
-  const t = dayTotals(pid, date); if (!t.count) return 0;
-  const g = goalsFor(pid);
-  if (t.kcal >= g.lo && t.kcal <= g.hi) return 1;
-  return t.kcal >= g.kcal * 0.5 ? 0.5 : 0;
+// A day's food against the targets locked for its week.
+// cal: 1 = logged and inside the calorie range, 0.5 = a real day of logging that missed the range, 0 = little or nothing logged.
+// prot: 1 = at least 90% of the protein target (a quick add with no protein entered counts as 0 g).
+// unit: what the day is worth to Fuel. Weeks on scoring 2 count 0.7 for calories and 0.3 for protein; earlier weeks count calories only.
+function fuelParts(pid, date) {
+  return cached('fp:' + pid + ':' + date, () => {
+    const t = dayTotals(pid, date), g = weekGoals(pid, weekStart(date)); if (!t.count) return { cal: 0, prot: 0, unit: 0, scoring: g.scoring };
+    const cal = t.kcal >= g.lo && t.kcal <= g.hi ? 1 : t.kcal >= g.kcal * 0.5 ? 0.5 : 0, prot = g.protein > 0 && t.n[1] >= g.protein * 0.9 ? 1 : 0;
+    return { cal, prot, unit: g.scoring >= 2 ? Math.round((0.7 * cal + 0.3 * prot) * 100) / 100 : cal, scoring: g.scoring };
+  });
 }
-const waterFrac = (pid, date) => Math.min(1, (dayTotals(pid, date).water || 0) / goalsFor(pid).waterOz);
+const fuelUnit = (pid, date) => fuelParts(pid, date).unit;
+const waterFrac = (pid, date) => Math.min(1, (dayTotals(pid, date).water || 0) / weekGoals(pid, weekStart(date)).waterOz);
 function mealByClock() { const h = Number(tzHour.format(new Date())) % 24; return h < 11 ? 'b' : h < 15 ? 'l' : h < 21 ? 'd' : 's'; }
 async function addFoodItem(date, item) {
   const path = PATH.food(me(), date), cur = getDoc(path) || { v: 1, date, items: [], water: 0 };

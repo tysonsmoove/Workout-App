@@ -133,12 +133,13 @@ const both = { 'sessions/2026-11-02': lift('2026-11-02', 'push', PUSH), 'setting
 
   // ---------- R7: weeks before both of you had logged do not count in the season ----------
   await section('R7', async () => {
-    ({ ctx, page } = await newPage(browser, { me: 'tyson', time: T('2026-11-09T12:00:00Z'), init: 'if(!localStorage.getItem("seeded")){localStorage.setItem("seeded","1");' +
+    ({ ctx, page } = await newPage(browser, { me: 'tyson', time: T('2026-11-11T12:00:00Z'), init: 'if(!localStorage.getItem("seeded")){localStorage.setItem("seeded","1");' +
       'localStorage.setItem("ml.sessions",' + JSON.stringify(JSON.stringify({ '2026-10-20': lift('2026-10-20', 'push', PUSH), '2026-10-27': lift('2026-10-27', 'push', PUSH), '2026-11-02': lift('2026-11-02', 'push', PUSH) })) + ');' +
       'localStorage.setItem("ml.settings",' + JSON.stringify(JSON.stringify({ startDate: '2026-10-19', goal: 5, maxed: {}, swaps: {} })) + ');' +
       'localStorage.setItem("ml.kv",' + JSON.stringify(JSON.stringify({ 'profiles/jacquie/sessions/2026-11-02': walk('2026-11-02', 15) })) + ');}' }));
     const wk = await page.evaluate(() => window.MorningLaps.compWeeks().filter(w => w.played).map(w => w.ws));
     check('R7 only the week both logged is in the season', wk.join() === '2026-11-02', wk.join());
+    await page.waitForFunction(() => !!(JSON.parse(localStorage.getItem('ml.kv') || '{}'))['results/2026-11-02']); // Wednesday: the week is final
     await go(page, 'compete');
     check('R7 solo weeks hand out no wins', (await txt(page, '#main')).includes('Tyson 0 – 1 Jacquie'), (await txt(page, '#main')).match(/Season.{0,60}/));
     await ctx.close();

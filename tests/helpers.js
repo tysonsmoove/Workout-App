@@ -39,7 +39,8 @@ const txt = (page, sel) => page.$eval(sel, el => el.textContent.trim());
 const has = (page, sel) => page.$(sel).then(Boolean);
 const fill = (page, sel, v) => page.fill(sel, String(v));
 async function toastText(page) { await page.waitForSelector('#toast:not([hidden])', { timeout: 4000 }); return txt(page, '#toast'); }
-const go = (page, tab) => page.evaluate(t => { location.hash = t; }, tab).then(() => page.waitForFunction(t => document.querySelector('#tabs a.on') && (location.hash === '#' + t), tab));
+// resolves once the app has routed to the tab and drawn it (the hash alone changes before the redraw)
+const go = (page, tab) => page.evaluate(t => { location.hash = t; }, tab).then(() => page.waitForFunction(t => location.hash === '#' + t && window.MorningLaps && window.MorningLaps.state.tab === t && !!document.querySelector('#tabs a.on'), tab));
 const cssVar = (page, name) => page.evaluate(n => document.documentElement.style.getPropertyValue(n).trim(), name);
 const score = (page, pid) => page.evaluate(p => window.MorningLaps.weekScore(p), pid);
 const overflow = page => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
