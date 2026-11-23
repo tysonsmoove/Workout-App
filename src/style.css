@@ -386,3 +386,27 @@ pre.code { padding: 8px 10px; margin: 6px 0; overflow-x: auto; line-height: 1.5;
 @keyframes fillrun { from { width: 40px; } }
 @keyframes bump { 50% { transform: scale(1.12); } }
 @keyframes flash { 50% { opacity: .35; } }
+
+/* ---------- Version 15: undo, stuck-lift line, scan, describe, backup ---------- */
+.toast.act { display: flex; align-items: center; gap: 2px; padding: 4px 6px 4px 16px; text-align: left; }
+.toast .undo { background: transparent; border: 0; color: inherit; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; min-height: 40px; padding: 4px 12px; white-space: nowrap; }
+.stallline { display: flex; align-items: center; flex-wrap: wrap; font-size: .8125rem; color: var(--warn); font-weight: 500; min-height: 32px; }
+.stallline button.quiet { color: var(--warn); font-weight: 600; }
+.filebtn { position: relative; display: inline-flex; align-items: center; justify-content: center; overflow: hidden; cursor: pointer; font-family: var(--body); font-weight: 500; border-radius: 9px; border: 1px solid var(--line); background: var(--card); color: var(--fg); padding: 8px 12px; min-height: 40px; }
+.filebtn.small { min-height: 32px; padding: 4px 10px; font-size: .8125rem; }
+.filebtn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.filebtn input { position: absolute; inset: 0; width: 100%; height: 100%; min-height: 0; opacity: 0; cursor: pointer; font-size: 0; }
+.filebtn:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+.chip.est { font-size: .6875rem; font-weight: 600; padding: 0 5px; vertical-align: 1px; }
+input.unread { border-color: var(--warn); background: var(--warn-soft); }
+.ov .formgrid { align-items: end; }
+label.f .chip { text-transform: none; letter-spacing: 0; }
+textarea.plaintext { font-family: var(--body); min-height: 88px; }
+.estrow { display: grid; gap: 6px; padding: 10px 0; border-top: 1px solid var(--line); }
+.estrow:first-child { border-top: 0; }
+.esthead { display: flex; gap: 8px; align-items: center; }
+.esthead input { flex: 1; min-width: 0; font-weight: 600; }
+.esthead button { flex: none; min-height: 44px; }
+.estnums { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.estnums input { padding: 8px 4px; }
+.estnums label.f { letter-spacing: .04em; }

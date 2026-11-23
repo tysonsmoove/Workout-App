@@ -159,6 +159,34 @@ function customFood(id) {
   const c = state.customFoods[id];
   return { name: c.name, src: 'Yours', customId: id, perServing: c.n, portions: [{ label: c.serving || '1 serving', grams: null }] };
 }
+/* ---------- Barcodes ---------- */
+// A product code is stored in one form, so a US scan and a European scan of the same package meet: 13 digits.
+// A 12-digit UPC-A gets a 0 in front, a UPC-E is expanded to its UPC-A first, an EAN-13 is kept. An EAN-8 stays 8 digits.
+function eanCheck(body) { let s = 0; for (let i = body.length - 1, w = 3; i >= 0; i--, w = 4 - w) s += Number(body[i]) * w; return String((10 - s % 10) % 10); }
+const eanValid = d => /^\d+$/.test(d) && eanCheck(d.slice(0, -1)) === d.slice(-1);
+function upceToUpca(e) { // 8 digits: number system, six digits, check digit
+  const ns = e[0], m = e.slice(1, 7), c = e[7], last = m[5];
+  const body = last <= '2' ? m.slice(0, 2) + last + '0000' + m.slice(2, 5) : last === '3' ? m.slice(0, 3) + '00000' + m.slice(3, 5) : last === '4' ? m.slice(0, 4) + '00000' + m[4] : m.slice(0, 5) + '0000' + last;
+  return ns + body + c;
+}
+// `format` is what the reader saw ('UPC_A', 'UPC_E', 'EAN_13', 'EAN_8'), or nothing for digits typed by hand.
+// Returns the stored form, or null when the digits are not a valid product code.
+function normBarcode(text, format) {
+  const d = String(text == null ? '' : text).replace(/[\s-]/g, ''); if (!/^\d+$/.test(d)) return null;
+  if (d.length === 13) return eanValid(d) ? d : null;
+  if (d.length === 12) return eanValid(d) ? '0' + d : null;
+  if (d.length === 8) {
+    const a = (d[0] === '0' || d[0] === '1') ? upceToUpca(d) : null, upce = !!a && eanValid(a), ean8 = eanValid(d);
+    if (format === 'EAN_8') return ean8 ? d : null;
+    if (format === 'UPC_E') return upce ? '0' + a : null;
+    return upce ? '0' + a : ean8 ? d : null; // typed by hand: in the US a short code is nearly always a UPC-E
+  }
+  return null;
+}
+function findByBarcode(code) { return code ? Object.keys(state.customFoods).find(id => state.customFoods[id] && state.customFoods[id].barcode === code) || null : null; }
+// an item logged from an estimate says so wherever it is listed
+const estTag = it => it && it.src === 'Estimate' ? ' <span class="chip est">est.</span>' : '';
+
 // nutrients for qty × the chosen portion
 function amountNutrients(food, portion, qty) {
   const q = qty > 0 ? qty : 0;

@@ -54,6 +54,26 @@ function fxTick() {
   if (!fx.raf) ctx.clearRect(0, 0, W, H);
 }
 
+/* ---------- Undo for removals ---------- */
+// Removing a food, an activity, a rest day, a lift day, a saved meal or a custom food leaves "… · Undo" in the toast
+// for six seconds. Undo puts back the exact document that was there, in one write. If the document is no longer
+// what the removal left (the other phone changed it), nothing is overwritten.
+const canon = v => JSON.stringify(v == null ? null : v, (k, x) => x && typeof x === 'object' && !Array.isArray(x) ? Object.keys(x).sort().reduce((o, key) => { o[key] = x[key]; return o; }, {}) : x);
+function offerUndo(label, path, before) { // call once the removal has been saved
+  if (before == null) { toast(label); return; }
+  const t = $('#toast');
+  t.innerHTML = '<span>' + esc(label) + ' · </span><button type="button" class="undo" data-a="undo">Undo</button>'; t.classList.add('act'); t.hidden = false;
+  state.undo = { path, before: JSON.parse(JSON.stringify(before)), after: canon(getDoc(path)) };
+  clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; t.classList.remove('act'); state.undo = null; }, 6000);
+}
+ACT.undo = async () => {
+  const u = state.undo; if (!u) return;
+  if (canon(getDoc(u.path)) !== u.after) { toast('Can\'t undo, it changed on the other phone.', 3800); return; }
+  state.undo = null;
+  const ok = await write(u.path, u.before); if (!ok) return;
+  settle(); render(); if (state.ov) renderOv(); toast('Put back.');
+};
+
 /* ---------- What an action changed: points, the lead, badges ---------- */
 function scoreSnapshot() { const ws = weekStart(todayIso()), o = {}; PIDS.forEach(p => { o[p] = weekScore(p, ws).total; }); return o; }
 function keepBadges(pid) { // write newly earned badges onto the profile, with the day they were earned

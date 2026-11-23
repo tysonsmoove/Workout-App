@@ -43,25 +43,15 @@ function refreshHealthPreview() {
 OV.health = {
   html: o => '<div class="ov" role="dialog" aria-modal="true" aria-label="Import from Apple Health">' + ovHead('Import from Health', 'Into ' + esc(P(me()).name) + '\'s log') +
     '<p class="muted">Run your <b>Laps Health</b> shortcut on this iPhone, then tap the box and choose <b>Paste</b>.</p>' +
-    '<textarea id="hkText" data-ovf="text" rows="6" placeholder="Paste here" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Text copied by the shortcut">' + esc(o.text || '') + '</textarea>' +
-    '<div class="row"><button type="button" class="small" id="hkPaste" data-a="hk-paste">Paste from clipboard</button><span class="tiny muted">or tap the box and choose Paste</span></div>' +
+    '<textarea id="hkText" data-ovf="text" rows="6" placeholder="Tap here, then Paste" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Text copied by the shortcut">' + esc(o.text || '') + '</textarea>' +
     '<div id="hkPreview" class="stack" aria-live="polite"></div>' +
     '<div class="row"><button type="button" class="primary" id="hkGo" data-a="hk-import" disabled>Import</button></div>' +
     '<details class="plain" id="hkHelp"><summary>Set up the shortcut, once per iPhone</summary><div style="margin-top:8px">' + shortcutStepsHTML() + '</div></details></div>',
-  after: () => refreshHealthPreview()
+  // The box takes focus inside the same tap that opened the sheet, so the iPhone's Paste is one tap away.
+  // (claude.ai does not let a page read the clipboard itself.)
+  after: () => { refreshHealthPreview(); const box = $('#hkText'); if (box && document.activeElement !== box) box.focus({ preventScroll: true }); }
 };
 ACT.health = () => openOv({ type: 'health', text: '', use: {} });
-// One tap instead of tap, hold, Paste. The page runs inside claude.ai, where reading the clipboard may be blocked:
-// when it is refused or missing, the box still works exactly as before.
-ACT['hk-paste'] = async () => {
-  const o = state.ov, box = $('#hkText'), manual = () => { toast('Tap the box and choose Paste instead.', 3400); if (box) box.focus(); };
-  let text;
-  try { if (!navigator.clipboard || typeof navigator.clipboard.readText !== 'function') { manual(); return; } text = await navigator.clipboard.readText(); }
-  catch (e) { manual(); return; }
-  if (state.ov !== o) return; // the sheet was closed while the phone asked for permission
-  if (!String(text || '').trim()) { toast('The clipboard is empty. Run the shortcut first, then try again.', 3400); return; }
-  o.text = text; const live = $('#hkText'); if (live) live.value = text; refreshHealthPreview();
-};
 ACT['hk-toggle'] = el => { const o = state.ov, k = el.dataset.k; o.use[k] = o.use[k] === false; refreshHealthPreview(); };
 ACT['hk-import'] = async () => {
   const o = state.ov, pid = me(), parsed = parseHealthPaste(o.text), plan = healthPlan(pid, parsed, state.selDate);

@@ -20,6 +20,8 @@ A phone-first fitness tracker for two people, Tyson and Jacquie: workouts, nutri
 | `src/50-fx.js` | Overlays, confetti, celebrations |
 | `src/55-rest.js` | Rest timer: its own bar outside the page, never part of the render loop |
 | `src/60…80-ui-*.js` | Screens: Train, Fuel, Compete, Me |
+| `src/74-ui-scan.js` | Scan a barcode, read a Nutrition Facts label, describe a restaurant meal |
+| `src/82-backup.js` | Backup: one JSON of every document, plus workouts and food as CSV |
 | `src/90-main.js` | Render loop, events, routing, boot |
 | `tools/build_foods.py` | Builds `foods.json` from USDA FoodData Central downloads |
 | `tests/` | Playwright suites |
@@ -87,11 +89,56 @@ None of these changes how points are scored. Weekly targets, scoring versions an
 - **Deload weeks** (`deloadState`, `deloadOn`). After every 5 completed lift weeks the Train screen offers one: 2 sets per lift at about 90%. Sessions are saved with `deload: true`; `lastLog`, `suggest` and the stall check read past them, so the week after picks up from the last normal session. A deload set counts 4.5 minutes instead of 3, so a recovery week with the same lift days has the same minutes and the same points.
 - **History, By exercise**: a trend line of weight over time with deload sessions drawn hollow, and the best set.
 - **Reminders** (Me). Setup steps for three iOS Shortcuts automations, filled in with the times each person picks (`profile.reminders`). The times are only used for the instructions; the phone does the reminding.
-- **Paste from clipboard** in the Health import sheet. Uses `navigator.clipboard.readText()`; when that is refused or missing it says to paste by hand and the box works as before.
+- **Health import sheet.** The text box takes focus in the same tap that opens the sheet, so the iPhone's own Paste is one tap away. (Version 13 had a "Paste from clipboard" button; claude.ai does not let a page read the clipboard, so version 15 removed it.)
 - **Last week's recap** (Compete, and the final-result announcement): active days, minutes, best weight increase, days in calorie range, days the water goal was met, badges earned. Provisional until the week is final.
 - **IOUs** (Season). Every closed week with stakes and a winner, with a Paid toggle stored at `iou/<monday>`.
 - **Goal nudge** (`goalNudge`). After three finished weeks in a row with a full Move score at the current goal, Train offers one more day (never past 7, or 6 on the lifting program). "Raise it" changes the setting, which locks next Monday like any goal change; "Not now" hides the card for 3 weeks (`profile.goalNudge`).
 - **Pain notes** (`painNotes`). History counts "Something hurt" notes from the last 30 days by activity and by the body areas each activity loads. Two or more on one activity flag it in the menu, sort it last and keep Surprise me away from it.
+
+## Version 15: fixes, scanning, estimates, undo, backup
+
+Nothing here changes scoring. The weekly race, locked weekly targets, scoring versions, `results/` and `iou/` are read, never altered.
+
+### Capabilities
+
+The artifact declares `db`, `user`, `sample` (with images) and `downloads`. Declaring replaces the whole set, so `db` and `user` must always be restated; a republish that omits `capabilities` carries the stored set forward. `loadCaps()` asks for `sample` and `downloads` in the background (`caps` in `src/00-core.js`); either may resolve `null`, and nothing waits on them.
+
+| Situation | Scan a barcode | Describe it | Backup |
+|---|---|---|---|
+| Available | A miss asks for a label photo and fills the form | Offered in Add food | "Download a backup" |
+| `null` (not offered to this viewer) | A miss opens the blank form with the barcode | Hidden | "Copy backup", with its size |
+| Declined (`not_granted`, `declined`) | Blank form with the barcode; no more questions this visit | Back to Add food, button hidden | "Not saved", button stays |
+| Rate limited | Says so, keeps the controls | Says so, keeps the text | Says to wait, button stays |
+
+`askJson()` never retries. A reply that is JSON wrapped in other text is unwrapped rather than asked for again.
+
+### Fixes
+
+- **Import from Health**: no clipboard button; the box has focus when the sheet opens; the empty box says "Tap here, then Paste".
+- **Reset plus deload** (`suggest`): with a reset waiting during a deload week the suggestion is the lighter of the reset weight and 90% of the normal suggestion, not both applied. The reset stays waiting for the first normal session after the deload, because deload sessions are not read as the last session.
+- **Stuck lifts** take one line under the exercise name, "Stuck at 50 lb · 3 sessions · Fix". Fix opens the Reset / Swap for 4 weeks / Dismiss choices in place (`state.stallOpen`).
+
+### Scan a barcode (`src/74-ui-scan.js`)
+
+- "Scan barcode" in Add food is a file input (`accept="image/*"`, `capture="environment"`) that covers its button, so the tap lands on the input itself.
+- The photo is read in the page with ZXing, `@zxing/library@0.21.3` from cdn.jsdelivr.net, loaded the first time it is needed. It reads UPC-A, EAN-13 and EAN-8. That version's own UPC-E reader returns nothing, so UPC-E is read by `upceRow()` from the same binarized rows: guards, six digits, the parity pattern, clear space each side, a valid check digit, and agreement on two rows.
+- Several looks at each photo: 1600, 1000 and 640 px, upright and turned 90°, and for a big photo the middle half at full detail.
+- One stored form (`normBarcode`): 13 digits. A 12-digit UPC-A gets a leading 0, a UPC-E is expanded to UPC-A first, an EAN-8 stays 8 digits. The form shows a UPC-A as the 12 digits printed on the package.
+- Custom foods (`foods/<id>`) carry an optional `barcode`. A match opens that food's sheet. A miss says "New product. Take a photo of the Nutrition Facts label.", shrinks the photo to about 1600 px, and asks Claude for JSON only: values per serving as printed, `null` for anything unreadable, never a guess. The Create a food form opens filled, with "Check these against the label." and "not read" marks on the null fields. A miss also offers "Link to a food we already made". Edit food shows the barcode and lets it be changed or cleared.
+- An unreadable photo, or a reader that cannot load, falls back to typing the digits.
+- Photos are held in memory for one read and never stored. Only confirmed numbers are saved.
+
+### Describe a restaurant meal
+
+"Describe it" (only when `sample` is available) takes a description and an optional plate photo, and returns an editable list: name, portion, calories, protein, carbs, fat. Logging writes the whole list to the chosen meal in one save with `src: "Estimate"`; those items show an "est." tag wherever they are listed.
+
+### Undo after removing (`offerUndo`, `ACT.undo` in `src/50-fx.js`)
+
+Removing a food, an activity, a rest day, a lift day, a saved meal or a custom food shows "Removed · Undo" for 6 seconds. Undo writes back the exact document that was there, in one write. If the document is no longer what the removal left, nothing is overwritten and it says "Can't undo, it changed on the other phone." A later change of our own to the same document withdraws the offer.
+
+### Backup (`src/82-backup.js`, Me)
+
+"Download a backup" saves three files named with today's date: `morning-laps-backup-<date>.json` (every shared document for both people, keyed by path: sessions, food, health, profiles, weekly goal snapshots, saved meals, shared foods, results, IOUs, competition settings), `morning-laps-workouts-<date>.csv` (one row per set, plus one per treadmill entry, activity and rest day) and `morning-laps-food-<date>.csv` (one row per item). Text cells that a spreadsheet would run as a formula get a leading apostrophe. Where files cannot be saved, "Copy backup" writes the same JSON to the clipboard inside the tap and says how big it is; if the clipboard refuses, the text is shown to copy by hand. The private per-account notes under `data/users/` are not part of the backup.
 
 ## Apple Health and Apple Watch
 
@@ -136,5 +183,6 @@ node tests/app.test.js   # profiles, looks, pick-your-own, nutrition, competitio
 node tests/review.test.js # review regressions: writes before the log loads, old-day drafts, double taps, day rollover, season tally, coach gains, calorie floor, plural food search, lead changes, a dead connection (50 checks)
 node tests/account.test.js # account memory: profile choice, weekly result and badges shown once, unsaved drafts, on a phone that empties its storage (29 checks)
 node tests/v12.test.js     # version 12: swaps, weekly locks, provisional/final results, Watch top-up, combined days, gym, stakes, custom foods, team, set shortcuts, rest timer, protein scoring, smoke of every tab (135 checks)
-node tests/v13.test.js     # version 13: saved meals, stalled lifts, deload weeks, reminders, clipboard paste, weekly recap, IOUs, goal nudge, pain notes, smoke of every tab (99 checks)
+node tests/v13.test.js     # version 13: saved meals, stalled lifts, deload weeks, reminders, weekly recap, IOUs, goal nudge, pain notes, smoke of every tab (98 checks)
+ML_ZXING=/path/to/zxing/umd/index.min.js node tests/v15.test.js   # version 15: Health paste box, reset plus deload, stuck-lift lines, barcode scanning, meal estimates, undo, backup, smoke of every tab
 ```

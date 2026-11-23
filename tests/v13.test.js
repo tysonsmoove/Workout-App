@@ -119,7 +119,7 @@ const MON = T('2026-12-07T17:00:00Z'), WED = T('2026-12-09T17:00:00Z'), NEXT = T
     await page.click('[data-a="food-add"][data-meal="s"]'); await page.waitForSelector('#myMeals'); await page.click('#myMeals [data-mealrow] [data-a="meal-edit"] >> nth=1'); await page.waitForSelector('[data-a="meal-rename"]');
     await fill(page, '#mealName', 'Weekday breakfast'); await page.click('[data-a="meal-rename"]'); await toastWith(page, 'Renamed');
     check('M3 a saved meal can be renamed', (await mealsNow()).map(m => m.name).sort().join('|') === 'Chicken night|Weekday breakfast' && (await page.$$eval('#myMeals .fn', els => els.map(e => e.textContent))).includes('Weekday breakfast'));
-    await page.click('#myMeals [data-mealrow] [data-a="meal-edit"] >> nth=1'); await page.waitForSelector('[data-a="meal-del"]'); await page.click('[data-a="meal-del"]'); await page.click('[data-a="meal-del"]'); await toastWith(page, 'Meal deleted');
+    await page.click('#myMeals [data-mealrow] [data-a="meal-edit"] >> nth=1'); await page.waitForSelector('[data-a="meal-del"]'); await page.click('[data-a="meal-del"]'); await page.click('[data-a="meal-del"]'); await toastWith(page, 'Removed');
     check('M3 and deleted', (await mealsNow()).map(m => m.name).join('|') === 'Chicken night' && !(await page.$$eval('#myMeals .fn', els => els.map(e => e.textContent))).includes('Weekday breakfast'));
     check('M3 days already logged do not change through rename or delete', await logged() === before);
   });
@@ -128,32 +128,35 @@ const MON = T('2026-12-07T17:00:00Z'), WED = T('2026-12-09T17:00:00Z'), NEXT = T
   await section('P', async () => {
     await open({ me: 'tyson', time: WED, init: seed() });
     await page.waitForSelector('.ex[data-ex="shoulderpress"]');
+    const line = await txt(page, '[data-stall-line="shoulderpress"]');
+    check('P1 three same-weight sessions without an increase show one stuck line', /^Stuck at 50 lb · 3 sessions · Fix$/.test(line.replace(/\s+/g, ' ').trim()) && (await page.$$('.stallline')).length === 1 && !(await has(page, '.stall')), line);
+    await page.click('[data-a="stall-open"][data-key="shoulderpress"]'); await page.waitForSelector('.stall[data-stall="shoulderpress"]');
     const card = await txt(page, '.stall[data-stall="shoulderpress"]');
-    check('P1 three same-weight sessions without an increase show the stall card', card.includes('Stuck at 50 lb for 3 sessions') && card.includes('Reset: drop 10% and build back') && card.includes('Swap for 4 weeks') && (await page.$$('.stall')).length === 1, card);
+    check('P1 Fix opens the stall card in place', card.includes('Stuck at 50 lb for 3 sessions') && card.includes('Reset: drop 10% and build back') && card.includes('Swap for 4 weeks') && (await page.$$('.stall')).length === 1, card);
     const rules = await ML(page, () => { const M = window.MorningLaps; return [M.easier('shoulderpress', 50), M.easier('legpress', 180), M.easier('latraise', 12.5), M.easier('dbcurl', 30), M.easier('assistpull', 80), M.stallFor('crunch', '2026-12-09'), M.stallFor('chestpress', '2026-12-09')]; });
     check('P2 the reset weight is 90%, rounded to each exercise\'s own step', JSON.stringify(rules.slice(0, 5)) === JSON.stringify([45, 160, 10, 27.5, 90]), JSON.stringify(rules));
     check('P1 bodyweight moves and progressing lifts get no card', rules[5] === null && rules[6] === null);
-    await page.click('[data-a="stall-reset"][data-key="shoulderpress"]'); await page.waitForFunction(() => !document.querySelector('.stall'));
+    await page.click('[data-a="stall-reset"][data-key="shoulderpress"]'); await page.waitForFunction(() => !document.querySelector('.stall') && !document.querySelector('.stallline'));
     const rs = (await settings(page)).resets.shoulderpress, sg = await ML(page, () => window.MorningLaps.suggest('shoulderpress', '2026-12-09'));
     check('P2 Reset suggests 90% for the next session', rs.w === 45 && rs.from === 50 && sg.w === 45 && sg.reset === true && await page.$eval('[data-usew="shoulderpress"]', b => b.dataset.val === '45') && (await txt(page, '.ex[data-ex="shoulderpress"] .exrx')).includes('reset'), JSON.stringify(sg));
     await ctx.close();
     await open({ me: 'tyson', time: WED, init: seed() });
-    await page.click('[data-a="stall-x"][data-key="shoulderpress"]'); await page.waitForFunction(() => !document.querySelector('.stall'));
+    await page.click('[data-a="stall-open"][data-key="shoulderpress"]'); await page.click('[data-a="stall-x"][data-key="shoulderpress"]'); await page.waitForFunction(() => !document.querySelector('.stall') && !document.querySelector('.stallline'));
     await page.reload(); await page.waitForSelector('.ex[data-ex="shoulderpress"]'); await settled(page);
-    check('P1 dismissing the card hides it, and it stays hidden', !(await has(page, '.stall')) && (await settings(page)).stallSeen.shoulderpress === '2026-11-30');
+    check('P1 dismissing the card hides it, and it stays hidden', !(await has(page, '.stall')) && !(await has(page, '.stallline')) && (await settings(page)).stallSeen.shoulderpress === '2026-11-30');
     await ctx.close();
     await open({ me: 'tyson', time: WED, init: seed({ settings: { stallSeen: { shoulderpress: '2026-11-16' } } }) }); // dismissed three sessions ago: only two stalled sessions since
-    check('P1 two more stalled sessions after a dismissal are not a new stall', !(await has(page, '.stall')));
+    check('P1 two more stalled sessions after a dismissal are not a new stall', !(await has(page, '.stallline')));
     await ctx.close();
     await open({ me: 'tyson', time: WED, init: seed({ settings: { stallSeen: { shoulderpress: '2026-11-09' } } }) }); // dismissed four sessions ago: three stalled sessions since
-    check('P1 three later stalled sessions bring it back', await has(page, '.stall[data-stall="shoulderpress"]'));
+    check('P1 three later stalled sessions bring it back', await has(page, '[data-stall-line="shoulderpress"]'));
     await ctx.close();
     await open({ me: 'tyson', time: WED, init: seed({ settings: { maxed: { shoulderpress: true } } }) });
     check('P1 a lift marked "Can\'t go higher" gets no card', !(await has(page, '.stall')) && await has(page, '.ex[data-ex="shoulderpress"] .exhold'));
     await ctx.close();
     // swap for four weeks, then the offer to switch back
     await open({ me: 'tyson', time: WED, init: seed() });
-    await page.click('[data-a="stall-swap"][data-key="shoulderpress"]'); await page.waitForSelector('.ex[data-ex="dbshoulder"]');
+    await page.click('[data-a="stall-open"][data-key="shoulderpress"]'); await page.click('[data-a="stall-swap"][data-key="shoulderpress"]'); await page.waitForSelector('.ex[data-ex="dbshoulder"]');
     const st = await settings(page);
     check('P1 "Swap for 4 weeks" applies the alternate as a default swap', st.swaps.shoulderpress === 'dbshoulder' && st.swapBack.shoulderpress.until === '2027-01-06' && !(await has(page, '.ex[data-ex="shoulderpress"]')) && (await page.$$('.ex[data-ex]')).length === 5, JSON.stringify(st.swapBack));
     check('P1 no switch-back offer before the four weeks are up', !(await has(page, '[data-swapback]')));
@@ -224,15 +227,8 @@ const MON = T('2026-12-07T17:00:00Z'), WED = T('2026-12-09T17:00:00Z'), NEXT = T
     await switchTo(page, 'jacquie'); await go(page, 'me');
     check('R1 and hers are still hers', (await steps()).m.includes('5:45 AM') && await val(page, '[data-form="rem"][data-k="water"]') === '15:15');
     // clipboard
-    await go(page, 'train'); await page.click('.sess [data-a="health"]'); await page.waitForSelector('#hkPaste');
-    await page.click('#hkPaste'); await page.waitForFunction(() => document.getElementById('hkText').value.includes('exercise: 31'));
-    check('R2 when the clipboard can be read, the button fills the box and the preview', await val(page, '#hkText') === 'date: 2026-12-09\nexercise: 31\nsteps: 6200' && (await txt(page, '#hkPreview')).includes('Watch exercise: 31 min') && await page.$eval('#hkGo', b => !b.disabled));
-    await fill(page, '#hkText', ''); await page.evaluate(() => { window.__clipMode = 'deny'; });
-    await page.click('#hkPaste'); const tA = await toastWith(page, 'Tap the box');
-    check('R2 when the read is refused it says to paste by hand, and nothing breaks', tA.includes('Tap the box and choose Paste instead') && await val(page, '#hkText') === '' && await page.evaluate(() => !document.getElementById('ov').hidden && document.activeElement.id === 'hkText'), tA);
-    await page.evaluate(() => { window.__clipMode = 'none'; document.getElementById('toast').hidden = true; });
-    await page.click('#hkPaste'); const tB = await toastWith(page, 'Tap the box');
-    check('R2 when the clipboard is unavailable it says the same', tB.includes('Tap the box and choose Paste instead'));
+    await go(page, 'train'); await page.click('.sess [data-a="health"]'); await page.waitForSelector('#hkText');
+    check('R2 (v15) the clipboard button is gone, and the box has focus when the sheet opens', !(await has(page, '#hkPaste')) && !(await has(page, '[data-a="hk-paste"]')) && await page.evaluate(() => document.activeElement.id === 'hkText') && await page.$eval('#hkText', b => b.placeholder === 'Tap here, then Paste'));
     await fill(page, '#hkText', 'date: 2026-12-09\nsteps: 4100');
     check('R2 the text box keeps working as before', (await txt(page, '#hkPreview')).includes('4,100 steps') && await page.$eval('#hkGo', b => !b.disabled));
     await page.click('#hkGo'); await page.waitForSelector('#ov', { state: 'hidden' });
@@ -378,7 +374,7 @@ const MON = T('2026-12-07T17:00:00Z'), WED = T('2026-12-09T17:00:00Z'), NEXT = T
     for (const who of ['tyson', 'jacquie']) { if (who === 'jacquie') await switchTo(page, 'jacquie');
       for (const tab of ['train', 'program', 'history', 'fuel', 'compete', 'me']) { await go(page, tab); const n = await page.evaluate(() => document.querySelectorAll('#main .card, #main .sheet').length); if (!n || /undefined|NaN|\[object/.test(await txt(page, '#main'))) bad.push(who + ':' + tab); }
       await go(page, 'fuel'); await page.click('[data-a="food-add"][data-meal="b"]'); await page.waitForSelector('#foodQ'); await page.keyboard.press('Escape');
-      await go(page, 'train'); await page.click('.sess [data-a="health"]'); await page.waitForSelector('#hkPaste'); await page.keyboard.press('Escape'); }
+      await go(page, 'train'); await page.click('.sess [data-a="health"]'); await page.waitForSelector('#hkText'); await page.keyboard.press('Escape'); }
     await page.waitForTimeout(400);
     check('G smoke: every tab draws for both profiles, with nothing broken in the text', bad.length === 0, bad.join(' '));
     check('G showing screens and sheets writes nothing to the store', (await page.evaluate(() => window.__w.length)) === 0, JSON.stringify(await page.evaluate(() => window.__w)));

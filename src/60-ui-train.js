@@ -119,13 +119,18 @@ function nudgeHTML(pid) {
 }
 // where a stalled slot can go for four weeks: another alternate that is free in every phase, else back to its planned exercise
 const stallSwapTarget = p => { const taken = defaultSwapTaken(p.base); return alts(p.base).concat(p.key !== p.base ? [p.base] : []).find(k => k !== p.key && (k === p.base || !taken[k])) || null; };
+// A stalled lift is one line under the exercise name, so several at once do not push the workout down the screen.
+// "Fix" opens the choices and their explanation in place.
 function stallHTML(p, date) {
   const key = p.key, st = stallFor(key, date); if (!st) return '';
-  const unit = ' lb' + (EX[key].per ? ' each' : ''), to = stallSwapTarget(p);
-  return '<div class="stall" data-stall="' + key + '"><div class="row between" style="flex-wrap:nowrap"><b>Stuck at ' + st.w + unit + ' for 3 sessions</b><button type="button" class="quiet" data-a="stall-x" data-key="' + key + '">Dismiss</button></div>' +
+  const unit = ' lb' + (EX[key].per ? ' each' : ''), to = stallSwapTarget(p), open = !!state.stallOpen[key];
+  const line = '<div class="stallline" data-stall-line="' + key + '"><span>Stuck at ' + st.w + unit + ' · 3 sessions · </span><button type="button" class="quiet" data-a="stall-open" data-key="' + key + '" aria-expanded="' + open + '">' + (open ? 'Close' : 'Fix') + '</button></div>';
+  if (!open) return line;
+  return line + '<div class="stall" data-stall="' + key + '"><div class="row between" style="flex-wrap:nowrap"><b>Stuck at ' + st.w + unit + ' for 3 sessions</b><button type="button" class="quiet" data-a="stall-x" data-key="' + key + '">Dismiss</button></div>' +
     '<div class="row"><button type="button" class="small" data-a="stall-reset" data-key="' + key + '">Reset: drop 10% and build back</button>' + (to ? '<button type="button" class="small" data-a="stall-swap" data-key="' + key + '" data-base="' + p.base + '">Swap for 4 weeks</button>' : '') + '</div>' +
     '<span class="tiny muted">Reset makes the next suggestion ' + st.to + unit + '.' + (to ? ' Swap uses ' + esc(EX[to].name) + ' for 4 weeks, then asks about switching back.' : ' Its alternates are already in that day\'s workout, so there is nothing to swap to.') + '</span></div>';
 }
+ACT['stall-open'] = el => { const k = el.dataset.key; state.stallOpen[k] = !state.stallOpen[k]; render('[data-a="stall-open"][data-key="' + k + '"]'); };
 ACT['deload-take'] = () => { const t = todayIso(), cw = completedWeeks(t); return saveSettings({ deload: { ws: weekStart(t), cw }, deloadAsked: cw }); };
 ACT['deload-skip'] = () => saveSettings({ deloadAsked: completedWeeks(todayIso()) });
 ACT['deload-off'] = () => saveSettings({ deload: null });
@@ -171,6 +176,7 @@ function renderExercise(p, m, date) {
   let h = '<section class="blk ex" data-ex="' + key + '" aria-label="' + esc(ex.name) + '">';
   h += '<div class="bhead"><h3>' + esc(ex.name) + (key !== p.base ? ' <span class="chip">swapped</span>' : '') + '</h3>' +
     '<button type="button" class="menubtn" data-menu="' + key + '" aria-label="Options for ' + esc(ex.name) + '" aria-haspopup="menu" aria-expanded="' + (menu ? 'true' : 'false') + '">···</button>' + renderMenu(key, p, m, date, menu) + '</div>';
+  h += stallHTML(p, date);
   if (closed) {
     h += '<div class="collapsed-sum"><span data-sum="' + key + '">' + (sm.line ? '<b>' + esc(sm.line) + '</b> · ' + sm.loggedN + '/' + nSets + ' logged' : 'Nothing logged') + '</span><button type="button" class="quiet" data-expand="' + key + '">Expand</button></div></section>';
     return h;
@@ -181,7 +187,6 @@ function renderExercise(p, m, date) {
   const qf = quickFills(key, e, nSets, sg);
   if (sg.last) h += '<div class="exlast" data-last="' + key + '"><span>Last · ' + nice(sg.last.date) + ': <b>' + esc((sg.last.w != null ? fmtW(key, sg.last.w) + ' × ' : '') + fmtReps(sg.last.reps)) + '</b></span><button type="button" class="small" data-same="' + key + '"' + (qf.same ? '' : ' hidden') + '>Same as last time</button></div>';
   if (maxed) h += '<div class="exhold" data-hold="' + key + '">Holding weight · progress by reps, then a 4th set</div>';
-  h += stallHTML(p, date);
   h += '<div class="logrow">';
   if (!ex.bw) h += '<label class="f w">Weight (lb)<input type="number" inputmode="decimal" min="0" step="2.5" id="w-' + key + '" data-field="w" data-ex="' + key + '" value="' + esc(e.w) + '" placeholder="–"></label>';
   for (let i = 0; i < nSets; i++) h += '<label class="f">Set ' + (i + 1) + '<input type="number" inputmode="numeric" pattern="[0-9]*" min="0" step="1" id="r-' + key + '-' + i + '" data-field="rep" data-ex="' + key + '" data-i="' + i + '" value="' + esc(e.reps[i] == null ? '' : e.reps[i]) + '" placeholder="–"></label>';
@@ -350,13 +355,13 @@ ACT['act-log'] = async () => {
   const di = dayInfo(me(), o.date);
   celebrate(min + ' min of ' + name.toLowerCase() + ' logged. ' + (a.mv === false ? 'Recovery counts for you, not for points.' : di.active ? 'That is an active day.' : (weekGoals(me(), weekStart(o.date)).minMin - di.minutes) + ' more min makes it count.'), { force: di.active, before });
 };
-ACT['act-del'] = async () => { const o = state.ov; const ok = await removeActivity(o.date, o.id); if (!ok) return; closeOv(); settle(); render(); toast('Removed'); };
+ACT['act-del'] = async () => { const o = state.ov, path = PATH.session(me(), o.date), before = getDoc(path); const ok = await removeActivity(o.date, o.id); if (!ok) return; closeOv(); settle(); render(); offerUndo('Removed', path, before); };
 ACT.surprise = () => { const k = surpriseActivity(me()); const a = ACTS[k]; openOv({ type: 'act', k, date: state.selDate, min: String(a.min), feel: null, hurt: false, note: '', name: '' }); burst({ count: 24, y: 0.35 }); };
 ACT.filter = el => { state.filter.cat = el.dataset.cat; redrawPicker(); };
 ACT['filter-quick'] = () => { state.filter.quick = !state.filter.quick; redrawPicker(); };
 ACT['filter-fav'] = () => { state.filter.fav = !state.filter.fav; redrawPicker(); };
 ACT.rest = async () => { const before = scoreSnapshot(); const ok = await logRest(state.selDate); if (!ok) return; render(); celebrate('Rest day logged. Recovery is part of the plan.', { before }); };
-ACT['rest-undo'] = async () => { await write(PATH.session(me(), state.selDate), null); settle(); render(); };
+ACT['rest-undo'] = async () => { const path = PATH.session(me(), state.selDate), before = getDoc(path); if (!(await write(path, null))) return; settle(); render(); offerUndo('Removed', path, before); };
 
 /* ---------- Program tab ---------- */
 function renderProgram() {

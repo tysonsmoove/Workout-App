@@ -25,7 +25,7 @@ function renderFuel() {
   MEALS.forEach(m => {
     const items = (day.items || []).filter(it => it.meal === m[0]), kc = sum(items, it => (it.n && it.n[0]) || 0), yest = mealItems(pid, addDays(date, -1), m[0]);
     h += '<div class="meal" data-mealsec="' + m[0] + '"><div class="mh"><h3>' + m[1] + (items.length ? ' <span class="muted num" style="font-weight:400;font-size:.875rem">' + commas(kc) + ' cal</span>' : '') + '</h3><button type="button" class="small" data-a="food-add" data-meal="' + m[0] + '" aria-label="Add food to ' + m[1] + '">+ Add</button></div>' +
-      items.map(it => '<button type="button" class="fooditem" data-a="food-item" data-id="' + esc(it.id) + '"><span class="fn">' + esc(it.name) + '</span><span class="fk">' + commas((it.n && it.n[0]) || 0) + '</span><span class="fq">' + esc(fmtQty(it.qty) + ' × ' + it.unit) + '</span></button>').join('') +
+      items.map(it => '<button type="button" class="fooditem" data-a="food-item" data-id="' + esc(it.id) + '"><span class="fn">' + esc(it.name) + estTag(it) + '</span><span class="fk">' + commas((it.n && it.n[0]) || 0) + '</span><span class="fq">' + esc(fmtQty(it.qty) + ' × ' + it.unit) + '</span></button>').join('') +
       // repeat meals in one tap: the same meal from the day before, or keep this one under a name
       (yest.length || items.length ? '<div class="mealtools">' + (yest.length ? '<button type="button" class="quiet" data-a="meal-copy" data-meal="' + m[0] + '">' + (items.length ? 'Add yesterday\'s ' + m[1].toLowerCase() + ' again' : 'Copy from yesterday') + '</button>' : '') +
         (items.length ? '<button type="button" class="quiet" data-a="meal-saveas" data-meal="' + m[0] + '">Save as a meal</button>' : '') + '</div>' : '') + '</div>';
@@ -53,14 +53,14 @@ let foodT;
 function fillFoodResults() {
   const o = state.ov, box = $('#foodRes'); if (!o || o.type !== 'food' || !box) return;
   const q = String(o.q || '').trim();
-  const row = (a, i, name, kcal, sub) => '<button type="button" class="fooditem" data-a="' + a + '" data-i="' + i + '"><span class="fn">' + esc(name) + '</span><span class="fk num">' + commas(kcal || 0) + '</span><span class="fq">' + esc(sub) + '</span></button>';
+  const row = (a, i, name, kcal, sub, tag) => '<button type="button" class="fooditem" data-a="' + a + '" data-i="' + i + '"><span class="fn">' + esc(name) + (tag || '') + '</span><span class="fk num">' + commas(kcal || 0) + '</span><span class="fq">' + esc(sub) + '</span></button>';
   if (!q) {
     const rec = recentFoods(me()); o.results = rec;
     const hint = foodDb.state === 'loading' ? 'Loading the food list…' : foodDb.state === 'error' ? 'The food list could not load. Quick add and your own foods still work.' : 'Type to search ' + (foodDb.list ? commas(foodDb.list.length) : 'thousands of') + ' foods.';
     const meals = savedMeals(me());
     box.innerHTML = '<p class="muted tiny" style="padding:6px 0">' + hint + '</p>' +
       (meals.length ? '<div class="eyebrow" style="padding:4px 0">My meals · tap to add all of it</div><div id="myMeals">' + meals.map(ml => '<div class="mealrow" data-mealrow="' + esc(ml.id) + '"><button type="button" class="fooditem" data-a="meal-add" data-id="' + esc(ml.id) + '"><span class="fn">' + esc(ml.name || 'Meal') + '</span><span class="fk num">' + commas(itemsKcal(ml.items)) + '</span><span class="fq">' + ml.items.length + ' item' + (ml.items.length === 1 ? '' : 's') + '</span></button><button type="button" class="small" data-a="meal-edit" data-id="' + esc(ml.id) + '" aria-label="Rename or delete ' + esc(ml.name || 'meal') + '">Edit</button></div>').join('') + '</div>' : '') +
-      (rec.length ? '<div class="eyebrow" style="padding:4px 0">Recent · tap to add again</div>' + rec.map((it, i) => row('food-again', i, it.name, it.n[0], fmtQty(it.qty) + ' × ' + it.unit)).join('') : '');
+      (rec.length ? '<div class="eyebrow" style="padding:4px 0">Recent · tap to add again</div>' + rec.map((it, i) => row('food-again', i, it.name, it.n[0], fmtQty(it.qty) + ' × ' + it.unit, estTag(it))).join('') : '');
     return;
   }
   const res = searchFoods(q, 40); o.results = res;
@@ -73,7 +73,8 @@ ACT['ov-meal'] = el => { state.ov.meal = el.dataset.v; renderOv(); };
 OV.food = {
   html: o => '<div class="ov tall" role="dialog" aria-modal="true" aria-label="Add food">' + ovHead('Add food', rel(o.date)) + mealSeg(o) +
     '<input type="search" id="foodQ" data-ovf="q" value="' + esc(o.q || '') + '" placeholder="Search: banana, chicken breast, pizza" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" aria-label="Search foods">' +
-    '<div class="row"><button type="button" class="small" data-a="food-quick">Quick add calories</button><button type="button" class="small" data-a="food-custom">Create a food</button></div>' +
+    '<div class="row" id="foodTools"><button type="button" class="small" data-a="food-quick">Quick add calories</button>' + fileButton('scan', 'Scan barcode', true) +
+      (caps.sample ? '<button type="button" class="small" data-a="describe-open">Describe it</button>' : '') + '<button type="button" class="small" data-a="food-custom">Create a food</button></div>' +
     '<div id="foodRes" class="results" aria-live="polite"></div></div>',
   after: o => { const loaded = loadFoods(); fillFoodResults(); const q = $('#foodQ'); if (q && !o.keepBlur) q.focus({ preventScroll: true }); loaded.then(() => { if (state.ov && state.ov.type === 'food') fillFoodResults(); }); } // start the load first, so the hint says it is loading
 };
@@ -85,7 +86,7 @@ ACT['meal-copy'] = async el => {
   const ok = await addFoodItems(date, items); if (!ok) return;
   render(); celebrate('Copied yesterday\'s ' + MEAL_NAME[meal].toLowerCase() + ': ' + mealWord(meal, items.length, itemsKcal(items)) + '.', { before, ms: 3400 });
 };
-const mealListHTML = items => '<div class="tbl"><table>' + items.map(it => '<tr><td>' + esc(it.name) + '<br><span class="tiny muted">' + esc(fmtQty(it.qty) + ' × ' + it.unit) + '</span></td><td>' + commas((it.n && it.n[0]) || 0) + ' cal</td></tr>').join('') + '</table></div>';
+const mealListHTML = items => '<div class="tbl"><table>' + items.map(it => '<tr><td>' + esc(it.name) + estTag(it) + '<br><span class="tiny muted">' + esc(fmtQty(it.qty) + ' × ' + it.unit) + '</span></td><td>' + commas((it.n && it.n[0]) || 0) + ' cal</td></tr>').join('') + '</table></div>';
 OV.mealname = {
   html: o => { const items = mealItems(me(), o.date, o.meal);
     return '<div class="ov" role="dialog" aria-modal="true" aria-label="Save as a meal">' + ovHead('Save as a meal', MEAL_NAME[o.meal] + ' · ' + rel(o.date).toLowerCase() + ' · ' + mealWord(o.meal, items.length, itemsKcal(items))) +
@@ -125,8 +126,9 @@ ACT['meal-rename'] = async () => {
 };
 ACT['meal-del'] = async () => {
   const o = state.ov; if (!o.confirmDel) { o.confirmDel = true; renderOv(); return; }
-  const ok = await write(PATH.meal(me(), o.id), null); if (!ok) return;
-  ACT['food-back'](); toast('Meal deleted. Days already logged are unchanged.', 3200);
+  const path = PATH.meal(me(), o.id), before = getDoc(path);
+  const ok = await write(path, null); if (!ok) return;
+  ACT['food-back'](); offerUndo('Removed', path, before); // days already logged are unchanged
 };
 ACT['food-pick'] = el => {
   const o = state.ov, f = o.results && o.results[Number(el.dataset.i)]; if (!f) return;
@@ -154,7 +156,7 @@ function refreshFoodItem() {
 OV.fooditem = {
   html: o => {
     const editing = !!o.item, name = editing ? o.item.name : o.food.name;
-    let h = '<div class="ov" role="dialog" aria-modal="true" aria-label="' + esc(name) + '">' + ovHead(esc(name), editing ? 'Logged ' + rel(o.date).toLowerCase() : o.food.src === 'Yours' ? 'Your food' : 'USDA ' + o.food.src) +
+    let h = '<div class="ov" role="dialog" aria-modal="true" aria-label="' + esc(name) + '">' + ovHead(esc(name), editing ? 'Logged ' + rel(o.date).toLowerCase() + (o.item.src === 'Estimate' ? ' · an estimate' : '') : o.food.src === 'Yours' ? 'Your food' : 'USDA ' + o.food.src) +
       '<div class="formgrid"><label class="f">How many<input type="number" id="fQty" data-ovf="qty" inputmode="decimal" min="0" step="0.25" value="' + esc(o.qty) + '"></label>';
     h += editing ? '<label class="f">Portion<input type="text" value="' + esc(o.item.unit) + '" disabled></label>'
       : '<label class="f">Portion<select id="fPortion" data-ovf="pi">' + o.food.portions.map((p, i) => '<option value="' + i + '"' + (Number(o.pi) === i ? ' selected' : '') + '>' + esc(portionText(p)) + '</option>').join('') + '</select></label>';
@@ -179,10 +181,10 @@ ACT['food-save'] = async () => {
   const was = o.item; closeOv(); render();
   celebrate((was ? 'Updated: ' : 'Added to ' + MEAL_NAME[o.meal] + ': ') + name + '.', { before });
 };
-ACT['food-del'] = async () => { const o = state.ov; const ok = await changeFoodItem(o.date, o.item.id, null); if (!ok) return; closeOv(); settle(); render(); toast('Removed'); };
+ACT['food-del'] = async () => { const o = state.ov, path = PATH.food(me(), o.date), before = getDoc(path); const ok = await changeFoodItem(o.date, o.item.id, null); if (!ok) return; closeOv(); settle(); render(); offerUndo('Removed', path, before); };
 
 const numOrNull = v => { const s = String(v == null ? '' : v).trim(); if (!s) return null; const n = Number(s); return isFinite(n) && n >= 0 ? n : NaN; };
-const ovField = (o, k, label, extra) => '<label class="f">' + label + '<input type="' + (extra && extra.text ? 'text' : 'number') + '" data-ovf="' + k + '" ' + (extra && extra.text ? 'maxlength="60"' : 'inputmode="decimal" min="0"') + ' value="' + esc(o[k] == null ? '' : o[k]) + '"' + (extra && extra.ph ? ' placeholder="' + extra.ph + '"' : '') + '></label>';
+const ovField = (o, k, label, extra) => '<label class="f">' + (o.unread && o.unread[k] ? '<span>' + label + ' <span class="chip warn" data-unread="' + k + '">not read</span></span>' : label) + '<input type="' + (extra && extra.text ? 'text' : 'number') + '" data-ovf="' + k + '" ' + (o.unread && o.unread[k] ? 'class="unread" ' : '') + (extra && extra.text ? 'maxlength="60"' : 'inputmode="decimal" min="0"') + ' value="' + esc(o[k] == null ? '' : o[k]) + '"' + (extra && extra.ph ? ' placeholder="' + extra.ph + '"' : '') + '></label>';
 OV.quick = {
   html: o => '<div class="ov" role="dialog" aria-modal="true" aria-label="Quick add">' + ovHead('Quick add', 'For a label you can read or a restaurant menu') + mealSeg(o) +
     '<div class="formgrid"><div class="wide">' + ovField(o, 'name', 'What was it? (optional)', { text: true, ph: 'Turkey sandwich' }) + '</div><div class="wide">' + ovField(o, 'kcal', 'Calories') + '</div>' + ovField(o, 'p', 'Protein g') + ovField(o, 'c', 'Carbs g') + ovField(o, 'f', 'Fat g') + '</div>' +
@@ -200,22 +202,27 @@ ACT['quick-save'] = async () => {
 };
 OV.custom = {
   html: o => '<div class="ov" role="dialog" aria-modal="true" aria-label="' + (o.id ? 'Edit food' : 'Create a food') + '">' + ovHead(o.id ? 'Edit food' : 'Create a food', o.id ? 'Changes the saved food for both of you' : 'Saved for both of you, searchable by name') +
+    (o.fromLabel ? '<p class="banner warn" id="labelCheck">Check these against the label.' + (Object.keys(o.unread || {}).length ? ' Boxes marked "not read" could not be read from the photo.' : '') + '</p>'
+      : o.scanned ? '<p class="banner" id="scanNote">' + esc(o.note || 'New product. Type the numbers from the Nutrition Facts label.') + '</p>' : '') +
     '<div class="formgrid"><div class="wide">' + ovField(o, 'name', 'Name', { text: true, ph: 'Mom\'s chili' }) + '</div><div class="wide">' + ovField(o, 'serving', 'One serving is', { text: true, ph: '1 bowl' }) + '</div>' +
-    ovField(o, 'kcal', 'Calories') + ovField(o, 'p', 'Protein g') + ovField(o, 'c', 'Carbs g') + ovField(o, 'f', 'Fat g') + ovField(o, 'fiber', 'Fiber g') + ovField(o, 'sugar', 'Sugars g') + ovField(o, 'sat', 'Sat fat g') + ovField(o, 'na', 'Sodium mg') + '</div>' +
-    '<p class="tiny muted">Per serving. Calories are required; leave anything else blank if you do not know it.</p>' +
-    '<div class="row"><button type="button" class="primary" data-a="custom-save">' + (o.id ? 'Save changes' : 'Save food') + '</button><button type="button" class="small" data-a="food-back">Back</button></div></div>'
+    ovField(o, 'kcal', 'Calories') + ovField(o, 'p', 'Protein g') + ovField(o, 'c', 'Carbs g') + ovField(o, 'f', 'Fat g') + ovField(o, 'fiber', 'Fiber g') + ovField(o, 'sugar', 'Sugars g') + ovField(o, 'sat', 'Sat fat g') + ovField(o, 'na', 'Sodium mg') +
+    '<div class="wide"><label class="f">Barcode (optional)<input type="text" id="customBarcode" data-ovf="barcode" inputmode="numeric" maxlength="20" autocomplete="off" value="' + esc(o.barcode || '') + '" placeholder="The digits under the bars"></label></div></div>' +
+    '<p class="tiny muted">Per serving. Calories are required; leave anything else blank if you do not know it. A barcode (the 12 or 13 digits under the bars) lets Scan barcode find this food next time' + (o.id ? '; clear the box to remove it' : '') + '.</p>' +
+    '<div class="row"><button type="button" class="primary" data-a="custom-save">' + (o.id ? 'Save changes' : 'Save food') + '</button><button type="button" class="small" data-a="food-back">Back</button></div>' +
+    (o.scanned ? '<div class="row"><button type="button" class="small" data-a="scan-link">Link to a food we already made</button><span class="tiny muted">if this is one of ours</span></div>' : '') + '</div>'
 };
 ACT['custom-edit'] = () => {
   const o = state.ov, id = o.food && o.food.customId, c = id && state.customFoods[id]; if (!c) { toast('That food is no longer saved.'); return; }
   const n = c.n || [], s = i => n[i] == null ? '' : String(n[i]);
-  openOv({ type: 'custom', id, meal: o.meal, date: o.date, name: c.name || '', serving: c.serving || '1 serving', kcal: s(NI.kcal), p: s(NI.protein), c: s(NI.carbs), f: s(NI.fat), fiber: s(NI.fiber), sugar: s(NI.sugar), sat: s(NI.satfat), na: s(NI.sodium), back: Object.assign({}, o, { confirmDel: false }), list: o.back });
+  openOv({ type: 'custom', id, meal: o.meal, date: o.date, name: c.name || '', serving: c.serving || '1 serving', kcal: s(NI.kcal), p: s(NI.protein), c: s(NI.carbs), f: s(NI.fat), fiber: s(NI.fiber), sugar: s(NI.sugar), sat: s(NI.satfat), na: s(NI.sodium), barcode: barcodeShown(c.barcode), back: Object.assign({}, o, { confirmDel: false }), list: o.back });
 };
 ACT['custom-del'] = async () => {
   const o = state.ov, id = o.food && o.food.customId; if (!id) return;
   if (!o.confirmDel) { o.confirmDel = true; renderOv(); return; }
-  const ok = await write('foods/' + id, null); if (!ok) return;
+  const path = 'foods/' + id, before = getDoc(path);
+  const ok = await write(path, null); if (!ok) return;
   if (o.back) openOv(o.back); else closeOv();
-  toast('Food deleted. Anything already logged keeps its numbers.', 3200);
+  offerUndo('Removed', path, before); // anything already logged keeps its numbers
 };
 ACT['food-custom'] = () => { const o = state.ov; openOv({ type: 'custom', meal: o.meal, date: o.date, name: String(o.q || '').trim(), serving: '1 serving', kcal: '', p: '', c: '', f: '', fiber: '', sugar: '', sat: '', na: '', back: { type: 'food', meal: o.meal, date: o.date, q: o.q } }); };
 ACT['custom-save'] = async () => {
@@ -226,7 +233,13 @@ ACT['custom-save'] = async () => {
   if (Object.keys(v).some(k => Number.isNaN(v[k]))) { toast('Nutrition values must be numbers, or blank.'); return; }
   const n = NKEYS.map(() => null); n[NI.kcal] = Math.round(v.kcal); n[NI.protein] = v.p; n[NI.carbs] = v.c; n[NI.fat] = v.f; n[NI.fiber] = v.fiber; n[NI.sugar] = v.sugar; n[NI.satfat] = v.sat; n[NI.sodium] = v.na;
   const id = o.id || uid(), prev = o.id ? state.customFoods[o.id] : null, now = new Date().toISOString();
+  // the barcode is optional: stored in one form, on one food at a time, and cleared when the box is emptied
+  const typed = String(o.barcode || '').trim(), code = typed ? normBarcode(typed) : null;
+  if (typed && !code) { toast('That barcode number is not valid. Check the digits under the bars, or clear the box.', 3600); return; }
+  const taken = code ? findByBarcode(code) : null;
+  if (taken && taken !== id) { toast('That barcode is already on "' + (state.customFoods[taken].name || 'another food') + '".', 3600); return; }
   const doc = Object.assign({}, prev, { name, serving: String(o.serving || '').trim() || '1 serving', n, by: prev && prev.by || me(), createdAt: prev && prev.createdAt || now }, prev ? { updatedAt: now, updatedBy: me() } : {});
+  if (code) doc.barcode = code; else delete doc.barcode;
   const ok = await write('foods/' + id, doc); if (!ok) return;
   openOv({ type: 'fooditem', food: customFood(id), meal: o.meal, date: o.date, qty: '1', pi: 0, back: o.id ? o.list : o.back });
   toast(o.id ? 'Food updated. Past logs keep their numbers.' : 'Saved. It now shows up in search.', 3000);

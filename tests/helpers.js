@@ -66,10 +66,48 @@ function fakeDb() {
     collection: c => ({ onSnapshot: (fn, err) => { cols.push({ c, fn }); if (err) errs.push(err); setTimeout(() => fn(colSnap(c)), first); return () => {}; } })
   } : n === 'user' && window.__uid ? { can: async () => true, id: async () => window.__uid } : null };
 }
+// Stand-ins for the two optional capabilities, "sample" (ask Claude) and "downloads" (save a file). Run it after
+// fakeDb() for an account-mode page; on its own the page stays in browser-only mode, because claude.use("db") is null.
+// window.__sampleMode / window.__dlMode (set before this runs, or changed later): 'ok', 'null' (read when the app
+// asks for the capability, at load), 'declined', 'rate'. sample also takes 'fail' and 'fenced' (the answer wrapped in other text); downloads also takes 'gone'.
+// window.__asked collects every call to Claude (prompt, and the size of each photo sent); window.__saved every file saved.
+function capStub() {
+  window.__sampleMode = window.__sampleMode || 'ok'; window.__dlMode = window.__dlMode || 'ok';
+  window.__asked = []; window.__saved = []; window.__uses = [];
+  const ask = async (input, opts) => {
+    const list = opts && opts.images ? [].concat(Array.from(opts.images)) : [], imgs = [];
+    for (const b of list) { const bm = await createImageBitmap(b); imgs.push({ w: bm.width, h: bm.height, type: b.type, size: b.size }); }
+    window.__asked.push({ input: String(input), images: imgs, mode: window.__sampleMode });
+    if (window.__sampleMode === 'declined') throw { code: 'not_granted', message: 'the viewer said no' };
+    if (window.__sampleMode === 'rate') throw { code: 'rate_limited', message: 'slow down' };
+    if (window.__sampleMode === 'fail') throw { code: 'invalid_json', message: 'not JSON', text: 'sorry' };
+    if (window.__sampleMode === 'fenced') throw { code: 'invalid_json', message: 'not JSON', text: 'Here is the estimate:\n```json\n' + JSON.stringify(/Nutrition Facts/.test(input) ? window.__labelReply : window.__mealReply) + '\n```' };
+    if (list.length && window.__noImages) throw { code: 'images_unavailable', message: 'no images here' };
+    return JSON.parse(JSON.stringify(/Nutrition Facts/.test(input) ? window.__labelReply : window.__mealReply));
+  };
+  const sample = async (input, opts) => ({ text: JSON.stringify(await ask(input, opts)), truncated: false });
+  sample.json = ask;
+  sample.limits = async () => window.__noImages ? {} : { images: { maxCount: 4, maxInputBytes: 4000000, mediaTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'] } };
+  const downloads = { save: async req => {
+    window.__dlTries = (window.__dlTries || 0) + 1;
+    if (window.__dlMode === 'declined') throw { code: 'declined', message: 'the viewer said no' };
+    if (window.__dlMode === 'rate') throw { code: 'rate_limited', message: 'wait' };
+    if (window.__dlMode === 'gone') throw { code: 'unavailable', message: 'not here' };
+    window.__saved.push({ filename: req.filename, data: typeof req.data === 'string' ? req.data : await new Response(req.data).text() });
+    return { status: 'saved' };
+  } };
+  const prev = window.claude && window.claude.use;
+  window.claude = { use: async n => {
+    window.__uses.push(n);
+    if (n === 'sample') return window.__sampleMode === 'null' ? null : sample;
+    if (n === 'downloads') return window.__dlMode === 'null' ? null : downloads;
+    return prev ? prev(n) : null;
+  } };
+}
 function finish(label) {
   const fails = results.filter(r => !r.ok);
   console.log('\n' + label + ': ' + results.length + ' checks, ' + fails.length + ' failed');
   fails.forEach(f => console.log(' - ' + f.name + ' ' + f.detail));
   return fails.length;
 }
-module.exports = { chromium, URL, results, check, T, newPage, val, txt, has, fill, toastText, go, cssVar, score, overflow, fakeDb, finish };
+module.exports = { chromium, URL, results, check, T, newPage, val, txt, has, fill, toastText, go, cssVar, score, overflow, fakeDb, capStub, finish };

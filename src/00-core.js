@@ -28,7 +28,7 @@ const lsGet = (k, dflt) => { try { const v = localStorage.getItem(k); return v =
 const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* storage unavailable */ } };
 const reducedMotion = () => { try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } };
 let toastT;
-function toast(msg, ms) { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, ms || 2200); }
+function toast(msg, ms) { const t = $('#toast'); t.textContent = msg; t.classList.remove('act'); t.hidden = false; state.undo = null; clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, ms || 2200); }
 
 /* ---------- Program constants ---------- */
 const GOAL = 5;             // default weekly activity days on the lifting program
@@ -76,6 +76,10 @@ const state = {
   customFoods: {},
   comp: { start: null, stakes: '' },   // also, when set: stakesBy { monday: text }, countdown { date, label, setAt }
   results: {},        // week start -> final result, once a finished week is closed
+  have: {},           // path -> the stored document, for the one-per-person documents (settings, profile, shared settings); null when there is none
+  undo: null,         // the last removal, while its "Undo" is still on offer
+  backupNote: '',     // what the last backup did, shown on the Backup card
+  stallOpen: {},      // exercise key -> its stuck-lift choices are open (this visit)
   iou: {},            // week start -> { paid }: whether what was on the line has been settled. Kept apart from results, which never change
   draftsBy: { tyson: {}, jacquie: {} },   // date -> unsaved lifting form draft (this device, mirrored to the account)
   acct: {},           // what this signed-in person's account remembers: profile, what has been shown; see prefGet
@@ -216,7 +220,7 @@ function getDoc(path) { const t = slot(path); if (!t) return null; return t.map 
 function applyDoc(path, doc) {
   const t = slot(path); if (!t) return; bump();
   if (t.map) { if (doc == null) delete t.map[t.key]; else t.map[t.key] = doc; }
-  else t.obj[t.field] = t.dflt ? Object.assign(t.dflt(), doc || {}) : doc;
+  else { t.obj[t.field] = t.dflt ? Object.assign(t.dflt(), doc || {}) : doc; state.have[path] = doc == null ? null : doc; }
 }
 function replaceCol(colPath, entries) {
   const s = colPath.split('/'); let host, field;
@@ -245,15 +249,18 @@ function noteWriteError(e) { const c = e && e.code; if (c === 'not_granted' || c
 // put / del update what you see first, then store. They reject when the store refuses.
 // Nothing is written until the log has loaded: a save built on a not-yet-loaded day would overwrite what is already there.
 const NOT_READY = { code: 'not_ready', message: 'The log is still loading.' };
+// A change made here to a document whose removal is still on offer for "Undo" withdraws the offer: the undo could no
+// longer put back exactly what was there. (A change arriving from the other phone is caught when Undo is tapped.)
+function dropUndo(path) { if (state.undo && state.undo.path === path) { state.undo = null; const t = $('#toast'); if (t.classList.contains('act')) { t.hidden = true; t.classList.remove('act'); } } }
 async function put(path, doc) {
   if (!state.ready) throw NOT_READY;
-  applyDoc(path, doc);
+  dropUndo(path); applyDoc(path, doc);
   if (!db) { localPut(path, doc); return 'local'; }
   try { await queueWrite(path, () => db.doc(path).set(doc)); return 'synced'; } catch (e) { noteWriteError(e); throw e; }
 }
 async function del(path) {
   if (!state.ready) throw NOT_READY;
-  applyDoc(path, null);
+  dropUndo(path); applyDoc(path, null);
   if (!db) { localPut(path, null); return; }
   try { await queueWrite(path, () => db.doc(path).delete()); } catch (e) { noteWriteError(e); throw e; }
 }
@@ -275,6 +282,44 @@ async function saveProfile(pid, patch) {
   const ok = await write(PATH.profile(pid), next);
   return ok;
 }
+/* ---------- Optional abilities: asking Claude, saving a file ---------- */
+// Both come from the Claude viewer some time after load, or never. `null` means this view cannot use one, and every
+// feature that wants one has a path without it: nothing waits on them, and nothing breaks when they are missing,
+// declined, or rate limited.
+const caps = { sample: null, images: null, downloads: null, known: false }; // images: this view's photo limits, or null; known: the viewer has answered about saving files
+function useCap(name) { try { return window.claude && window.claude.use ? Promise.resolve(window.claude.use(name)).catch(() => null) : Promise.resolve(null); } catch (e) { return Promise.resolve(null); } }
+function capsChanged() { render(); if (state.ov && state.ov.type === 'food') renderOv(); }
+function loadCaps() {
+  useCap('sample').then(async s => {
+    if (!s || typeof s.json !== 'function') return;
+    caps.sample = s; try { const l = await s.limits(); caps.images = (l && l.images) || null; } catch (e) { caps.images = null; }
+    capsChanged();
+  });
+  useCap('downloads').then(d => { caps.downloads = d && typeof d.save === 'function' ? d : null; caps.known = true; capsChanged(); });
+}
+// Ask Claude for one JSON value, on a tap, never from a loop and never retried here.
+// Resolves { ok: true, data }, or { ok: false, why } with why = 'gone' (unavailable, or the viewer said no: the
+// feature hides for this visit), 'noimage' (text works, photos do not), 'busy' (rate limited: the viewer may try
+// again later), or 'failed' (anything else).
+const SAMPLE_GONE = ['not_granted', 'sampling_disabled', 'not_declared', 'capability_disabled', 'capability_removed'];
+// the JSON inside a reply that also carried other text (a code fence, a sentence before it); undefined when there is none
+function looseJson(text) {
+  const a = text.search(/[\[{]/); if (a < 0) return undefined;
+  const b = Math.max(text.lastIndexOf(']'), text.lastIndexOf('}')); if (b <= a) return undefined;
+  try { return JSON.parse(text.slice(a, b + 1)); } catch (e) { return undefined; }
+}
+async function askJson(prompt, images) {
+  if (!caps.sample) return { ok: false, why: 'gone' };
+  try { const opts = {}; if (images && images.length) opts.images = images; return { ok: true, data: await caps.sample.json(prompt, opts) }; }
+  catch (e) {
+    const code = e && e.code;
+    if (SAMPLE_GONE.includes(code)) { caps.sample = null; caps.images = null; capsChanged(); return { ok: false, why: 'gone', code }; }
+    if (code === 'images_unavailable') { caps.images = null; return { ok: false, why: 'noimage', code }; }
+    if (code === 'invalid_json' && e && typeof e.text === 'string') { const v = looseJson(e.text); if (v !== undefined) return { ok: true, data: v }; } // the answer was there, wrapped in other text
+    return { ok: false, why: code === 'rate_limited' ? 'busy' : 'failed', code: code || 'upstream_error' };
+  }
+}
+
 /* ---------- What a person's account remembers ---------- */
 // An iPhone can empty a page's own storage between visits, which used to mean choosing a profile on every open and
 // seeing last week's result again and again. So the profile choice, what has already been shown and unsaved lifting

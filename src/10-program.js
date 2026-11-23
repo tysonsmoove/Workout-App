@@ -196,13 +196,17 @@ const stepUp = (ex, w) => Math.max(0, w + ex.inc);
 // Weight rule, as shown on the Program tab. Only logged sets count; blanks are not failures.
 // On top of the rule: a chosen reset replaces the next suggestion once, and a deload session is 2 sets at about 90%.
 function suggest(key, date) {
-  const ex = EX[key], unit = ex.per ? ' lb each hand' : ' lb'; let s = suggestRule(key, date);
+  const ex = EX[key], unit = ex.per ? ' lb each hand' : ' lb', base = suggestRule(key, date); let s = base;
   const rs = (state.settings.resets || {})[key];
-  if (!ex.bw && rs && isNum(rs.w) && validIso(rs.at) && (!s.last || s.last.date < rs.at)) // waits until a session is logged on or after the day it was chosen
-    s = Object.assign({}, s, { w: rs.w, sets: ex.sets, reset: true, text: rs.w + unit + ' · reset', why: 'Reset from ' + rs.from + ' lb: about 10% lighter, then build back up with clean reps.' });
+  // a reset waits until a normal session is logged on or after the day it was chosen (deload sessions do not use it up)
+  const waiting = !ex.bw && !!rs && isNum(rs.w) && validIso(rs.at) && (!base.last || base.last.date < rs.at);
+  if (waiting) s = Object.assign({}, base, { w: rs.w, sets: ex.sets, reset: true, text: rs.w + unit + ' · reset', why: 'Reset from ' + rs.from + ' lb: about 10% lighter, then build back up with clean reps.' });
   if (deloadOn(date)) {
-    const w = ex.bw || s.w == null ? s.w : easier(key, s.w);
-    s = Object.assign({}, s, { w, sets: 2, deload: true, text: (ex.bw ? '2 × ' + s.reps : w + unit) + ' · deload', why: 'Deload week: 2 sets' + (ex.bw ? '' : ' at about 90% of ' + s.w + ' lb') + '. Next week picks up from your last normal session.' });
+    // A reset and a deload never stack. The deload is 90% of the normal suggestion; with a reset waiting it is the
+    // lighter of that and the reset weight (for the assisted pull-up, lighter means more assistance).
+    let w = base.w;
+    if (!ex.bw && base.w != null) { const dl = easier(key, base.w); w = waiting ? (ex.inc < 0 ? Math.max(dl, rs.w) : Math.min(dl, rs.w)) : dl; }
+    s = Object.assign({}, s, { w, sets: 2, deload: true, text: (ex.bw ? '2 × ' + base.reps : w + unit) + ' · deload', why: 'Deload week: 2 sets' + (ex.bw ? '' : ' at about 90% of ' + base.w + ' lb') + '.' + (waiting ? ' Your reset to ' + rs.w + ' lb is still waiting for the first normal session.' : ' Next week picks up from your last normal session.') });
   }
   return s;
 }
@@ -400,7 +404,7 @@ async function removeRecord(date) {
   const acts = n && n.program ? watchTopUp(pid, date, n.acts.filter(a => !isHk(a)), false) : [];
   const next = acts.length ? { v: SCHEMA, date, kind: 'activity', acts, savedAt: had.savedAt || now, updatedAt: now } : null;
   applyDoc(path, next); render();
-  try { if (next) await put(path, next); else await del(path); toast(next ? 'Removed the ' + (n.kind === 'strength' ? 'lift' : 'treadmill entry') + '. Your activities for ' + nice(date) + ' are kept.' : 'Removed ' + nice(date), next ? 3200 : 2200); }
+  try { if (next) await put(path, next); else await del(path); offerUndo(next ? 'Removed the ' + (n.kind === 'strength' ? 'lift' : 'treadmill entry') + '. Your activities for ' + nice(date) + ' are kept' : 'Removed', path, had); }
   catch (e) { applyDoc(path, had); toast('Could not remove ' + nice(date) + '. Try again.'); render(); }
   settle();
 }

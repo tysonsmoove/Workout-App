@@ -122,7 +122,7 @@ main.addEventListener('focusout', e => {
 // one click handler for every data-a action, in the page and in overlays
 // Actions that save one thing per tap. A second tap while the first is still saving is dropped, so a slow
 // connection cannot log the same food or activity twice. Water is left out on purpose: tapping it twice means two glasses.
-const ONE_AT_A_TIME = ['act-log', 'act-del', 'rest', 'food-save', 'food-again', 'food-del', 'quick-save', 'custom-save', 'custom-del', 'hk-import', 'hk-off', 'body-save', 'weigh-save', 'name-save', 'gym-save', 'stakes-save', 'cd-save', 'cd-clear', 'meal-copy', 'meal-save', 'meal-add', 'meal-rename', 'meal-del', 'hk-paste', 'iou-toggle', 'rem-save', 'nudge-yes', 'nudge-no', 'stall-reset', 'stall-swap', 'deload-take'];
+const ONE_AT_A_TIME = ['act-log', 'act-del', 'rest', 'food-save', 'food-again', 'food-del', 'quick-save', 'custom-save', 'custom-del', 'hk-import', 'hk-off', 'body-save', 'weigh-save', 'name-save', 'gym-save', 'stakes-save', 'cd-save', 'cd-clear', 'meal-copy', 'meal-save', 'meal-add', 'meal-rename', 'meal-del', 'iou-toggle', 'undo', 'scan-digits', 'scan-link-pick', 'describe-go', 'describe-log', 'backup-all', 'backup-workouts', 'backup-food', 'backup-copy', 'rem-save', 'nudge-yes', 'nudge-no', 'stall-reset', 'stall-swap', 'deload-take'];
 const busy = {};
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-a]'); if (!el || el.disabled) return;
@@ -139,7 +139,9 @@ document.addEventListener('click', e => {
 // overlay fields write straight into the overlay's state
 const ovRoot = $('#ov');
 function onOvInput(e) {
-  const el = e.target, o = state.ov; if (!o || !el.dataset || !el.dataset.ovf) return;
+  const el = e.target, o = state.ov; if (!o || !el.dataset) return;
+  if (o.type === 'describe' && el.dataset.di != null) { const it = (o.items || [])[Number(el.dataset.di)]; if (it) { it[el.dataset.dk] = el.value; refreshDescribe(); } return; } // one row of the estimate
+  if (!el.dataset.ovf) return;
   const key = el.dataset.ovf, typed = e.type === 'input';
   o[key] = el.value;
   // Lists are only redrawn while typing. A field also fires "change" when it loses focus, which happens in the
@@ -241,6 +243,7 @@ function route() {
 }
 window.MorningLaps = { state, P, weekScore, coach, goalsFor, badgesFor, searchFoods, loadFoods, dayTotals, compWeeks, parseHealthPaste, foodCount: () => foodDb.list ? foodDb.list.length : 0,
   EX, DAYS, normalize, dayInfo, weekFacts, scoreFacts, weekGoals, liveGoals, fuelParts, plannedFor, planSlots, swapOptions, defaultSwapOption, alts, teamStats, stakesFor, phaseFor, restT,
+  caps, normBarcode, backupDocs, workoutsCsv, foodCsv, canon,
   suggest, stallFor, deloadOn, deloadState, completedWeeks, easier, weekRecap, lastWeek, ious, goalNudge, painNotes, painFlag, actList, surpriseActivity, savedMeals, mealItems };
 (function boot() {
   const saved = lsGet('ml.me', null);
@@ -254,5 +257,6 @@ window.MorningLaps = { state, P, weekScore, coach, goalsFor, badgesFor, searchFo
   window.addEventListener('pageshow', wake);
   window.addEventListener('focus', wake);
   route();
+  loadCaps(); // asking Claude and saving files light up when the viewer offers them; nothing waits for that
   connect(); // with no profile on this device, connect asks who is logging once the account has had its say
 })();

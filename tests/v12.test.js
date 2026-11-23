@@ -328,7 +328,7 @@ const SAT = T('2026-11-21T17:00:00Z'), SUN = T('2026-11-22T17:00:00Z'), MON = T(
     const foods = await page.evaluate(() => { const k = JSON.parse(localStorage.getItem('ml.kv')); return Object.keys(k).filter(p => p.indexOf('foods/') === 0).map(p => k[p]); });
     check('B8 the edit changes the saved food, not a copy', foods.length === 1 && foods[0].n[0] === 420 && foods[0].name === 'Trackside chili, big bowl' && !!foods[0].createdAt && !!foods[0].updatedAt);
     check('B8 what was already logged keeps the nutrition it was logged with', JSON.stringify(await day()) === JSON.stringify(logged) && (await kv(page, 'profiles/jacquie/food/2026-11-25')).items[0].name === 'Trackside chili');
-    await page.click('[data-a="custom-del"]'); await page.click('[data-a="custom-del"]'); await toastWith(page, 'Food deleted');
+    await page.click('[data-a="custom-del"]'); await page.click('[data-a="custom-del"]'); await toastWith(page, 'Removed');
     await page.keyboard.press('Escape'); await page.waitForSelector('#ov[hidden]', { state: 'attached' });
     const r2 = await find('trackside chili');
     check('B8 Delete removes it from search, for either of you', r2.filter(x => x.includes('Trackside')).length === 0 && await page.evaluate(() => !Object.keys(JSON.parse(localStorage.getItem('ml.kv'))).some(p => p.indexOf('foods/') === 0)));

@@ -78,6 +78,7 @@ function renderMe() {
     '<div class="formgrid"><label class="f">Weekday mornings<input type="time" data-form="rem" data-k="morning" value="' + esc('morning' in rf ? rf.morning : p.reminders.morning) + '"></label><label class="f">Afternoon water check<input type="time" data-form="rem" data-k="water" value="' + esc('water' in rf ? rf.water : p.reminders.water) + '"></label></div>' +
     '<div class="row"><button type="button" class="small" data-a="rem-save">Save my times</button><span class="tiny muted">Sunday\'s reminder is at 7:00 PM.</span></div>' +
     '<details class="plain" data-dk="remsteps"><summary>Set up the three reminders, once per iPhone</summary><div style="margin-top:8px" id="remSteps">' + reminderStepsHTML(pid) + '</div></details></section>';
+  h += backupCardHTML();
   h += '<section class="card stack"><h3>Workout style</h3>' + seg('plan-set', 'plan', p.plan, { program: 'Lifting program', choice: 'Pick-your-own' }) +
     '<p class="tiny muted">' + (p.plan === 'program' ? 'Push, Pull, Legs rotation with weight suggestions. Weekly goal: ' + live.goal + ' activity days, ' + LIFT_GOAL + ' of them lifts. Walks and other activities can be added on any day.' : 'Choose from a gentle menu each day. Weekly goal: ' + live.goal + ' active days of ' + live.minMin + ' minutes or more. Adjust it under Train, Plan.') + ' Switching keeps everything already logged.</p>' +
     (live.plan !== wk.plan ? '<p class="tiny locknote" id="planLock"><span class="chip accent">' + mon + '</span> for scoring. Your Train tab switches now, but this week is still scored as ' + (wk.plan === 'program' ? 'the lifting program' : 'pick-your-own') + ', so the race already running does not change.</p>' : '') + '</section>';
@@ -168,7 +169,7 @@ ACT['who-pick'] = el => { switchProfile(el.dataset.pid); closeOv(); };
 function switchProfile(pid) {
   if (!PIDS.includes(pid)) return;
   state.pid = pid; prefSet('ml.me', pid);
-  state.status = {}; state.formError = {}; state.menu = null; state.forms = {}; state.details = {}; state.confirmRemove = null; restStop();
+  state.status = {}; state.formError = {}; state.menu = null; state.forms = {}; state.details = {}; state.stallOpen = {}; state.confirmRemove = null; restStop();
   applySkin(); render();
   if (state.ready) announce();
 }
