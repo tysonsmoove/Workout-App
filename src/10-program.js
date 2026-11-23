@@ -114,7 +114,9 @@ function normalize(rec) {
   const planned = Array.isArray(rec.planned) ? rec.planned.filter(k => EX[k]) : null;
   const complete = kind !== 'strength' ? null : planned ? planned.every(k => ex[k]) : null;
   const sets = sum(keys, k => ex[k].reps.filter(r => r != null).length);
-  const progMin = program ? (tm ? tm.minutes : 0) + sets * 3 : 0; // lifting time is estimated at 3 minutes a logged set
+  // Lifting time is estimated at 3 minutes a logged set. A deload session has 2 sets where a normal one has 3, so its
+  // sets count 4.5 minutes each: a recovery week with the same lift days carries the same minutes, and the same points.
+  const progMin = program ? (tm ? tm.minutes : 0) + Math.round(sets * (rec.deload ? 4.5 : 3)) : 0;
   return Object.assign(base, { kind, day: DAYS[rec.day] ? rec.day : null, qualifies, complete, ex, keys, mainLogged, legacy, ambiguous, tm, acts, program, progMin, actMin, minutes: progMin + actMin, allMin: progMin + actAll,
     phase: program || kind === 'rest' ? rec.phase || null : null, planned, plannedBase: rec.plannedBase || null, swaps: rec.swaps || {}, qualifyOverride: rec.qualifyOverride == null ? null : rec.qualifyOverride });
 }
@@ -147,9 +149,44 @@ function weekStats(asOf, pid) { // the top strip: the same days and the same goa
   pid = pid || me(); const ws = weekStart(asOf), sc = weekScore(pid, ws), g = weekGoals(pid, ws);
   return { activity: sc.active, lifts: sc.lifts, minutes: sc.minutes, goal: g.goal, liftGoal: g.liftGoal, plan: g.plan };
 }
+// the normal sessions of one exercise before a date, oldest first. Deload sessions are left out: they are lighter on
+// purpose, so the weight rule, the stall check and "last time" all read through them to the last normal session.
+const liftLog = (key, beforeDate) => records().filter(r => r.date < beforeDate && r.n.ex[key] && !r.rec.deload);
 function lastLog(key, beforeDate) {
-  const l = records().filter(r => r.date < beforeDate && r.n.ex[key]);
+  const l = liftLog(key, beforeDate);
   return l.length ? Object.assign({ date: l[l.length - 1].date }, l[l.length - 1].n.ex[key]) : null;
+}
+// one step easier: about 10% lighter, rounded to the exercise's own step, and never the same weight.
+// (The assisted pull-up is inverted: easier means more assistance.)
+function easier(key, w) {
+  const ex = EX[key], step = Math.abs(ex.inc) || 5, up = ex.inc < 0;
+  const v = Math.round(w * (up ? 1.1 : 0.9) / step) * step;
+  return up ? Math.max(v, w + step) : Math.max(0, Math.min(v, w - step));
+}
+// Is the workout for this date a deload session? A saved lift keeps what it was saved as; a new one follows the week.
+function deloadOn(date) {
+  const rec = state.sessions[date]; if (rec && normalize(rec).kind === 'strength') return !!rec.deload;
+  const d = state.settings.deload; return !!(d && d.ws === weekStart(date));
+}
+// A deload week is offered after every 5 completed lift weeks (counted the same way as phases).
+// Returns 'on' while this week is one, 'offer' when it should be suggested, or ''.
+function deloadState() {
+  const t = todayIso(), d = state.settings.deload, cw = completedWeeks(t);
+  if (d && d.ws === weekStart(t)) return 'on';
+  return cw > 0 && cw % 5 === 0 && state.settings.deloadAsked !== cw ? 'offer' : '';
+}
+// Stalled: the last three normal sessions sat at one weight and none of them earned an increase.
+// Not for bodyweight moves or lifts marked "Can't go higher". Hidden while a reset is waiting, and after a dismissal
+// until three later sessions stall again.
+function stallFor(key, date) {
+  const ex = EX[key]; if (!ex || ex.bw || (state.settings.maxed || {})[key]) return null;
+  const ss = liftLog(key, date).slice(-3); if (ss.length < 3) return null;
+  const w = ss[0].n.ex[key].w; if (w == null) return null;
+  const earned = e => { const l = e.reps.filter(r => r != null); return l.length >= ex.sets && l.every(r => r >= ex.hi); };
+  if (!ss.every(r => r.n.ex[key].w === w && !earned(r.n.ex[key]))) return null;
+  const rs = (state.settings.resets || {})[key]; if (rs && rs.at > ss[2].date) return null;
+  const seen = (state.settings.stallSeen || {})[key]; if (seen && seen >= ss[0].date) return null;
+  return { w, first: ss[0].date, last: ss[2].date, to: easier(key, w) };
 }
 const fmtReps = reps => reps.map(r => r == null ? '–' : r).join(' / ');
 const fmtW = (key, w) => w == null ? '' : w + ' lb' + (EX[key].per ? ' each' : '');
@@ -157,7 +194,19 @@ const stepDown = (ex, w) => Math.max(0, w - ex.inc);
 const stepUp = (ex, w) => Math.max(0, w + ex.inc);
 
 // Weight rule, as shown on the Program tab. Only logged sets count; blanks are not failures.
+// On top of the rule: a chosen reset replaces the next suggestion once, and a deload session is 2 sets at about 90%.
 function suggest(key, date) {
+  const ex = EX[key], unit = ex.per ? ' lb each hand' : ' lb'; let s = suggestRule(key, date);
+  const rs = (state.settings.resets || {})[key];
+  if (!ex.bw && rs && isNum(rs.w) && validIso(rs.at) && (!s.last || s.last.date < rs.at)) // waits until a session is logged on or after the day it was chosen
+    s = Object.assign({}, s, { w: rs.w, sets: ex.sets, reset: true, text: rs.w + unit + ' · reset', why: 'Reset from ' + rs.from + ' lb: about 10% lighter, then build back up with clean reps.' });
+  if (deloadOn(date)) {
+    const w = ex.bw || s.w == null ? s.w : easier(key, s.w);
+    s = Object.assign({}, s, { w, sets: 2, deload: true, text: (ex.bw ? '2 × ' + s.reps : w + unit) + ' · deload', why: 'Deload week: 2 sets' + (ex.bw ? '' : ' at about 90% of ' + s.w + ' lb') + '. Next week picks up from your last normal session.' });
+  }
+  return s;
+}
+function suggestRule(key, date) {
   const ex = EX[key]; const last = lastLog(key, date); const maxed = !!(state.settings.maxed || {})[key];
   const logged = last ? last.reps.filter(r => r != null) : [];
   if (ex.bw) {
@@ -233,7 +282,7 @@ function plannedFor(date, kind, m) {
 function setCount(key, m, date) {
   const sg = suggest(key, date);
   const have = m.ex[key] ? m.ex[key].reps.length : 0;
-  return Math.min(MAX_SETS, Math.max(EX[key].sets, sg.sets || 0, have, m.extra[key] || 0));
+  return Math.min(MAX_SETS, Math.max(sg.deload ? 2 : EX[key].sets, sg.sets || 0, have, m.extra[key] || 0)); // a deload session shows 2 sets
 }
 function parseDraft(date, m) {
   // Turns the draft into a record. Returns { doc, errors, kind }.
@@ -278,6 +327,7 @@ function parseDraft(date, m) {
     doc.planned = plannedPairs.map(p => p.key); doc.plannedBase = plannedPairs.map(p => p.base);
     doc.swaps = {}; plannedPairs.forEach(p => { if (p.key !== p.base) doc.swaps[p.base] = p.key; });
     doc.qualifyOverride = m.countAs; doc.qualifies = m.countAs == null ? auto : !!m.countAs;
+    if (deloadOn(date)) doc.deload = true; // a recovery session: it counts as a lift day, and the weight rule reads past it
     doc.complete = doc.planned.every(k => ex[k]);
     return { doc, errors, kind: 'strength', mainLogged, auto };
   }

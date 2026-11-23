@@ -23,9 +23,12 @@ function renderFuel() {
     '<p class="tiny muted">' + (inRange ? '<span class="chip good">in range</span> ' : '') + 'A day counts for the competition between ' + commas(g.lo) + ' and ' + commas(g.hi) + ' calories. ' + (changed ? 'These are the targets locked for that week. Your new ones start ' + nice(nextMonday()).replace(/^\w+ /, 'Mon ') + '.' : live.kcalSrc === 'doctor' ? 'Target from your doctor.' : live.kcalSrc === 'estimate' ? 'Target estimated from your numbers.' : '') + '</p></section>';
   h += '<section class="card">';
   MEALS.forEach(m => {
-    const items = (day.items || []).filter(it => it.meal === m[0]), kc = sum(items, it => (it.n && it.n[0]) || 0);
-    h += '<div class="meal"><div class="mh"><h3>' + m[1] + (items.length ? ' <span class="muted num" style="font-weight:400;font-size:.875rem">' + commas(kc) + ' cal</span>' : '') + '</h3><button type="button" class="small" data-a="food-add" data-meal="' + m[0] + '" aria-label="Add food to ' + m[1] + '">+ Add</button></div>' +
-      items.map(it => '<button type="button" class="fooditem" data-a="food-item" data-id="' + esc(it.id) + '"><span class="fn">' + esc(it.name) + '</span><span class="fk">' + commas((it.n && it.n[0]) || 0) + '</span><span class="fq">' + esc(fmtQty(it.qty) + ' × ' + it.unit) + '</span></button>').join('') + '</div>';
+    const items = (day.items || []).filter(it => it.meal === m[0]), kc = sum(items, it => (it.n && it.n[0]) || 0), yest = mealItems(pid, addDays(date, -1), m[0]);
+    h += '<div class="meal" data-mealsec="' + m[0] + '"><div class="mh"><h3>' + m[1] + (items.length ? ' <span class="muted num" style="font-weight:400;font-size:.875rem">' + commas(kc) + ' cal</span>' : '') + '</h3><button type="button" class="small" data-a="food-add" data-meal="' + m[0] + '" aria-label="Add food to ' + m[1] + '">+ Add</button></div>' +
+      items.map(it => '<button type="button" class="fooditem" data-a="food-item" data-id="' + esc(it.id) + '"><span class="fn">' + esc(it.name) + '</span><span class="fk">' + commas((it.n && it.n[0]) || 0) + '</span><span class="fq">' + esc(fmtQty(it.qty) + ' × ' + it.unit) + '</span></button>').join('') +
+      // repeat meals in one tap: the same meal from the day before, or keep this one under a name
+      (yest.length || items.length ? '<div class="mealtools">' + (yest.length ? '<button type="button" class="quiet" data-a="meal-copy" data-meal="' + m[0] + '">' + (items.length ? 'Add yesterday\'s ' + m[1].toLowerCase() + ' again' : 'Copy from yesterday') + '</button>' : '') +
+        (items.length ? '<button type="button" class="quiet" data-a="meal-saveas" data-meal="' + m[0] + '">Save as a meal</button>' : '') + '</div>' : '') + '</div>';
   });
   h += '</section>';
   if (t.count) h += '<details class="card plain" data-dk="dayfacts"><summary>Nutrition facts for the whole day</summary><div style="margin-top:10px">' + factsHTML(t.n, 'Everything logged ' + (rel(date) === nice(date) ? nice(date) : rel(date).toLowerCase()) + ' · ' + t.count + ' item' + (t.count === 1 ? '' : 's')) + '</div></details>';
@@ -54,7 +57,10 @@ function fillFoodResults() {
   if (!q) {
     const rec = recentFoods(me()); o.results = rec;
     const hint = foodDb.state === 'loading' ? 'Loading the food list…' : foodDb.state === 'error' ? 'The food list could not load. Quick add and your own foods still work.' : 'Type to search ' + (foodDb.list ? commas(foodDb.list.length) : 'thousands of') + ' foods.';
-    box.innerHTML = '<p class="muted tiny" style="padding:6px 0">' + hint + '</p>' + (rec.length ? '<div class="eyebrow" style="padding:4px 0">Recent · tap to add again</div>' + rec.map((it, i) => row('food-again', i, it.name, it.n[0], fmtQty(it.qty) + ' × ' + it.unit)).join('') : '');
+    const meals = savedMeals(me());
+    box.innerHTML = '<p class="muted tiny" style="padding:6px 0">' + hint + '</p>' +
+      (meals.length ? '<div class="eyebrow" style="padding:4px 0">My meals · tap to add all of it</div><div id="myMeals">' + meals.map(ml => '<div class="mealrow" data-mealrow="' + esc(ml.id) + '"><button type="button" class="fooditem" data-a="meal-add" data-id="' + esc(ml.id) + '"><span class="fn">' + esc(ml.name || 'Meal') + '</span><span class="fk num">' + commas(itemsKcal(ml.items)) + '</span><span class="fq">' + ml.items.length + ' item' + (ml.items.length === 1 ? '' : 's') + '</span></button><button type="button" class="small" data-a="meal-edit" data-id="' + esc(ml.id) + '" aria-label="Rename or delete ' + esc(ml.name || 'meal') + '">Edit</button></div>').join('') + '</div>' : '') +
+      (rec.length ? '<div class="eyebrow" style="padding:4px 0">Recent · tap to add again</div>' + rec.map((it, i) => row('food-again', i, it.name, it.n[0], fmtQty(it.qty) + ' × ' + it.unit)).join('') : '');
     return;
   }
   const res = searchFoods(q, 40); o.results = res;
@@ -70,6 +76,57 @@ OV.food = {
     '<div class="row"><button type="button" class="small" data-a="food-quick">Quick add calories</button><button type="button" class="small" data-a="food-custom">Create a food</button></div>' +
     '<div id="foodRes" class="results" aria-live="polite"></div></div>',
   after: o => { const loaded = loadFoods(); fillFoodResults(); const q = $('#foodQ'); if (q && !o.keepBlur) q.focus({ preventScroll: true }); loaded.then(() => { if (state.ov && state.ov.type === 'food') fillFoodResults(); }); } // start the load first, so the hint says it is loading
+};
+/* ---------- Saved meals and "copy from yesterday": a whole meal in one save, celebrated once ---------- */
+const mealWord = (m, n, kcal) => n + ' item' + (n === 1 ? '' : 's') + ', ' + commas(kcal) + ' cal';
+ACT['meal-copy'] = async el => {
+  const pid = me(), date = state.selDate, meal = el.dataset.meal, src = mealItems(pid, addDays(date, -1), meal); if (!src.length) return;
+  const before = scoreSnapshot(), items = cloneItems(src, meal);
+  const ok = await addFoodItems(date, items); if (!ok) return;
+  render(); celebrate('Copied yesterday\'s ' + MEAL_NAME[meal].toLowerCase() + ': ' + mealWord(meal, items.length, itemsKcal(items)) + '.', { before, ms: 3400 });
+};
+const mealListHTML = items => '<div class="tbl"><table>' + items.map(it => '<tr><td>' + esc(it.name) + '<br><span class="tiny muted">' + esc(fmtQty(it.qty) + ' × ' + it.unit) + '</span></td><td>' + commas((it.n && it.n[0]) || 0) + ' cal</td></tr>').join('') + '</table></div>';
+OV.mealname = {
+  html: o => { const items = mealItems(me(), o.date, o.meal);
+    return '<div class="ov" role="dialog" aria-modal="true" aria-label="Save as a meal">' + ovHead('Save as a meal', MEAL_NAME[o.meal] + ' · ' + rel(o.date).toLowerCase() + ' · ' + mealWord(o.meal, items.length, itemsKcal(items))) +
+      '<label class="f">Name<input type="text" id="mealName" data-ovf="name" maxlength="40" value="' + esc(o.name || '') + '" placeholder="Usual breakfast"></label>' + mealListHTML(items) +
+      '<p class="tiny muted">Saved for you. It shows up under My meals when you add food, and one tap logs all of it.</p>' +
+      '<div class="row"><button type="button" class="primary" data-a="meal-save">Save meal</button><button type="button" class="small" data-a="ov-close">Cancel</button></div></div>'; }
+};
+ACT['meal-saveas'] = el => { const meal = el.dataset.meal; openOv({ type: 'mealname', meal, date: state.selDate, name: 'Usual ' + MEAL_NAME[meal].toLowerCase() }); };
+ACT['meal-save'] = async () => {
+  const o = state.ov, pid = me(), name = String(o.name || '').trim().slice(0, 40), src = mealItems(pid, o.date, o.meal);
+  if (!name) { toast('Give the meal a name.'); return; }
+  if (!src.length) { toast('That meal has nothing in it now.'); closeOv(); return; }
+  // the meal keeps its own copy of each item, with the nutrition it was logged with: later edits to a day or a food do not reach it
+  const items = src.map(it => ({ name: it.name, qty: it.qty, unit: it.unit, grams: it.grams == null ? null : it.grams, src: it.src || '', n: (it.n || []).slice() }));
+  const ok = await write(PATH.meal(pid, uid()), { v: 1, name, items, createdAt: new Date().toISOString() }); if (!ok) return;
+  closeOv(); render(); toast('Saved "' + name + '": ' + mealWord(o.meal, items.length, itemsKcal(items)) + '. Find it under My meals when you add food.', 3800);
+};
+ACT['meal-add'] = async el => {
+  const o = state.ov, pid = me(), ml = state.data[pid].meals[el.dataset.id]; if (!o || !ml || !Array.isArray(ml.items) || !ml.items.length) return;
+  const before = scoreSnapshot(), items = cloneItems(ml.items, o.meal);
+  const ok = await addFoodItems(o.date, items); if (!ok) return;
+  closeOv(); render(); celebrate('Added ' + (ml.name || 'meal') + ' to ' + MEAL_NAME[o.meal] + ': ' + mealWord(o.meal, items.length, itemsKcal(items)) + '.', { before, ms: 3400 });
+};
+OV.mealedit = {
+  html: o => { const ml = state.data[me()].meals[o.id] || { items: [] };
+    return '<div class="ov" role="dialog" aria-modal="true" aria-label="Edit saved meal">' + ovHead('Saved meal', mealWord('', ml.items.length, itemsKcal(ml.items))) +
+      '<label class="f">Name<input type="text" id="mealName" data-ovf="name" maxlength="40" value="' + esc(o.name || '') + '"></label>' + mealListHTML(ml.items) +
+      '<p class="tiny muted">Renaming or deleting a saved meal never changes days already logged.</p>' +
+      '<div class="row"><button type="button" class="primary" data-a="meal-rename">Save name</button><button type="button" class="small danger" data-a="meal-del">' + (o.confirmDel ? 'Tap again to delete it' : 'Delete meal') + '</button><button type="button" class="small" data-a="food-back">Back</button></div></div>'; }
+};
+ACT['meal-edit'] = el => { const o = state.ov, ml = state.data[me()].meals[el.dataset.id]; if (!ml) return; openOv({ type: 'mealedit', id: el.dataset.id, name: ml.name || '', back: { type: 'food', meal: o.meal, date: o.date, q: o.q, keepBlur: true } }); };
+ACT['meal-rename'] = async () => {
+  const o = state.ov, pid = me(), cur = state.data[pid].meals[o.id], name = String(o.name || '').trim().slice(0, 40); if (!cur) { ACT['food-back'](); return; }
+  if (!name) { toast('Give the meal a name.'); return; }
+  const ok = await write(PATH.meal(pid, o.id), Object.assign({}, cur, { name, updatedAt: new Date().toISOString() })); if (!ok) return;
+  ACT['food-back'](); toast('Renamed to "' + name + '".');
+};
+ACT['meal-del'] = async () => {
+  const o = state.ov; if (!o.confirmDel) { o.confirmDel = true; renderOv(); return; }
+  const ok = await write(PATH.meal(me(), o.id), null); if (!ok) return;
+  ACT['food-back'](); toast('Meal deleted. Days already logged are unchanged.', 3200);
 };
 ACT['food-pick'] = el => {
   const o = state.ov, f = o.results && o.results[Number(el.dataset.i)]; if (!f) return;

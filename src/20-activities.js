@@ -55,12 +55,12 @@ function actList(pid, filter) {
     if (filter.quick && a.min > 10) return false;
     if (filter.fav && !favs.includes(k)) return false;
     return true;
-  }).map((k, i) => ({ k, i, fav: favs.includes(k), caution: actCaution(pid, k).length }))
-    .sort((x, y) => (y.fav - x.fav) || (x.caution - y.caution) || (order.indexOf(ACTS[x.k].cat) - order.indexOf(ACTS[y.k].cat)) || (ACTS[x.k].impact - ACTS[y.k].impact) || (x.i - y.i))
+  }).map((k, i) => ({ k, i, fav: favs.includes(k), caution: actCaution(pid, k).length, pain: painFlag(pid, k) ? 1 : 0 }))
+    .sort((x, y) => (x.pain - y.pain) || (y.fav - x.fav) || (x.caution - y.caution) || (order.indexOf(ACTS[x.k].cat) - order.indexOf(ACTS[y.k].cat)) || (ACTS[x.k].impact - ACTS[y.k].impact) || (x.i - y.i))
     .map(x => x.k);
 }
 function surpriseActivity(pid) {
-  const pool = Object.keys(ACTS).filter(k => k !== 'other' && ACTS[k].mv !== false && !actCaution(pid, k).length);
+  const pool = Object.keys(ACTS).filter(k => k !== 'other' && ACTS[k].mv !== false && !actCaution(pid, k).length && !painFlag(pid, k)); // never something that has hurt twice lately
   const recent = new Set(); const t = todayIso();
   for (let i = 0; i < 4; i++) dayInfo(pid, addDays(t, -i)).kinds.forEach(k => recent.add(k));
   const fresh = pool.filter(k => !recent.has(k));
@@ -69,6 +69,23 @@ function surpriseActivity(pid) {
 }
 const actName = a => a.name || (ACTS[a.a] ? ACTS[a.a].name : 'Activity');
 const actIcon = a => a.src === 'health' ? '⌚' : ACTS[a.a] ? ACTS[a.a].icon : '✏️';
+// "Something hurt" notes from the last 30 days: newest first, counted by activity and by the body areas each activity loads.
+// Two or more on one activity flag it in the menu, sort it lower and keep Surprise me away from it.
+const PAIN_DAYS = 30;
+function painNotes(pid) {
+  return cached('pain:' + pid, () => {
+    const t = todayIso(), from = addDays(t, -PAIN_DAYS), list = [], byAct = {}, byArea = {};
+    recordsOf(pid).forEach(r => { if (r.date < from || r.date > t) return; r.n.acts.forEach(a => {
+      if (!a.hurt) return; const areas = ACTS[a.a] ? ACTS[a.a].stress : [];
+      list.push({ date: r.date, k: a.a, name: actName(a), note: a.note || '', areas, at: String(a.at || '') });
+      const key = a.a === 'other' ? 'other:' + actName(a).toLowerCase() : a.a; byAct[key] = byAct[key] || { n: 0, name: actName(a), k: a.a }; byAct[key].n++;
+      areas.forEach(x => { byArea[x] = (byArea[x] || 0) + 1; }); }); });
+    list.sort((x, y) => y.date.localeCompare(x.date) || y.at.localeCompare(x.at));
+    return { list, byAct, byArea, from };
+  });
+}
+const painCount = (pid, k) => { const e = painNotes(pid).byAct[k]; return e ? e.n : 0; };
+const painFlag = (pid, k) => k !== 'other' && painCount(pid, k) >= 2;
 
 // The Watch's Exercise Minutes for a day live on that day's health doc. Movement logged by hand counts first; the
 // top-up entry holds only what the Watch saw beyond it, so the same walk never counts twice. Every change to a

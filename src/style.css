@@ -117,7 +117,7 @@ button:disabled { opacity: .5; cursor: default; }
 .chips::-webkit-scrollbar { display: none; }
 .chips.wrapc { flex-wrap: wrap; overflow: visible; }
 .chips button { flex: none; border-radius: 999px; min-height: 34px; padding: 4px 12px; font-size: .875rem; }
-input[type=number], input[type=date], input[type=text], input[type=search], select, textarea { font: inherit; font-size: 1.0625rem; color: var(--fg); background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; min-height: 44px; width: 100%; font-variant-numeric: tabular-nums; }
+input[type=number], input[type=date], input[type=time], input[type=text], input[type=search], select, textarea { font: inherit; font-size: 1.0625rem; color: var(--fg); background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; min-height: 44px; width: 100%; font-variant-numeric: tabular-nums; }
 input[type=number] { text-align: center; -moz-appearance: textfield; }
 input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 input[type=search] { -webkit-appearance: none; appearance: none; }
@@ -161,6 +161,9 @@ label.f { display: grid; gap: 3px; font-size: .6875rem; color: var(--muted); tex
 .logrow label.f { letter-spacing: .05em; }
 .exprog { display: flex; align-items: center; gap: 8px; font-size: .8125rem; color: var(--muted); }
 .exprog b { color: var(--fg); font-weight: 500; }
+.stall { display: grid; gap: 6px; padding: 8px 10px; background: var(--warn-soft); border-radius: 8px; font-size: .875rem; }
+.spark.trend circle { fill: var(--accent); }
+.spark.trend circle.dl { fill: var(--card); stroke: var(--accent); stroke-width: 1.5; }
 .exdetails { font-size: .8125rem; color: var(--muted); display: grid; gap: 4px; padding: 8px 10px; background: var(--soft); border-radius: 8px; }
 .exdetails b { color: var(--fg); font-weight: 500; }
 .menubtn { width: 36px; height: 32px; min-height: 32px; padding: 0; border-radius: 8px; font-size: 1.25rem; line-height: 1; letter-spacing: .05em; color: var(--muted); border-color: transparent; background: transparent; flex: none; }
@@ -245,6 +248,11 @@ details.sessopts { padding: 10px 0 2px; border-top: 1px solid var(--line); }
 .protline .bar em { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--fg); opacity: .55; }
 .meal { display: grid; gap: 2px; padding: 10px 0; border-top: 1px solid var(--line); }
 .meal:first-child { border-top: 0; }
+.mealtools { display: flex; flex-wrap: wrap; gap: 0 10px; margin-top: 2px; }
+.mealtools button { min-height: 30px; padding: 2px 0; }
+.mealrow { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; border-top: 1px solid var(--line); }
+.mealrow:first-child { border-top: 0; }
+.results .mealrow .fooditem { border-top: 0; }
 .meal .mh { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .fooditem { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; text-align: left; border: 0; background: transparent; border-radius: 6px; padding: 6px 0; min-height: 40px; width: 100%; }
 .fooditem .fn { font-weight: 500; line-height: 1.2; }
@@ -285,6 +293,12 @@ details.sessopts { padding: 10px 0 2px; border-top: 1px solid var(--line); }
 .trow .tn { line-height: 1.2; min-width: 0; }
 .trow .bar { height: 8px; border-radius: 4px; background: var(--soft); overflow: hidden; }
 .trow .bar i { display: block; height: 100%; border-radius: 4px; background: hsl(var(--ph, 3) var(--ps, 65%) calc(var(--pl, 47%) * (1 - var(--dk)) + var(--pld, 57%) * var(--dk))); }
+.recap { display: grid; grid-template-columns: minmax(0, 1.5fr) 1fr 1fr; gap: 5px 10px; align-items: start; font-size: .8125rem; text-align: left; width: 100%; }
+.recap b { font-weight: 600; }
+.ious { display: grid; }
+.iou { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; padding: 7px 0; border-top: 1px solid var(--line); font-size: .875rem; }
+.iou:first-child { border-top: 0; }
+.iou.paid > span { color: var(--muted); text-decoration: line-through; text-decoration-thickness: 1px; }
 .tips { display: grid; }
 .tip { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; padding: 9px 0; border-top: 1px solid var(--line); text-decoration: none; }
 .tip:first-child { border-top: 0; }

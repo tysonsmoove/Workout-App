@@ -17,17 +17,33 @@ function countdownText(cd, banked) {
   const d = cd.days, when = d > 1 ? d + ' days to ' + cd.phrase : d === 1 ? '1 day to ' + cd.phrase : d === 0 ? 'Today: ' + cd.phrase : cd.phrase.charAt(0).toUpperCase() + cd.phrase.slice(1) + ' was ' + (-d) + ' day' + (d === -1 ? '' : 's') + ' ago';
   return when + (banked != null ? ' · ' + banked + ' team week' + (banked === 1 ? '' : 's') : '');
 }
+// last week's highlights for both of you, from the same day facts the score and History use
+function recapTableHTML(ws, order) {
+  const r = order.map(p => weekRecap(p, ws)), cell = (k, i, v) => '<b class="num" data-r="' + k + ':' + order[i] + '">' + v + '</b>';
+  const row = (label, k, f) => '<span class="muted">' + label + '</span>' + cell(k, 0, f(r[0])) + cell(k, 1, f(r[1]));
+  return '<div class="recap" data-recap="' + ws + '"><span></span>' + order.map(p => '<b>' + esc(P(p).name) + '</b>').join('') +
+    row('Active days', 'active', x => x.active) + row('Minutes', 'minutes', x => x.minutes) +
+    row('Best weight increase', 'best', x => x.best ? '+' + x.best.up + ' lb<br><span class="tiny muted">' + esc(x.best.name) + '</span>' : '–') +
+    row('Days in calorie range', 'cal', x => x.calDays) + row('Days water goal met', 'water', x => x.waterDays) +
+    row('Badges earned', 'badges', x => x.badges.length ? x.badges.map(b => '<span title="' + esc(b.name) + '">' + b.icon + '</span>').join(' ') : '–') + '</div>';
+}
+function recapCardHTML(pid) {
+  const w = lastWeek(); if (!w) return '';
+  const hi = Math.max(w.tyson, w.jacquie), lo = Math.min(w.tyson, w.jacquie), head = w.final ? (w.winner ? P(w.winner).name + ' won ' + hi + '–' + lo : 'Tied at ' + w.tyson) : (w.winner ? P(w.winner).name + ' leads ' + hi + '–' + lo : 'Tied at ' + w.tyson), owes = w.final ? stakesLine(w) : '';
+  return '<section class="card stack" id="recapCard"><div class="row between"><div><div class="eyebrow">Last week · ' + shortDate(w.ws) + ' to ' + shortDate(addDays(w.ws, 6)) + '</div><h3 id="recapHead">' + esc(head) + '</h3></div><span class="chip ' + (w.final ? 'good' : 'warn') + '" id="recapState">' + (w.final ? 'Final' : 'Provisional') + '</span></div>' +
+    (w.final ? (owes ? '<p class="tiny">' + esc(owes) + '</p>' : '') : '<p class="tiny muted" id="provLine">' + esc(provisionalText(w)) + '. The winner is announced once it is final, on Wednesday.</p>') +
+    recapTableHTML(w.ws, [pid, otherPid(pid)]) + '</section>';
+}
 function renderCompete() {
   const pid = me(), other = otherPid(pid), t = todayIso(), ws = weekStart(t), A = weekScore(pid, ws), B = weekScore(other, ws), c = coach(pid), pa = P(pid), pb = P(other), ga = thisWeek(pid);
   const diff = A.total - B.total, left = c.daysLeft, stakes = stakesFor(ws), all = compWeeks(), prev = all[all.length - 1];
   const lead = diff === 0 ? (A.total === 0 ? 'Green flag. First points take the lead.' : 'Dead heat.') : diff > 0 ? 'You lead by ' + diff + '.' : pb.name + ' leads by ' + (-diff) + '.';
   const lane = (p, sc) => '<div class="lane" style="' + avStyle(p) + ';--p:' + (clamp(sc.total, 0, 100) / 100).toFixed(3) + '" role="img" aria-label="' + esc(P(p).name) + ': ' + sc.total + ' of 100 points"><div class="fill"></div><div class="car">' + avatarHTML(p) + '</div></div>';
-  let h = '<section class="card stack"><div class="row between"><div><div class="eyebrow">Week of ' + shortDate(ws) + '</div><h2>' + (left === 0 ? 'Final day' : left + ' day' + (left === 1 ? '' : 's') + ' left') + '</h2></div><span class="chip">resets Monday</span></div>' +
+  let h = recapCardHTML(pid) + '<section class="card stack"><div class="row between"><div><div class="eyebrow">Week of ' + shortDate(ws) + '</div><h2>' + (left === 0 ? 'Final day' : left + ' day' + (left === 1 ? '' : 's') + ' left') + '</h2></div><span class="chip">resets Monday</span></div>' +
     '<div class="vs"><div class="side">' + avatarHTML(pid, 'lg') + '<b>' + esc(pa.name) + '</b><span class="pts" id="myPts">' + A.total + '</span></div><div class="mid">VS</div><div class="side">' + avatarHTML(other, 'lg') + '<b>' + esc(pb.name) + '</b><span class="pts" id="theirPts">' + B.total + '</span></div></div>' +
     '<div class="race">' + lane(pid, A) + lane(other, B) + '</div>' +
     '<p id="leadLine"><b>' + esc(lead) + '</b> <span class="muted">Out of 100. Each of you is scored against your own goals.</span></p>';
   // last week stays open for late entries through Tuesday: until then its result is only provisional, and says so quietly
-  if (prev && !prev.final && prev.played) h += '<p class="tiny muted" id="provLine">Last week · ' + esc(provisionalText(prev)) + '. The winner is announced once it is final.</p>';
   if (state.forms.stakes) h += '<div class="row" style="flex-wrap:nowrap"><input type="text" id="stakesIn" data-form="stakes" data-k="text" maxlength="80" value="' + esc(state.forms.stakes.text || '') + '" placeholder="Loser cooks Sunday dinner" aria-label="What is on the line this week"><button type="button" class="small" data-a="stakes-save">Save</button></div>';
   else h += stakes ? '<p class="tiny" id="stakesLine">On the line this week: <b>' + esc(stakes) + '</b> <button type="button" class="quiet" data-a="stakes-edit">Change</button></p>' : '<div id="stakesLine"><button type="button" class="quiet" data-a="stakes-edit">Add what\'s on the line this week</button></div>';
   h += '</section>';
@@ -72,12 +88,16 @@ function renderCompete() {
     '<li>Scores are worked out from the saved logs, so editing an entry updates the race and nothing counts twice.</li>' +
     '<li>A finished week stays open through Tuesday for anything you forgot to log. Until then its result is provisional. On Wednesday it is final, the winner is announced, and nothing can rewrite it.</li></ul></details>';
 
+  const owed = ious(), unpaid = p => owed.filter(x => !x.paid && x.loser === p).length;
   const weeks = all.filter(w => w.played).slice().reverse(), finals = weeks.filter(w => w.final), wins = p => finals.filter(w => w.winner === p).length, ties = finals.filter(w => !w.winner).length;
   h += '<section class="card stack" id="seasonCard"><div class="row between"><h3>Season</h3><span class="num">' + esc(pa.name) + ' <b>' + wins(pid) + '</b> – <b>' + wins(other) + '</b> ' + esc(pb.name) + (ties ? ' · ' + ties + ' tied' : '') + '</span></div>' +
+    // what is still owed from closed weeks. Either of you can mark one paid; the mark lives at iou/<monday>, never in the result
+    (owed.length ? '<p class="tiny" id="iouCount">' + esc(pa.name) + ' owes <b>' + unpaid(pid) + '</b> · ' + esc(pb.name) + ' owes <b>' + unpaid(other) + '</b></p><div class="ious" id="iouList">' + owed.map(x => '<div class="iou' + (x.paid ? ' paid' : '') + '" data-iou="' + x.ws + '"><span><b>' + esc(P(x.loser).name) + ' owes:</b> ' + esc(x.stakes) + '<br><span class="tiny muted">Week of ' + shortDate(x.ws) + ' · ' + esc(P(x.winner).name) + ' won</span></span><button type="button" class="small' + (x.paid ? ' on' : '') + '" data-a="iou-toggle" data-ws="' + x.ws + '" aria-pressed="' + x.paid + '">' + (x.paid ? 'Paid ✓' : 'Paid') + '</button></div>').join('') + '</div>' : '') +
     (weeks.length ? '<div class="weeks">' + weeks.slice(0, 10).map(w => { const sl = stakesLine(w); return '<div class="wk" data-wk="' + w.ws + '"><span>Week of ' + shortDate(w.ws) + (w.final ? (isTeamWeek(w.ws) ? ' <span class="chip good">team week</span>' : '') : ' <span class="chip">provisional · open through Tue</span>') + (sl ? '<br><span class="tiny muted">' + esc(sl) + '</span>' : '') + '</span><span class="num">' + (w.final ? (w.winner ? '<b>' + esc(P(w.winner).name) + '</b> ' : 'Tie ') : '') + w[pid] + '–' + w[other] + '</span></div>'; }).join('') + '</div>' : '<p class="muted tiny">The first result posts once a week has finished.</p>') +
     '<p class="tiny muted">Wins count once a week is final.</p></section>';
   return h;
 }
+ACT['iou-toggle'] = async el => { const ws = el.dataset.ws; if (!validIso(ws)) return; await write('iou/' + ws, { ws, paid: !iouPaid(ws), at: new Date().toISOString(), by: me() }); render(); };
 ACT['stakes-edit'] = () => { state.forms.stakes = { text: stakesFor(weekStart(todayIso())) }; render('#stakesIn'); };
 ACT['stakes-save'] = async () => {
   const text = String((state.forms.stakes || {}).text || '').trim().slice(0, 80), cur = weekStart(todayIso()), c = state.comp;

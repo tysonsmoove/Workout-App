@@ -50,7 +50,7 @@ function renderTrain() {
   else if (n && n.kind === 'strength') why = 'Partial lift, not counted. ' + DAYS[nextK].name + ' is still next.';
   else if (isLift && kind !== nextK) why += ' You picked ' + DAYS[kind].name + '.';
 
-  let h = '<section class="card sess">' + dateHead('Logging for') +
+  let h = trainTopHTML() + '<section class="card sess">' + dateHead('Logging for') +
     '<div class="seg" id="kindSeg" aria-label="Workout type">' + ROTATION.map(k => '<button type="button" data-kind="' + k + '" class="' + (kind === k ? 'on' : '') + '" aria-pressed="' + (kind === k) + '">' + DAYS[k].name + '</button>').join('') +
     '<button type="button" data-kind="cardio" class="' + (kind === 'cardio' ? 'on' : '') + '" aria-pressed="' + (kind === 'cardio') + '">Treadmill</button><button type="button" data-kind="rest" class="' + (kind === 'rest' ? 'on' : '') + '" aria-pressed="' + (kind === 'rest') + '">Rest</button></div>' +
     '<div class="status"><span id="statusLine">' + esc(statusText(date)) + '</span><span>·</span><span>Phase ' + phase + '</span>' + healthButton() + '</div>' +
@@ -101,6 +101,62 @@ function extrasHTML(date) {
     '<p class="tiny muted">' + (n && n.program ? 'Saved on the same day as your ' + (n.kind === 'strength' ? 'lift' : 'treadmill entry') + '. The minutes count; the day is already an activity day.' : 'On a day with no lift or treadmill, ' + mm + ' minutes of anything makes it an activity day.') + '</p></section>';
   return h;
 }
+/* ---------- Progression after Phase 3: deload weeks, stalled lifts, the goal nudge ---------- */
+// What sits above the lifting log: the deload offer (or the reminder that one is on), a swap whose four weeks are up,
+// and the goal nudge. Each is a choice saved to settings or the profile by its button, never by drawing it.
+function trainTopHTML() {
+  const st = deloadState(), sb = state.settings.swapBack || {}, sw = state.settings.swaps || {}, t = todayIso(); let h = '';
+  if (st === 'on') h += '<div class="banner good" id="deloadBanner"><span><b>Deload week is on.</b> 2 sets per lift at about 90% weight. Recovery week, same points.</span><div class="row"><button type="button" class="small" data-a="deload-off">End the deload early</button></div></div>';
+  else if (st === 'offer') h += '<div class="banner accent" id="deloadBanner"><span><b>Deload week:</b> 2 sets per lift at about 90% weight. Recovery week, same points.</span><span class="tiny muted">You have finished ' + completedWeeks(t) + ' full lift weeks. A lighter week now lets the next five go heavier. Lift days still count as lift days.</span><div class="row"><button type="button" class="small" data-a="deload-take">Take it</button><button type="button" class="small" data-a="deload-skip">Skip</button></div></div>';
+  Object.keys(sb).forEach(base => { const x = sb[base]; if (!x || !EX[base] || !EX[x.to] || !EX[x.from] || !validIso(x.until) || t < x.until || (sw[base] || base) !== x.to) return;
+    h += '<div class="banner" data-swapback="' + base + '"><span><b>Four weeks on ' + esc(EX[x.to].name) + '.</b> Switch back to ' + esc(EX[x.from].name) + '?</span><div class="row"><button type="button" class="small" data-a="swapback-yes" data-base="' + base + '">Switch back</button><button type="button" class="small" data-a="swapback-no" data-base="' + base + '">Keep ' + esc(EX[x.to].name) + '</button></div></div>'; });
+  return h + nudgeHTML(me());
+}
+function nudgeHTML(pid) {
+  const n = goalNudge(pid); if (!n) return '';
+  return '<section class="card stack" id="nudgeCard"><p><b>Three full weeks in a row.</b> Raise your goal to ' + n.to + ' days starting Monday?</p><div class="row"><button type="button" class="small" data-a="nudge-yes">Raise it</button><button type="button" class="quiet" data-a="nudge-no">Not now</button></div>' +
+    '<p class="tiny muted">This week stays at ' + n.from + '. A raised goal locks in next Monday, like any goal change.</p></section>';
+}
+// where a stalled slot can go for four weeks: another alternate that is free in every phase, else back to its planned exercise
+const stallSwapTarget = p => { const taken = defaultSwapTaken(p.base); return alts(p.base).concat(p.key !== p.base ? [p.base] : []).find(k => k !== p.key && (k === p.base || !taken[k])) || null; };
+function stallHTML(p, date) {
+  const key = p.key, st = stallFor(key, date); if (!st) return '';
+  const unit = ' lb' + (EX[key].per ? ' each' : ''), to = stallSwapTarget(p);
+  return '<div class="stall" data-stall="' + key + '"><div class="row between" style="flex-wrap:nowrap"><b>Stuck at ' + st.w + unit + ' for 3 sessions</b><button type="button" class="quiet" data-a="stall-x" data-key="' + key + '">Dismiss</button></div>' +
+    '<div class="row"><button type="button" class="small" data-a="stall-reset" data-key="' + key + '">Reset: drop 10% and build back</button>' + (to ? '<button type="button" class="small" data-a="stall-swap" data-key="' + key + '" data-base="' + p.base + '">Swap for 4 weeks</button>' : '') + '</div>' +
+    '<span class="tiny muted">Reset makes the next suggestion ' + st.to + unit + '.' + (to ? ' Swap uses ' + esc(EX[to].name) + ' for 4 weeks, then asks about switching back.' : ' Its alternates are already in that day\'s workout, so there is nothing to swap to.') + '</span></div>';
+}
+ACT['deload-take'] = () => { const t = todayIso(), cw = completedWeeks(t); return saveSettings({ deload: { ws: weekStart(t), cw }, deloadAsked: cw }); };
+ACT['deload-skip'] = () => saveSettings({ deloadAsked: completedWeeks(todayIso()) });
+ACT['deload-off'] = () => saveSettings({ deload: null });
+ACT['stall-x'] = el => { const key = el.dataset.key, st = stallFor(key, state.selDate); if (!st) return; return saveSettings({ stallSeen: Object.assign({}, state.settings.stallSeen, { [key]: st.last }) }); };
+ACT['stall-reset'] = async el => {
+  const key = el.dataset.key, st = stallFor(key, state.selDate); if (!st) return;
+  await saveSettings({ resets: Object.assign({}, state.settings.resets, { [key]: { w: st.to, from: st.w, at: state.selDate } }) });
+  toast('Reset: ' + EX[key].name + ' is suggested at ' + st.to + ' lb next. Build back from there.', 3600);
+};
+ACT['stall-swap'] = async el => {
+  const key = el.dataset.key, base = el.dataset.base, date = state.selDate, m = model(date), st = stallFor(key, date);
+  const p = plannedFor(date, kindFor(date, m), m).find(x => x.base === base && x.key === key), to = p && stallSwapTarget(p); if (!st || !to) return;
+  const sw = Object.assign({}, state.settings.swaps); if (to === base) delete sw[base]; else sw[base] = to;
+  const back = Object.assign({}, state.settings.swapBack); back[base] = { from: key, to, since: todayIso(), until: addDays(todayIso(), 28) };
+  const d = state.drafts[date]; if (d && d.swaps[base] != null) { delete d.swaps[base]; persistDrafts(); } // this workout follows the new default too
+  await saveSettings({ swaps: sw, swapBack: back, stallSeen: Object.assign({}, state.settings.stallSeen, { [key]: st.last }) });
+  toast(EX[to].name + ' replaces ' + EX[key].name + ' for 4 weeks. You will be asked about switching back on ' + nice(back[base].until) + '.', 4200);
+};
+ACT['swapback-yes'] = el => {
+  const base = el.dataset.base, x = (state.settings.swapBack || {})[base]; if (!x) return;
+  const sw = Object.assign({}, state.settings.swaps), back = Object.assign({}, state.settings.swapBack);
+  if (x.from === base) delete sw[base]; else sw[base] = x.from; delete back[base];
+  return saveSettings({ swaps: sw, swapBack: back });
+};
+ACT['swapback-no'] = el => { const back = Object.assign({}, state.settings.swapBack); delete back[el.dataset.base]; return saveSettings({ swapBack: back }); };
+ACT['nudge-yes'] = async () => {
+  const pid = me(), n = goalNudge(pid); if (!n) return;
+  if (n.plan === 'program') await saveSettings({ goal: n.to }); else if (!(await saveProfile(pid, { move: { goalDays: n.to } }))) return;
+  settle(); render(); toast('Goal raised to ' + n.to + ' days. ' + startsNote() + '; this week stays at ' + n.from + '.', 4200);
+};
+ACT['nudge-no'] = async () => { if (await saveProfile(me(), { goalNudge: { until: addDays(todayIso(), 21) } })) { render(); toast('Okay. It will ask again in 3 weeks.'); } };
 function exSummary(key, e, nSets) {
   const ex = EX[key];
   const loggedN = e.reps.filter(r => r !== '' && r != null).length;
@@ -119,12 +175,13 @@ function renderExercise(p, m, date) {
     h += '<div class="collapsed-sum"><span data-sum="' + key + '">' + (sm.line ? '<b>' + esc(sm.line) + '</b> · ' + sm.loggedN + '/' + nSets + ' logged' : 'Nothing logged') + '</span><button type="button" class="quiet" data-expand="' + key + '">Expand</button></div></section>';
     return h;
   }
-  const rx = ex.sets + ' sets · ' + ex.lo + '–' + ex.hi + ' reps' + (ex.bw ? ' · bodyweight' : ex.per ? ' · lb per hand' : '');
+  const rx = (sg.deload ? 2 : ex.sets) + ' sets · ' + ex.lo + '–' + ex.hi + ' reps' + (ex.bw ? ' · bodyweight' : ex.per ? ' · lb per hand' : '') + (sg.deload ? ' · deload' : sg.reset ? ' · reset' : '');
   const useHidden = ex.bw || String(e.w) === String(sg.w);
   h += '<div class="exrx"><span>' + esc(rx) + '</span>' + (ex.bw ? '' : '<button type="button" class="small" data-usew="' + key + '" data-val="' + sg.w + '"' + (useHidden ? ' hidden' : '') + '>Use ' + sg.w + ' lb</button>') + '</div>';
   const qf = quickFills(key, e, nSets, sg);
   if (sg.last) h += '<div class="exlast" data-last="' + key + '"><span>Last · ' + nice(sg.last.date) + ': <b>' + esc((sg.last.w != null ? fmtW(key, sg.last.w) + ' × ' : '') + fmtReps(sg.last.reps)) + '</b></span><button type="button" class="small" data-same="' + key + '"' + (qf.same ? '' : ' hidden') + '>Same as last time</button></div>';
   if (maxed) h += '<div class="exhold" data-hold="' + key + '">Holding weight · progress by reps, then a 4th set</div>';
+  h += stallHTML(p, date);
   h += '<div class="logrow">';
   if (!ex.bw) h += '<label class="f w">Weight (lb)<input type="number" inputmode="decimal" min="0" step="2.5" id="w-' + key + '" data-field="w" data-ex="' + key + '" value="' + esc(e.w) + '" placeholder="–"></label>';
   for (let i = 0; i < nSets; i++) h += '<label class="f">Set ' + (i + 1) + '<input type="number" inputmode="numeric" pattern="[0-9]*" min="0" step="1" id="r-' + key + '-' + i + '" data-field="rep" data-ex="' + key + '" data-i="' + i + '" value="' + esc(e.reps[i] == null ? '' : e.reps[i]) + '" placeholder="–"></label>';
@@ -212,7 +269,7 @@ function actGridHTML(pid) { // the activity menu: filters and the grid, shared b
     '<div class="chips">' + chip(f.quick, 'filter-quick', '', '10 min or less') + chip(f.fav, 'filter-fav', '', 'Favorites') + '</div>' +
     '<div class="acts">' + list.map(k => {
       const a = ACTS[k], caution = actCaution(pid, k), fav = P(pid).favorites.includes(k);
-      return '<button type="button" class="act' + (fav ? ' fav' : '') + '" data-a="act" data-k="' + k + '"><span class="ai" aria-hidden="true">' + a.icon + '</span><span class="an">' + esc(a.name) + '</span><span class="am">' + a.min + ' min · ' + (a.mv === false ? 'recovery' : IMPACT[a.impact]) + '</span>' + (caution.length ? '<span class="aw">Go easy: ' + caution.map(x => AREAS[x].toLowerCase()).join(', ') + '</span>' : '') + '</button>';
+      return '<button type="button" class="act' + (fav ? ' fav' : '') + '" data-a="act" data-k="' + k + '"><span class="ai" aria-hidden="true">' + a.icon + '</span><span class="an">' + esc(a.name) + '</span><span class="am">' + a.min + ' min · ' + (a.mv === false ? 'recovery' : IMPACT[a.impact]) + '</span>' + (caution.length ? '<span class="aw">Go easy: ' + caution.map(x => AREAS[x].toLowerCase()).join(', ') + '</span>' : '') + (painFlag(pid, k) ? '<span class="aw" data-pain="' + k + '">Pain noted ' + painCount(pid, k) + '× recently</span>' : '') + '</button>';
     }).join('') + '</div>' + (list.length ? '' : '<p class="muted tiny">Nothing matches those filters.</p>');
 }
 function renderMove() {
@@ -223,7 +280,7 @@ function renderMove() {
   if (rest) status = 'Rest day logged';
   else if (program) status = progText + (acts.length ? ' + ' + n.actMin + ' min of activities' : '') + ' · counts as an active day';
   else if (acts.length) status = n.allMin + ' min logged · ' + (di.active ? 'counts as an active day' : (mm - di.minutes) + ' more min of movement to count');
-  let h = '<section class="card sess">' + dateHead('Logging for') + '<div class="status"><span id="statusLine">' + esc(status) + '</span>' + healthButton() + '</div>' + hkLineHTML(date) + '</section>';
+  let h = nudgeHTML(pid) + '<section class="card sess">' + dateHead('Logging for') + '<div class="status"><span id="statusLine">' + esc(status) + '</span>' + healthButton() + '</div>' + hkLineHTML(date) + '</section>';
   if (acts.length || rest || program) {
     h += '<section class="card"><div class="row between"><h3>Logged ' + (rel(date) === nice(date) ? nice(date) : rel(date).toLowerCase()) + '</h3>' + (rest ? '<span class="chip">rest</span>' : di.active ? '<span class="chip good">active day</span>' : '<span class="chip warn">' + di.minutes + ' of ' + mm + ' min</span>') + '</div><div class="done-list" style="margin-top:4px">';
     if (rest) h += '<button type="button" data-a="rest-undo"><span>🛌 Rest day</span><span class="muted">tap to remove</span></button>';
@@ -258,6 +315,7 @@ OV.act = {
     const a = ACTS[o.k], pid = me(), caution = actCaution(pid, o.k), fav = P(pid).favorites.includes(o.k), min = Number(o.min) || 0;
     let h = '<div class="ov" role="dialog" aria-modal="true" aria-label="Log ' + esc(a.name) + '">' + ovHead(a.icon + ' ' + esc(a.name), rel(o.date) + ' · ' + (a.mv === false ? 'recovery, does not count toward active minutes' : IMPACT[a.impact])) +
       '<p class="muted">' + esc(a.desc) + '</p>';
+    if (painFlag(pid, o.k)) h += '<div class="banner">You noted pain on this ' + painCount(pid, o.k) + ' times in the last ' + PAIN_DAYS + ' days. Rest it, shorten it or pick something else, and talk to your doctor or physical therapist if it keeps happening.</div>';
     if (caution.length) h += '<div class="banner">Loads an area you are protecting: ' + caution.map(x => AREAS[x].toLowerCase()).join(', ') + '. Keep it short and easy, or pick something else.</div>';
     if (o.k === 'other') h += '<label class="f">What did you do?<input type="text" data-ovf="name" value="' + esc(o.name || '') + '" placeholder="Name the activity" maxlength="40"></label>';
     h += '<div><div class="eyebrow">Minutes</div><div class="stepper" style="margin-top:4px"><button type="button" data-a="act-min" data-d="-5" aria-label="5 fewer minutes">−</button><input type="number" id="actMin" data-ovf="min" inputmode="numeric" pattern="[0-9]*" min="1" max="300" value="' + esc(o.min) + '" aria-label="Minutes"><button type="button" data-a="act-min" data-d="5" aria-label="5 more minutes">+</button></div></div>' +
@@ -380,6 +438,36 @@ ACT['rest-len'] = async el => { await saveSettings({ rest: Number(el.dataset.v) 
 ACT.protect = async el => { const cur = P(me()).move.protect || [], k = el.dataset.k; await saveProfile(me(), { move: { protect: cur.includes(k) ? cur.filter(x => x !== k) : cur.concat([k]) } }); render(); };
 
 /* ---------- History ---------- */
+// By exercise: weight over time (most reps for a bodyweight move), with deload sessions drawn hollow, and the best set.
+function liftTrendHTML(sel) {
+  const ex = EX[sel], rows = records().filter(r => r.n.ex[sel]);
+  const pts = rows.map(r => { const e = r.n.ex[sel], reps = e.reps.filter(x => x != null); return { d: r.date, v: ex.bw ? (reps.length ? Math.max.apply(null, reps) : null) : e.w, deload: !!r.rec.deload }; }).filter(p => isNum(p.v));
+  let best = null; // the heaviest weight, then the most reps at it (less assistance counts as heavier; bodyweight: the most reps)
+  rows.forEach(r => { const e = r.n.ex[sel]; e.reps.forEach(x => { if (x == null || (!ex.bw && e.w == null)) return; const w = ex.bw ? 0 : (ex.inc < 0 ? -e.w : e.w); if (!best || w > best.rank || (w === best.rank && x > best.reps)) best = { rank: w, w: e.w, reps: x, date: r.date }; }); });
+  let h = '';
+  if (pts.length >= 2) {
+    const W = 300, H = 64, pad = 7, vs = pts.map(p => p.v), mn = Math.min.apply(null, vs), mx = Math.max.apply(null, vs), span = (mx - mn) || 1;
+    const x = i => pad + (W - 2 * pad) * i / (pts.length - 1), y = v => pad + (H - 2 * pad) * (1 - (v - mn) / span);
+    h += '<svg class="spark trend" id="exTrend" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc(ex.name) + ': ' + (ex.bw ? 'best reps' : 'weight') + ' over ' + pts.length + ' sessions, from ' + pts[0].v + ' to ' + pts[pts.length - 1].v + '"><path d="' + pts.map((p, i) => (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(p.v).toFixed(1)).join(' ') + '"/>' +
+      pts.map((p, i) => '<circle class="' + (p.deload ? 'dl' : '') + '" cx="' + x(i).toFixed(1) + '" cy="' + y(p.v).toFixed(1) + '" r="' + (p.deload ? 3.5 : 2.5) + '"/>').join('') + '</svg>';
+  }
+  if (best) h += '<p class="tiny" id="exBest" style="margin-top:6px"><b>Best set:</b> ' + esc((ex.bw ? '' : fmtW(sel, best.w) + ' × ') + best.reps + (ex.bw ? ' reps' : '')) + ' <span class="muted">· ' + nice(best.date) + (pts.some(p => p.deload) ? ' · hollow dots are deload sessions' : '') + '</span></p>';
+  return h;
+}
+// "Something hurt" notes, so a pattern is visible: which activities, which areas they load, and what was written.
+function painCardHTML(pid) {
+  const pn = painNotes(pid); if (!pn.list.length && P(pid).plan !== 'choice') return '';
+  let h = '<section class="card stack" id="painCard"><div class="row between"><h3>Pain notes</h3><span class="chip' + (pn.list.length ? ' warn' : '') + '">' + pn.list.length + ' in the last ' + PAIN_DAYS + ' days</span></div>';
+  if (!pn.list.length) h += '<p class="tiny muted">Nothing noted. Tap "Something hurt" when you log an activity and the pattern shows up here.</p>';
+  else {
+    const acts = Object.keys(pn.byAct).map(k => pn.byAct[k]).sort((a, b) => b.n - a.n), areas = Object.keys(pn.byArea).sort((a, b) => pn.byArea[b] - pn.byArea[a]);
+    h += '<div id="painByAct"><div class="eyebrow">By activity</div><p>' + acts.map(a => esc(a.name) + ' <b>' + a.n + '×</b>').join(' · ') + '</p></div>' +
+      (areas.length ? '<div id="painByArea"><div class="eyebrow">By body area those activities load</div><p>' + areas.map(a => AREAS[a] + ' <b>' + pn.byArea[a] + '×</b>').join(' · ') + '</p></div>' : '') +
+      '<div class="tbl" id="painList"><table>' + pn.list.map(x => '<tr><td>' + esc(x.name) + (x.note ? '<br><span class="tiny muted">“' + esc(x.note) + '”</span>' : '') + '</td><td>' + nice(x.date) + '</td></tr>').join('') + '</table></div>' +
+      '<p class="tiny muted">An activity with two or more notes in ' + PAIN_DAYS + ' days is flagged in the menu, sorted lower, and skipped by Surprise me.</p>';
+  }
+  return h + '<p class="tiny muted">This is a log, not medical advice. With past injuries, or if pain is sharp, new, or keeps coming back, talk to your doctor or physical therapist before doing that activity again.</p></section>';
+}
 function renderHistory() {
   const pid = me(), list = records().filter(r => r.n.kind !== 'empty' || r.n.ambiguous).reverse();
   let h = '<section class="card"><div class="row between"><h2>History</h2><span class="chip">' + list.length + ' saved</span></div>';
@@ -400,6 +488,7 @@ function renderHistory() {
     if (n.keys.length) line.push(n.keys.length + ' exercise' + (n.keys.length === 1 ? '' : 's'));
     if (n.program && n.acts.length) line.push(n.actMin + ' min of activities');
     if (n.phase) line.push('Phase ' + n.phase);
+    if (r.rec.deload && n.kind === 'strength') line.push('deload');
     h += '<details class="hi" data-hdate="' + r.date + '"><summary><div class="hdate num">' + nice(r.date).replace(/^(\w+) /, '$1<br>') + '</div><div><b>' + esc(what) + '</b><div class="tiny muted">' + esc(line.join(' · ') || '—') + '</div></div>' + chip + '</summary><div class="hbody">';
     if (n.ambiguous) h += '<p class="tiny" style="color:var(--warn)">Saved as a lift day by the earlier version, but it has no lifting sets. Treated as ' + (n.kind === 'cardio' ? 'treadmill only' : 'no activity') + ' until you edit it.</p>';
     if (n.legacy && n.keys.length) h += '<p class="tiny muted">Saved by the earlier version: blank sets were stored as 0 and are shown as not logged.</p>';
@@ -423,6 +512,7 @@ function renderHistory() {
   });
   h += '</div></section>';
 
+  h += painCardHTML(pid);
   const used = Object.keys(EX).filter(k => records().some(r => r.n.ex[k]));
   if (used.length || P(pid).plan === 'program') {
     h += '<section class="card"><h3>By exercise</h3>';
@@ -431,7 +521,8 @@ function renderHistory() {
       const sel = used.includes(state.exHist) ? state.exHist : used[0];
       h += '<select id="exHist" style="margin-top:8px" aria-label="Exercise">' + used.map(k => '<option value="' + k + '"' + (k === sel ? ' selected' : '') + '>' + esc(EX[k].name) + '</option>').join('') + '</select>';
       const rows = records().filter(r => r.n.ex[sel]).reverse();
-      h += '<div class="tbl" style="margin-top:8px"><table>' + rows.map(r => '<tr><td>' + nice(r.date) + '</td><td>' + esc((r.n.ex[sel].w != null ? fmtW(sel, r.n.ex[sel].w) + ' × ' : '') + fmtReps(r.n.ex[sel].reps)) + '</td></tr>').join('') + '</table></div>';
+      h += liftTrendHTML(sel);
+      h += '<div class="tbl" style="margin-top:8px"><table>' + rows.map(r => '<tr><td>' + nice(r.date) + (r.rec.deload ? ' <span class="chip">deload</span>' : '') + '</td><td>' + esc((r.n.ex[sel].w != null ? fmtW(sel, r.n.ex[sel].w) + ' × ' : '') + fmtReps(r.n.ex[sel].reps)) + '</td></tr>').join('') + '</table></div>';
       h += '<p class="tiny muted" style="margin-top:6px">Target ' + EX[sel].sets + ' × ' + EX[sel].lo + '–' + EX[sel].hi + (EX[sel].per ? '. Weight is per hand.' : '.') + '</p>';
     }
     h += '</section>';

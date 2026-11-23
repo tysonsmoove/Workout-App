@@ -122,7 +122,7 @@ button:disabled { opacity: .5; cursor: default; }
 .chips::-webkit-scrollbar { display: none; }
 .chips.wrapc { flex-wrap: wrap; overflow: visible; }
 .chips button { flex: none; border-radius: 999px; min-height: 34px; padding: 4px 12px; font-size: .875rem; }
-input[type=number], input[type=date], input[type=text], input[type=search], select, textarea { font: inherit; font-size: 1.0625rem; color: var(--fg); background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; min-height: 44px; width: 100%; font-variant-numeric: tabular-nums; }
+input[type=number], input[type=date], input[type=time], input[type=text], input[type=search], select, textarea { font: inherit; font-size: 1.0625rem; color: var(--fg); background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; min-height: 44px; width: 100%; font-variant-numeric: tabular-nums; }
 input[type=number] { text-align: center; -moz-appearance: textfield; }
 input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 input[type=search] { -webkit-appearance: none; appearance: none; }
@@ -166,6 +166,9 @@ label.f { display: grid; gap: 3px; font-size: .6875rem; color: var(--muted); tex
 .logrow label.f { letter-spacing: .05em; }
 .exprog { display: flex; align-items: center; gap: 8px; font-size: .8125rem; color: var(--muted); }
 .exprog b { color: var(--fg); font-weight: 500; }
+.stall { display: grid; gap: 6px; padding: 8px 10px; background: var(--warn-soft); border-radius: 8px; font-size: .875rem; }
+.spark.trend circle { fill: var(--accent); }
+.spark.trend circle.dl { fill: var(--card); stroke: var(--accent); stroke-width: 1.5; }
 .exdetails { font-size: .8125rem; color: var(--muted); display: grid; gap: 4px; padding: 8px 10px; background: var(--soft); border-radius: 8px; }
 .exdetails b { color: var(--fg); font-weight: 500; }
 .menubtn { width: 36px; height: 32px; min-height: 32px; padding: 0; border-radius: 8px; font-size: 1.25rem; line-height: 1; letter-spacing: .05em; color: var(--muted); border-color: transparent; background: transparent; flex: none; }
@@ -250,6 +253,11 @@ details.sessopts { padding: 10px 0 2px; border-top: 1px solid var(--line); }
 .protline .bar em { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--fg); opacity: .55; }
 .meal { display: grid; gap: 2px; padding: 10px 0; border-top: 1px solid var(--line); }
 .meal:first-child { border-top: 0; }
+.mealtools { display: flex; flex-wrap: wrap; gap: 0 10px; margin-top: 2px; }
+.mealtools button { min-height: 30px; padding: 2px 0; }
+.mealrow { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; border-top: 1px solid var(--line); }
+.mealrow:first-child { border-top: 0; }
+.results .mealrow .fooditem { border-top: 0; }
 .meal .mh { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .fooditem { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; text-align: left; border: 0; background: transparent; border-radius: 6px; padding: 6px 0; min-height: 40px; width: 100%; }
 .fooditem .fn { font-weight: 500; line-height: 1.2; }
@@ -290,6 +298,12 @@ details.sessopts { padding: 10px 0 2px; border-top: 1px solid var(--line); }
 .trow .tn { line-height: 1.2; min-width: 0; }
 .trow .bar { height: 8px; border-radius: 4px; background: var(--soft); overflow: hidden; }
 .trow .bar i { display: block; height: 100%; border-radius: 4px; background: hsl(var(--ph, 3) var(--ps, 65%) calc(var(--pl, 47%) * (1 - var(--dk)) + var(--pld, 57%) * var(--dk))); }
+.recap { display: grid; grid-template-columns: minmax(0, 1.5fr) 1fr 1fr; gap: 5px 10px; align-items: start; font-size: .8125rem; text-align: left; width: 100%; }
+.recap b { font-weight: 600; }
+.ious { display: grid; }
+.iou { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; padding: 7px 0; border-top: 1px solid var(--line); font-size: .875rem; }
+.iou:first-child { border-top: 0; }
+.iou.paid > span { color: var(--muted); text-decoration: line-through; text-decoration-thickness: 1px; }
 .tips { display: grid; }
 .tip { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; padding: 9px 0; border-top: 1px solid var(--line); text-decoration: none; }
 .tip:first-child { border-top: 0; }
@@ -477,13 +491,14 @@ const AVATARS = ['', '🏁', '🏎️', '🔥', '⚡', '💪', '🌸', '🌷', '
 
 /* ---------- State ---------- */
 const blankSettings = () => ({ startDate: null, maxed: {}, swaps: {}, goal: GOAL });
-const blankData = () => ({ profile: null, sessions: {}, settings: blankSettings(), food: {}, health: {}, weekgoals: {} });
+const blankData = () => ({ profile: null, sessions: {}, settings: blankSettings(), food: {}, health: {}, weekgoals: {}, meals: {} });
 const state = {
   pid: null,
   data: { tyson: blankData(), jacquie: blankData() },
   customFoods: {},
   comp: { start: null, stakes: '' },   // also, when set: stakesBy { monday: text }, countdown { date, label, setAt }
   results: {},        // week start -> final result, once a finished week is closed
+  iou: {},            // week start -> { paid }: whether what was on the line has been settled. Kept apart from results, which never change
   draftsBy: { tyson: {}, jacquie: {} },   // date -> unsaved lifting form draft (this device, mirrored to the account)
   acct: {},           // what this signed-in person's account remembers: profile, what has been shown; see prefGet
   acctDrafts: null,   // the account's copy of unsaved drafts, as last read
@@ -529,7 +544,8 @@ function P(pid) {
     const d = DEFAULTS[pid], s = state.data[pid].profile || {};
     return Object.assign({}, d, s, {
       name: (s.name || d.name), skin: Object.assign({}, d.skin, s.skin), move: Object.assign({}, d.move, s.move),
-      body: Object.assign({}, s.body), doctor: Object.assign({}, s.doctor), weighIns: Object.assign({}, s.weighIns), badges: Object.assign({}, s.badges), favorites: (s.favorites || []).slice()
+      body: Object.assign({}, s.body), doctor: Object.assign({}, s.doctor), weighIns: Object.assign({}, s.weighIns), badges: Object.assign({}, s.badges), favorites: (s.favorites || []).slice(),
+      reminders: Object.assign({ morning: '06:00', water: '14:30' }, s.reminders) // times shown in the Shortcuts reminder steps; the phone does the reminding
     });
   });
 }
@@ -594,6 +610,8 @@ const PATH = {
   health: (pid, d) => 'profiles/' + pid + '/health/' + d,
   weekgoalsCol: pid => 'profiles/' + pid + '/weekgoals',                             // one snapshot of a person's targets per week
   weekgoal: (pid, ws) => 'profiles/' + pid + '/weekgoals/' + ws,
+  mealsCol: pid => 'profiles/' + pid + '/meals',                                     // a person's saved meals
+  meal: (pid, id) => 'profiles/' + pid + '/meals/' + id,
   profile: pid => 'profiles/' + pid
 };
 function slot(path) { // where a document lives in state: { map, key } or { obj, field }
@@ -607,10 +625,12 @@ function slot(path) { // where a document lives in state: { map, key } or { obj,
     if (s[2] === 'food' && s.length === 4) return { map: D.food, key: s[3] };
     if (s[2] === 'health' && s.length === 4) return { map: D.health, key: s[3] };
     if (s[2] === 'weekgoals' && s.length === 4) return { map: D.weekgoals, key: s[3] };
+    if (s[2] === 'meals' && s.length === 4) return { map: D.meals, key: s[3] };
     if (s[2] === 'settings' && s[3] === 'program') return { obj: D, field: 'settings', dflt: blankSettings };
   }
   if (s[0] === 'foods' && s.length === 2) return { map: state.customFoods, key: s[1] };
   if (s[0] === 'results' && s.length === 2) return { map: state.results, key: s[1] };
+  if (s[0] === 'iou' && s.length === 2) return { map: state.iou, key: s[1] };
   if (path === 'comp/settings') return { obj: state, field: 'comp', dflt: () => ({ start: null, stakes: '' }) };
   return null;
 }
@@ -625,7 +645,8 @@ function replaceCol(colPath, entries) {
   if (colPath === 'sessions') { host = state.data.tyson; field = 'sessions'; }
   else if (colPath === 'foods') { host = state; field = 'customFoods'; }
   else if (colPath === 'results') { host = state; field = 'results'; }
-  else if (s[0] === 'profiles' && state.data[s[1]] && (s[2] === 'sessions' || s[2] === 'food' || s[2] === 'health' || s[2] === 'weekgoals')) { host = state.data[s[1]]; field = s[2]; }
+  else if (colPath === 'iou') { host = state; field = 'iou'; }
+  else if (s[0] === 'profiles' && state.data[s[1]] && (s[2] === 'sessions' || s[2] === 'food' || s[2] === 'health' || s[2] === 'weekgoals' || s[2] === 'meals')) { host = state.data[s[1]]; field = s[2]; }
   if (!host) return;
   const m = {}; entries.forEach(e => { m[e[0]] = e[1]; }); host[field] = m; bump();
 }
@@ -672,7 +693,7 @@ async function write(path, doc) {
 async function saveProfile(pid, patch) {
   const cur = state.data[pid].profile || {};
   const next = Object.assign({}, cur, patch, { updatedAt: new Date().toISOString() });
-  ['skin', 'move', 'body', 'doctor', 'weighIns', 'badges'].forEach(k => { if (patch[k]) next[k] = Object.assign({}, cur[k], patch[k]); });
+  ['skin', 'move', 'body', 'doctor', 'weighIns', 'badges', 'reminders'].forEach(k => { if (patch[k]) next[k] = Object.assign({}, cur[k], patch[k]); });
   const ok = await write(PATH.profile(pid), next);
   return ok;
 }
@@ -728,7 +749,7 @@ function rollDay() {
   state.today = t; return true;
 }
 function findLocalOnly() {
-  const docs = localDocs(); const only = Object.keys(docs).filter(p => (/\/\d{4}-\d{2}-\d{2}$/.test(p) || /^profiles\/[a-z]+$/.test(p) || /^foods\/[A-Za-z0-9]+$/.test(p)) && p.indexOf('results/') !== 0 && p.indexOf('/weekgoals/') < 0 && slot(p) && !getDoc(p)); // results and week locks are made fresh, never imported
+  const docs = localDocs(); const only = Object.keys(docs).filter(p => (/\/\d{4}-\d{2}-\d{2}$/.test(p) || /^profiles\/[a-z]+$/.test(p) || /^foods\/[A-Za-z0-9]+$/.test(p) || /^profiles\/[a-z]+\/meals\/[A-Za-z0-9]+$/.test(p)) && p.indexOf('results/') !== 0 && p.indexOf('/weekgoals/') < 0 && slot(p) && !getDoc(p)); // results and week locks are made fresh, never imported
   state.localOnly = only.length ? only : null;
 }
 async function importLocal() {
@@ -783,8 +804,8 @@ async function connect() {
     subOwn(acctPath, d => { state.acct = Object.assign({}, d, acctLocal); });
     subOwn(acctDraftsPath, d => { if (!resolved) state.acctDrafts = d; });
   }
-  PIDS.forEach(pid => { subCol(PATH.sessions(pid)); subCol(PATH.foodCol(pid)); subCol(PATH.healthCol(pid)); subCol(PATH.weekgoalsCol(pid)); subDoc(PATH.settings(pid)); subDoc(PATH.profile(pid)); });
-  subCol('foods'); subCol('results'); subDoc('comp/settings');
+  PIDS.forEach(pid => { subCol(PATH.sessions(pid)); subCol(PATH.foodCol(pid)); subCol(PATH.healthCol(pid)); subCol(PATH.weekgoalsCol(pid)); subCol(PATH.mealsCol(pid)); subDoc(PATH.settings(pid)); subDoc(PATH.profile(pid)); });
+  subCol('foods'); subCol('results'); subCol('iou'); subDoc('comp/settings');
 }
 
 /* ---- 10-program.js ---- */
@@ -904,7 +925,9 @@ function normalize(rec) {
   const planned = Array.isArray(rec.planned) ? rec.planned.filter(k => EX[k]) : null;
   const complete = kind !== 'strength' ? null : planned ? planned.every(k => ex[k]) : null;
   const sets = sum(keys, k => ex[k].reps.filter(r => r != null).length);
-  const progMin = program ? (tm ? tm.minutes : 0) + sets * 3 : 0; // lifting time is estimated at 3 minutes a logged set
+  // Lifting time is estimated at 3 minutes a logged set. A deload session has 2 sets where a normal one has 3, so its
+  // sets count 4.5 minutes each: a recovery week with the same lift days carries the same minutes, and the same points.
+  const progMin = program ? (tm ? tm.minutes : 0) + Math.round(sets * (rec.deload ? 4.5 : 3)) : 0;
   return Object.assign(base, { kind, day: DAYS[rec.day] ? rec.day : null, qualifies, complete, ex, keys, mainLogged, legacy, ambiguous, tm, acts, program, progMin, actMin, minutes: progMin + actMin, allMin: progMin + actAll,
     phase: program || kind === 'rest' ? rec.phase || null : null, planned, plannedBase: rec.plannedBase || null, swaps: rec.swaps || {}, qualifyOverride: rec.qualifyOverride == null ? null : rec.qualifyOverride });
 }
@@ -937,9 +960,44 @@ function weekStats(asOf, pid) { // the top strip: the same days and the same goa
   pid = pid || me(); const ws = weekStart(asOf), sc = weekScore(pid, ws), g = weekGoals(pid, ws);
   return { activity: sc.active, lifts: sc.lifts, minutes: sc.minutes, goal: g.goal, liftGoal: g.liftGoal, plan: g.plan };
 }
+// the normal sessions of one exercise before a date, oldest first. Deload sessions are left out: they are lighter on
+// purpose, so the weight rule, the stall check and "last time" all read through them to the last normal session.
+const liftLog = (key, beforeDate) => records().filter(r => r.date < beforeDate && r.n.ex[key] && !r.rec.deload);
 function lastLog(key, beforeDate) {
-  const l = records().filter(r => r.date < beforeDate && r.n.ex[key]);
+  const l = liftLog(key, beforeDate);
   return l.length ? Object.assign({ date: l[l.length - 1].date }, l[l.length - 1].n.ex[key]) : null;
+}
+// one step easier: about 10% lighter, rounded to the exercise's own step, and never the same weight.
+// (The assisted pull-up is inverted: easier means more assistance.)
+function easier(key, w) {
+  const ex = EX[key], step = Math.abs(ex.inc) || 5, up = ex.inc < 0;
+  const v = Math.round(w * (up ? 1.1 : 0.9) / step) * step;
+  return up ? Math.max(v, w + step) : Math.max(0, Math.min(v, w - step));
+}
+// Is the workout for this date a deload session? A saved lift keeps what it was saved as; a new one follows the week.
+function deloadOn(date) {
+  const rec = state.sessions[date]; if (rec && normalize(rec).kind === 'strength') return !!rec.deload;
+  const d = state.settings.deload; return !!(d && d.ws === weekStart(date));
+}
+// A deload week is offered after every 5 completed lift weeks (counted the same way as phases).
+// Returns 'on' while this week is one, 'offer' when it should be suggested, or ''.
+function deloadState() {
+  const t = todayIso(), d = state.settings.deload, cw = completedWeeks(t);
+  if (d && d.ws === weekStart(t)) return 'on';
+  return cw > 0 && cw % 5 === 0 && state.settings.deloadAsked !== cw ? 'offer' : '';
+}
+// Stalled: the last three normal sessions sat at one weight and none of them earned an increase.
+// Not for bodyweight moves or lifts marked "Can't go higher". Hidden while a reset is waiting, and after a dismissal
+// until three later sessions stall again.
+function stallFor(key, date) {
+  const ex = EX[key]; if (!ex || ex.bw || (state.settings.maxed || {})[key]) return null;
+  const ss = liftLog(key, date).slice(-3); if (ss.length < 3) return null;
+  const w = ss[0].n.ex[key].w; if (w == null) return null;
+  const earned = e => { const l = e.reps.filter(r => r != null); return l.length >= ex.sets && l.every(r => r >= ex.hi); };
+  if (!ss.every(r => r.n.ex[key].w === w && !earned(r.n.ex[key]))) return null;
+  const rs = (state.settings.resets || {})[key]; if (rs && rs.at > ss[2].date) return null;
+  const seen = (state.settings.stallSeen || {})[key]; if (seen && seen >= ss[0].date) return null;
+  return { w, first: ss[0].date, last: ss[2].date, to: easier(key, w) };
 }
 const fmtReps = reps => reps.map(r => r == null ? '–' : r).join(' / ');
 const fmtW = (key, w) => w == null ? '' : w + ' lb' + (EX[key].per ? ' each' : '');
@@ -947,7 +1005,19 @@ const stepDown = (ex, w) => Math.max(0, w - ex.inc);
 const stepUp = (ex, w) => Math.max(0, w + ex.inc);
 
 // Weight rule, as shown on the Program tab. Only logged sets count; blanks are not failures.
+// On top of the rule: a chosen reset replaces the next suggestion once, and a deload session is 2 sets at about 90%.
 function suggest(key, date) {
+  const ex = EX[key], unit = ex.per ? ' lb each hand' : ' lb'; let s = suggestRule(key, date);
+  const rs = (state.settings.resets || {})[key];
+  if (!ex.bw && rs && isNum(rs.w) && validIso(rs.at) && (!s.last || s.last.date < rs.at)) // waits until a session is logged on or after the day it was chosen
+    s = Object.assign({}, s, { w: rs.w, sets: ex.sets, reset: true, text: rs.w + unit + ' · reset', why: 'Reset from ' + rs.from + ' lb: about 10% lighter, then build back up with clean reps.' });
+  if (deloadOn(date)) {
+    const w = ex.bw || s.w == null ? s.w : easier(key, s.w);
+    s = Object.assign({}, s, { w, sets: 2, deload: true, text: (ex.bw ? '2 × ' + s.reps : w + unit) + ' · deload', why: 'Deload week: 2 sets' + (ex.bw ? '' : ' at about 90% of ' + s.w + ' lb') + '. Next week picks up from your last normal session.' });
+  }
+  return s;
+}
+function suggestRule(key, date) {
   const ex = EX[key]; const last = lastLog(key, date); const maxed = !!(state.settings.maxed || {})[key];
   const logged = last ? last.reps.filter(r => r != null) : [];
   if (ex.bw) {
@@ -1023,7 +1093,7 @@ function plannedFor(date, kind, m) {
 function setCount(key, m, date) {
   const sg = suggest(key, date);
   const have = m.ex[key] ? m.ex[key].reps.length : 0;
-  return Math.min(MAX_SETS, Math.max(EX[key].sets, sg.sets || 0, have, m.extra[key] || 0));
+  return Math.min(MAX_SETS, Math.max(sg.deload ? 2 : EX[key].sets, sg.sets || 0, have, m.extra[key] || 0)); // a deload session shows 2 sets
 }
 function parseDraft(date, m) {
   // Turns the draft into a record. Returns { doc, errors, kind }.
@@ -1068,6 +1138,7 @@ function parseDraft(date, m) {
     doc.planned = plannedPairs.map(p => p.key); doc.plannedBase = plannedPairs.map(p => p.base);
     doc.swaps = {}; plannedPairs.forEach(p => { if (p.key !== p.base) doc.swaps[p.base] = p.key; });
     doc.qualifyOverride = m.countAs; doc.qualifies = m.countAs == null ? auto : !!m.countAs;
+    if (deloadOn(date)) doc.deload = true; // a recovery session: it counts as a lift day, and the weight rule reads past it
     doc.complete = doc.planned.every(k => ex[k]);
     return { doc, errors, kind: 'strength', mainLogged, auto };
   }
@@ -1209,12 +1280,12 @@ function actList(pid, filter) {
     if (filter.quick && a.min > 10) return false;
     if (filter.fav && !favs.includes(k)) return false;
     return true;
-  }).map((k, i) => ({ k, i, fav: favs.includes(k), caution: actCaution(pid, k).length }))
-    .sort((x, y) => (y.fav - x.fav) || (x.caution - y.caution) || (order.indexOf(ACTS[x.k].cat) - order.indexOf(ACTS[y.k].cat)) || (ACTS[x.k].impact - ACTS[y.k].impact) || (x.i - y.i))
+  }).map((k, i) => ({ k, i, fav: favs.includes(k), caution: actCaution(pid, k).length, pain: painFlag(pid, k) ? 1 : 0 }))
+    .sort((x, y) => (x.pain - y.pain) || (y.fav - x.fav) || (x.caution - y.caution) || (order.indexOf(ACTS[x.k].cat) - order.indexOf(ACTS[y.k].cat)) || (ACTS[x.k].impact - ACTS[y.k].impact) || (x.i - y.i))
     .map(x => x.k);
 }
 function surpriseActivity(pid) {
-  const pool = Object.keys(ACTS).filter(k => k !== 'other' && ACTS[k].mv !== false && !actCaution(pid, k).length);
+  const pool = Object.keys(ACTS).filter(k => k !== 'other' && ACTS[k].mv !== false && !actCaution(pid, k).length && !painFlag(pid, k)); // never something that has hurt twice lately
   const recent = new Set(); const t = todayIso();
   for (let i = 0; i < 4; i++) dayInfo(pid, addDays(t, -i)).kinds.forEach(k => recent.add(k));
   const fresh = pool.filter(k => !recent.has(k));
@@ -1223,6 +1294,23 @@ function surpriseActivity(pid) {
 }
 const actName = a => a.name || (ACTS[a.a] ? ACTS[a.a].name : 'Activity');
 const actIcon = a => a.src === 'health' ? '⌚' : ACTS[a.a] ? ACTS[a.a].icon : '✏️';
+// "Something hurt" notes from the last 30 days: newest first, counted by activity and by the body areas each activity loads.
+// Two or more on one activity flag it in the menu, sort it lower and keep Surprise me away from it.
+const PAIN_DAYS = 30;
+function painNotes(pid) {
+  return cached('pain:' + pid, () => {
+    const t = todayIso(), from = addDays(t, -PAIN_DAYS), list = [], byAct = {}, byArea = {};
+    recordsOf(pid).forEach(r => { if (r.date < from || r.date > t) return; r.n.acts.forEach(a => {
+      if (!a.hurt) return; const areas = ACTS[a.a] ? ACTS[a.a].stress : [];
+      list.push({ date: r.date, k: a.a, name: actName(a), note: a.note || '', areas, at: String(a.at || '') });
+      const key = a.a === 'other' ? 'other:' + actName(a).toLowerCase() : a.a; byAct[key] = byAct[key] || { n: 0, name: actName(a), k: a.a }; byAct[key].n++;
+      areas.forEach(x => { byArea[x] = (byArea[x] || 0) + 1; }); }); });
+    list.sort((x, y) => y.date.localeCompare(x.date) || y.at.localeCompare(x.at));
+    return { list, byAct, byArea, from };
+  });
+}
+const painCount = (pid, k) => { const e = painNotes(pid).byAct[k]; return e ? e.n : 0; };
+const painFlag = (pid, k) => k !== 'other' && painCount(pid, k) >= 2;
 
 // The Watch's Exercise Minutes for a day live on that day's health doc. Movement logged by hand counts first; the
 // top-up entry holds only what the Watch saw beyond it, so the same walk never counts twice. Every change to a
@@ -1559,6 +1647,40 @@ function badgesFor(pid) { // earned = true now, or recorded on the profile earli
   return BADGES.filter(b => !b.plan || b.plan === p.plan || kept[b.id]).map(b => { const live = !!b.has(s), earned = live || !!kept[b.id]; return { id: b.id, icon: b.icon, name: b.name, desc: b.desc, earned, live, since: kept[b.id] || null, prog: !earned && b.prog ? b.prog(s) : '' }; });
 }
 
+/* ---------- Last week's recap, IOUs, and the goal nudge (none of these changes a score) ---------- */
+// One person's highlights for a week, read from the same day facts the score and History use.
+function weekRecap(pid, ws) {
+  return cached('recap:' + pid + ':' + ws, () => {
+    const f = weekFacts(pid, ws), sc = scoreFacts(f), we = addDays(ws, 6), kept = P(pid).badges, recs = recordsOf(pid);
+    let best = null; // the biggest step up on any lift, against the last normal session of that exercise before it
+    recs.forEach((r, idx) => { if (r.date < ws || r.date > we || r.rec.deload) return; Object.keys(r.n.ex).forEach(k => {
+      const e = r.n.ex[k], ex = EX[k]; if (!ex || ex.bw || e.w == null) return;
+      let prev = null; for (let j = idx - 1; j >= 0 && prev == null; j--) { const q = recs[j]; if (!q.rec.deload && q.n.ex[k] && q.n.ex[k].w != null) prev = q.n.ex[k].w; }
+      if (prev == null) return; const up = ex.inc < 0 ? prev - e.w : e.w - prev;
+      if (up > 0 && (!best || up > best.up)) best = { k, up, w: e.w, name: ex.name }; }); });
+    const badges = BADGES.filter(b => typeof kept[b.id] === 'string' && kept[b.id] >= ws && kept[b.id] <= we).map(b => ({ id: b.id, icon: b.icon, name: b.name }));
+    return { ws, active: sc.active, lifts: sc.lifts, minutes: sc.minutes, best, calDays: f.days.filter(d => d.cal >= 1).length, waterDays: f.days.filter(d => d.water >= 1).length, badges, total: sc.total, plan: f.plan };
+  });
+}
+// the week the recap is about: the one that ended last Sunday, while it is part of the race
+function lastWeek() { const prev = addDays(weekStart(todayIso()), -7); return compWeeks().find(w => w.ws === prev && w.played) || null; }
+// What is still owed: every closed week that had stakes and a winner. Paid marks live at iou/<monday>; results never change.
+const iouPaid = ws => !!(state.iou[ws] && state.iou[ws].paid);
+function ious() {
+  return compWeeks().filter(w => w.final && w.winner && w.stakes).map(w => ({ ws: w.ws, winner: w.winner, loser: otherPid(w.winner), stakes: w.stakes, paid: iouPaid(w.ws) })).reverse();
+}
+// After three finished weeks in a row with a full Move score at the current goal: offer one more day, never past
+// 7 (6 on the lifting program). Null while a change is already waiting for Monday, or while "Not now" is still counting down.
+function goalNudge(pid) {
+  return cached('nudge:' + pid, () => {
+    const live = liveGoals(pid), wk = thisWeek(pid), cap = live.plan === 'program' ? 6 : 7, t = todayIso(), cur = weekStart(t), sn = P(pid).goalNudge;
+    if (live.goal >= cap || live.goal !== wk.goal || live.plan !== wk.plan) return null;
+    if (sn && validIso(sn.until) && t < sn.until) return null;
+    for (let i = 1; i <= 3; i++) { const ws = addDays(cur, -7 * i), g = weekGoals(pid, ws); if (g.plan !== live.plan || g.goal < live.goal || !weekScore(pid, ws).moveFull) return null; }
+    return { from: live.goal, to: live.goal + 1, plan: live.plan };
+  });
+}
+
 /* ---- 40-nutrition.js ---- */
 /* ---------- Nutrition: daily targets, food log, food database ---------- */
 const NKEYS = ['kcal', 'protein', 'fat', 'carbs', 'fiber', 'sugar', 'satfat', 'transfat', 'chol', 'sodium', 'potassium', 'calcium', 'iron', 'vitd'];
@@ -1636,6 +1758,18 @@ async function addFoodItem(date, item) {
   const path = PATH.food(me(), date), cur = getDoc(path) || { v: 1, date, items: [], water: 0 };
   return write(path, Object.assign({}, cur, { items: (cur.items || []).concat([item]), updatedAt: new Date().toISOString() }));
 }
+// several items in one save: a copied or saved meal lands as one write, and is celebrated once
+async function addFoodItems(date, items) {
+  const path = PATH.food(me(), date), cur = getDoc(path) || { v: 1, date, items: [], water: 0 };
+  return write(path, Object.assign({}, cur, { items: (cur.items || []).concat(items), updatedAt: new Date().toISOString() }));
+}
+const mealItems = (pid, date, meal) => (foodDay(pid, date).items || []).filter(it => it && it.meal === meal);
+const itemsKcal = items => Math.round(sum(items, it => it && it.n && isNum(it.n[0]) ? it.n[0] : 0));
+// copies of logged items for another day or meal: new ids, the nutrition they were logged with
+const cloneItems = (items, meal) => items.map((it, i) => Object.assign({}, it, { id: uid() + i.toString(36), meal, n: (it.n || []).slice() }));
+// a person's saved meals, newest first
+const savedMeals = pid => Object.keys(state.data[pid].meals).map(id => Object.assign({}, state.data[pid].meals[id], { id }))
+  .filter(m => Array.isArray(m.items) && m.items.length).sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
 async function changeFoodItem(date, id, next) { // next = replacement item, or null to remove
   const path = PATH.food(me(), date), cur = getDoc(path); if (!cur) return false;
   const items = (cur.items || []).map(it => it.id === id ? next : it).filter(Boolean);
@@ -1963,15 +2097,18 @@ function announce() {
   checkBadges(pid).slice(0, 3).forEach(b => queueOv({ type: 'badge', pid, badge: b }));
   const weeks = compWeeks(), finals = weeks.filter(w => w.final && w.played), last = weeks[weeks.length - 1];
   let seen = prefGet('ml.seenFinalWeek', null);
-  if (seen == null) { // first run with final-result tracking: what the old announcement already showed, or anything already final, is old news
-    const old = prefGet('ml.seenWeek', null);
-    // a week the old code announced while it was still open gets its real announcement once it is final
-    seen = typeof old === 'string' && validIso(old) ? (finalResult(old) ? old : addDays(old, -7)) : finals.length ? finals[finals.length - 1].ws : '';
+  if (seen == null) { // first run with final-result tracking on this phone
+    const old = prefGet('ml.seenWeek', null), lastWs = addDays(weekStart(todayIso()), -7), older = finals.filter(w => w.ws < lastWs);
+    // What the old announcement already showed is old news; a week it announced while still open gets its real
+    // announcement once final. A phone with no memory at all treats only the week that just ended as news, whether
+    // that week was closed before or after this phone picked its profile.
+    seen = typeof old === 'string' && validIso(old) ? (finalResult(old) ? old : addDays(old, -7)) : older.length ? older[older.length - 1].ws : '';
     prefSet('ml.seenFinalWeek', seen);
   }
   const fresh = finals.filter(w => w.ws > seen).slice(-2);
   if (fresh.length) { prefSet('ml.seenFinalWeek', fresh[fresh.length - 1].ws); fresh.forEach(w => queueOv({ type: 'weekwin', week: w })); }
-  if (last && !last.final && last.played && String(prefGet('ml.seenWeek', '')) < last.ws) { prefSet('ml.seenWeek', last.ws); toast(provisionalText(last), 5200); }
+  // only while late entries still count: from Wednesday the week is about to be closed and announced for real
+  if (last && !last.final && last.played && todayIso() < addDays(last.ws, 7 + GRACE_DAYS) && String(prefGet('ml.seenWeek', '')) < last.ws) { prefSet('ml.seenWeek', last.ws); toast(provisionalText(last), 5200); }
 }
 // With no profile on this device the page waits for the account to say which one this person uses, and asks only
 // when the account does not know either (or cannot be reached).
@@ -2019,7 +2156,7 @@ OV.weekwin = {
   html: o => {
     const w = o.week, win = w.winner, owes = stakesLine(w);
     const line = win ? esc(P(win).name) + ' wins, ' + Math.max(w.tyson, w.jacquie) + ' to ' + Math.min(w.tyson, w.jacquie) : 'Dead heat at ' + w.tyson;
-    return '<div class="ov" role="dialog" aria-modal="true" aria-label="Final result"><div class="eyebrow">Final · week of ' + shortDate(w.ws) + '</div><div class="pop">' + (win ? avatarHTML(win, 'lg') : '<div class="medal lg">🤝</div>') + '</div><h2>' + line + '</h2>' + (owes ? '<p><b>' + esc(owes) + '</b></p>' : '') + '<p class="muted">' + (win ? 'Late entries are in and the result is final. A new week is already running.' : 'Nobody gets bragging rights. Settle it this week.') + '</p><div class="row" style="width:100%"><button type="button" class="primary" data-a="ov-close">On to this week</button></div></div>';
+    return '<div class="ov" role="dialog" aria-modal="true" aria-label="Final result"><div class="eyebrow">Final · week of ' + shortDate(w.ws) + '</div><div class="pop">' + (win ? avatarHTML(win, 'lg') : '<div class="medal lg">🤝</div>') + '</div><h2>' + line + '</h2>' + (owes ? '<p><b>' + esc(owes) + '</b></p>' : '') + recapTableHTML(w.ws, win ? [win, otherPid(win)] : PIDS) + '<p class="muted">' + (win ? 'Late entries are in and the result is final. A new week is already running.' : 'Nobody gets bragging rights. Settle it this week.') + '</p><div class="row" style="width:100%"><button type="button" class="primary" data-a="ov-close">On to this week</button></div></div>';
   },
   after: o => { if (o.week.winner) burst({ pid: o.week.winner, kind: 'flags', y: 0.5, count: 140 }); }
 };
@@ -2119,7 +2256,7 @@ function renderTrain() {
   else if (n && n.kind === 'strength') why = 'Partial lift, not counted. ' + DAYS[nextK].name + ' is still next.';
   else if (isLift && kind !== nextK) why += ' You picked ' + DAYS[kind].name + '.';
 
-  let h = '<section class="card sess">' + dateHead('Logging for') +
+  let h = trainTopHTML() + '<section class="card sess">' + dateHead('Logging for') +
     '<div class="seg" id="kindSeg" aria-label="Workout type">' + ROTATION.map(k => '<button type="button" data-kind="' + k + '" class="' + (kind === k ? 'on' : '') + '" aria-pressed="' + (kind === k) + '">' + DAYS[k].name + '</button>').join('') +
     '<button type="button" data-kind="cardio" class="' + (kind === 'cardio' ? 'on' : '') + '" aria-pressed="' + (kind === 'cardio') + '">Treadmill</button><button type="button" data-kind="rest" class="' + (kind === 'rest' ? 'on' : '') + '" aria-pressed="' + (kind === 'rest') + '">Rest</button></div>' +
     '<div class="status"><span id="statusLine">' + esc(statusText(date)) + '</span><span>·</span><span>Phase ' + phase + '</span>' + healthButton() + '</div>' +
@@ -2170,6 +2307,62 @@ function extrasHTML(date) {
     '<p class="tiny muted">' + (n && n.program ? 'Saved on the same day as your ' + (n.kind === 'strength' ? 'lift' : 'treadmill entry') + '. The minutes count; the day is already an activity day.' : 'On a day with no lift or treadmill, ' + mm + ' minutes of anything makes it an activity day.') + '</p></section>';
   return h;
 }
+/* ---------- Progression after Phase 3: deload weeks, stalled lifts, the goal nudge ---------- */
+// What sits above the lifting log: the deload offer (or the reminder that one is on), a swap whose four weeks are up,
+// and the goal nudge. Each is a choice saved to settings or the profile by its button, never by drawing it.
+function trainTopHTML() {
+  const st = deloadState(), sb = state.settings.swapBack || {}, sw = state.settings.swaps || {}, t = todayIso(); let h = '';
+  if (st === 'on') h += '<div class="banner good" id="deloadBanner"><span><b>Deload week is on.</b> 2 sets per lift at about 90% weight. Recovery week, same points.</span><div class="row"><button type="button" class="small" data-a="deload-off">End the deload early</button></div></div>';
+  else if (st === 'offer') h += '<div class="banner accent" id="deloadBanner"><span><b>Deload week:</b> 2 sets per lift at about 90% weight. Recovery week, same points.</span><span class="tiny muted">You have finished ' + completedWeeks(t) + ' full lift weeks. A lighter week now lets the next five go heavier. Lift days still count as lift days.</span><div class="row"><button type="button" class="small" data-a="deload-take">Take it</button><button type="button" class="small" data-a="deload-skip">Skip</button></div></div>';
+  Object.keys(sb).forEach(base => { const x = sb[base]; if (!x || !EX[base] || !EX[x.to] || !EX[x.from] || !validIso(x.until) || t < x.until || (sw[base] || base) !== x.to) return;
+    h += '<div class="banner" data-swapback="' + base + '"><span><b>Four weeks on ' + esc(EX[x.to].name) + '.</b> Switch back to ' + esc(EX[x.from].name) + '?</span><div class="row"><button type="button" class="small" data-a="swapback-yes" data-base="' + base + '">Switch back</button><button type="button" class="small" data-a="swapback-no" data-base="' + base + '">Keep ' + esc(EX[x.to].name) + '</button></div></div>'; });
+  return h + nudgeHTML(me());
+}
+function nudgeHTML(pid) {
+  const n = goalNudge(pid); if (!n) return '';
+  return '<section class="card stack" id="nudgeCard"><p><b>Three full weeks in a row.</b> Raise your goal to ' + n.to + ' days starting Monday?</p><div class="row"><button type="button" class="small" data-a="nudge-yes">Raise it</button><button type="button" class="quiet" data-a="nudge-no">Not now</button></div>' +
+    '<p class="tiny muted">This week stays at ' + n.from + '. A raised goal locks in next Monday, like any goal change.</p></section>';
+}
+// where a stalled slot can go for four weeks: another alternate that is free in every phase, else back to its planned exercise
+const stallSwapTarget = p => { const taken = defaultSwapTaken(p.base); return alts(p.base).concat(p.key !== p.base ? [p.base] : []).find(k => k !== p.key && (k === p.base || !taken[k])) || null; };
+function stallHTML(p, date) {
+  const key = p.key, st = stallFor(key, date); if (!st) return '';
+  const unit = ' lb' + (EX[key].per ? ' each' : ''), to = stallSwapTarget(p);
+  return '<div class="stall" data-stall="' + key + '"><div class="row between" style="flex-wrap:nowrap"><b>Stuck at ' + st.w + unit + ' for 3 sessions</b><button type="button" class="quiet" data-a="stall-x" data-key="' + key + '">Dismiss</button></div>' +
+    '<div class="row"><button type="button" class="small" data-a="stall-reset" data-key="' + key + '">Reset: drop 10% and build back</button>' + (to ? '<button type="button" class="small" data-a="stall-swap" data-key="' + key + '" data-base="' + p.base + '">Swap for 4 weeks</button>' : '') + '</div>' +
+    '<span class="tiny muted">Reset makes the next suggestion ' + st.to + unit + '.' + (to ? ' Swap uses ' + esc(EX[to].name) + ' for 4 weeks, then asks about switching back.' : ' Its alternates are already in that day\'s workout, so there is nothing to swap to.') + '</span></div>';
+}
+ACT['deload-take'] = () => { const t = todayIso(), cw = completedWeeks(t); return saveSettings({ deload: { ws: weekStart(t), cw }, deloadAsked: cw }); };
+ACT['deload-skip'] = () => saveSettings({ deloadAsked: completedWeeks(todayIso()) });
+ACT['deload-off'] = () => saveSettings({ deload: null });
+ACT['stall-x'] = el => { const key = el.dataset.key, st = stallFor(key, state.selDate); if (!st) return; return saveSettings({ stallSeen: Object.assign({}, state.settings.stallSeen, { [key]: st.last }) }); };
+ACT['stall-reset'] = async el => {
+  const key = el.dataset.key, st = stallFor(key, state.selDate); if (!st) return;
+  await saveSettings({ resets: Object.assign({}, state.settings.resets, { [key]: { w: st.to, from: st.w, at: state.selDate } }) });
+  toast('Reset: ' + EX[key].name + ' is suggested at ' + st.to + ' lb next. Build back from there.', 3600);
+};
+ACT['stall-swap'] = async el => {
+  const key = el.dataset.key, base = el.dataset.base, date = state.selDate, m = model(date), st = stallFor(key, date);
+  const p = plannedFor(date, kindFor(date, m), m).find(x => x.base === base && x.key === key), to = p && stallSwapTarget(p); if (!st || !to) return;
+  const sw = Object.assign({}, state.settings.swaps); if (to === base) delete sw[base]; else sw[base] = to;
+  const back = Object.assign({}, state.settings.swapBack); back[base] = { from: key, to, since: todayIso(), until: addDays(todayIso(), 28) };
+  const d = state.drafts[date]; if (d && d.swaps[base] != null) { delete d.swaps[base]; persistDrafts(); } // this workout follows the new default too
+  await saveSettings({ swaps: sw, swapBack: back, stallSeen: Object.assign({}, state.settings.stallSeen, { [key]: st.last }) });
+  toast(EX[to].name + ' replaces ' + EX[key].name + ' for 4 weeks. You will be asked about switching back on ' + nice(back[base].until) + '.', 4200);
+};
+ACT['swapback-yes'] = el => {
+  const base = el.dataset.base, x = (state.settings.swapBack || {})[base]; if (!x) return;
+  const sw = Object.assign({}, state.settings.swaps), back = Object.assign({}, state.settings.swapBack);
+  if (x.from === base) delete sw[base]; else sw[base] = x.from; delete back[base];
+  return saveSettings({ swaps: sw, swapBack: back });
+};
+ACT['swapback-no'] = el => { const back = Object.assign({}, state.settings.swapBack); delete back[el.dataset.base]; return saveSettings({ swapBack: back }); };
+ACT['nudge-yes'] = async () => {
+  const pid = me(), n = goalNudge(pid); if (!n) return;
+  if (n.plan === 'program') await saveSettings({ goal: n.to }); else if (!(await saveProfile(pid, { move: { goalDays: n.to } }))) return;
+  settle(); render(); toast('Goal raised to ' + n.to + ' days. ' + startsNote() + '; this week stays at ' + n.from + '.', 4200);
+};
+ACT['nudge-no'] = async () => { if (await saveProfile(me(), { goalNudge: { until: addDays(todayIso(), 21) } })) { render(); toast('Okay. It will ask again in 3 weeks.'); } };
 function exSummary(key, e, nSets) {
   const ex = EX[key];
   const loggedN = e.reps.filter(r => r !== '' && r != null).length;
@@ -2188,12 +2381,13 @@ function renderExercise(p, m, date) {
     h += '<div class="collapsed-sum"><span data-sum="' + key + '">' + (sm.line ? '<b>' + esc(sm.line) + '</b> · ' + sm.loggedN + '/' + nSets + ' logged' : 'Nothing logged') + '</span><button type="button" class="quiet" data-expand="' + key + '">Expand</button></div></section>';
     return h;
   }
-  const rx = ex.sets + ' sets · ' + ex.lo + '–' + ex.hi + ' reps' + (ex.bw ? ' · bodyweight' : ex.per ? ' · lb per hand' : '');
+  const rx = (sg.deload ? 2 : ex.sets) + ' sets · ' + ex.lo + '–' + ex.hi + ' reps' + (ex.bw ? ' · bodyweight' : ex.per ? ' · lb per hand' : '') + (sg.deload ? ' · deload' : sg.reset ? ' · reset' : '');
   const useHidden = ex.bw || String(e.w) === String(sg.w);
   h += '<div class="exrx"><span>' + esc(rx) + '</span>' + (ex.bw ? '' : '<button type="button" class="small" data-usew="' + key + '" data-val="' + sg.w + '"' + (useHidden ? ' hidden' : '') + '>Use ' + sg.w + ' lb</button>') + '</div>';
   const qf = quickFills(key, e, nSets, sg);
   if (sg.last) h += '<div class="exlast" data-last="' + key + '"><span>Last · ' + nice(sg.last.date) + ': <b>' + esc((sg.last.w != null ? fmtW(key, sg.last.w) + ' × ' : '') + fmtReps(sg.last.reps)) + '</b></span><button type="button" class="small" data-same="' + key + '"' + (qf.same ? '' : ' hidden') + '>Same as last time</button></div>';
   if (maxed) h += '<div class="exhold" data-hold="' + key + '">Holding weight · progress by reps, then a 4th set</div>';
+  h += stallHTML(p, date);
   h += '<div class="logrow">';
   if (!ex.bw) h += '<label class="f w">Weight (lb)<input type="number" inputmode="decimal" min="0" step="2.5" id="w-' + key + '" data-field="w" data-ex="' + key + '" value="' + esc(e.w) + '" placeholder="–"></label>';
   for (let i = 0; i < nSets; i++) h += '<label class="f">Set ' + (i + 1) + '<input type="number" inputmode="numeric" pattern="[0-9]*" min="0" step="1" id="r-' + key + '-' + i + '" data-field="rep" data-ex="' + key + '" data-i="' + i + '" value="' + esc(e.reps[i] == null ? '' : e.reps[i]) + '" placeholder="–"></label>';
@@ -2281,7 +2475,7 @@ function actGridHTML(pid) { // the activity menu: filters and the grid, shared b
     '<div class="chips">' + chip(f.quick, 'filter-quick', '', '10 min or less') + chip(f.fav, 'filter-fav', '', 'Favorites') + '</div>' +
     '<div class="acts">' + list.map(k => {
       const a = ACTS[k], caution = actCaution(pid, k), fav = P(pid).favorites.includes(k);
-      return '<button type="button" class="act' + (fav ? ' fav' : '') + '" data-a="act" data-k="' + k + '"><span class="ai" aria-hidden="true">' + a.icon + '</span><span class="an">' + esc(a.name) + '</span><span class="am">' + a.min + ' min · ' + (a.mv === false ? 'recovery' : IMPACT[a.impact]) + '</span>' + (caution.length ? '<span class="aw">Go easy: ' + caution.map(x => AREAS[x].toLowerCase()).join(', ') + '</span>' : '') + '</button>';
+      return '<button type="button" class="act' + (fav ? ' fav' : '') + '" data-a="act" data-k="' + k + '"><span class="ai" aria-hidden="true">' + a.icon + '</span><span class="an">' + esc(a.name) + '</span><span class="am">' + a.min + ' min · ' + (a.mv === false ? 'recovery' : IMPACT[a.impact]) + '</span>' + (caution.length ? '<span class="aw">Go easy: ' + caution.map(x => AREAS[x].toLowerCase()).join(', ') + '</span>' : '') + (painFlag(pid, k) ? '<span class="aw" data-pain="' + k + '">Pain noted ' + painCount(pid, k) + '× recently</span>' : '') + '</button>';
     }).join('') + '</div>' + (list.length ? '' : '<p class="muted tiny">Nothing matches those filters.</p>');
 }
 function renderMove() {
@@ -2292,7 +2486,7 @@ function renderMove() {
   if (rest) status = 'Rest day logged';
   else if (program) status = progText + (acts.length ? ' + ' + n.actMin + ' min of activities' : '') + ' · counts as an active day';
   else if (acts.length) status = n.allMin + ' min logged · ' + (di.active ? 'counts as an active day' : (mm - di.minutes) + ' more min of movement to count');
-  let h = '<section class="card sess">' + dateHead('Logging for') + '<div class="status"><span id="statusLine">' + esc(status) + '</span>' + healthButton() + '</div>' + hkLineHTML(date) + '</section>';
+  let h = nudgeHTML(pid) + '<section class="card sess">' + dateHead('Logging for') + '<div class="status"><span id="statusLine">' + esc(status) + '</span>' + healthButton() + '</div>' + hkLineHTML(date) + '</section>';
   if (acts.length || rest || program) {
     h += '<section class="card"><div class="row between"><h3>Logged ' + (rel(date) === nice(date) ? nice(date) : rel(date).toLowerCase()) + '</h3>' + (rest ? '<span class="chip">rest</span>' : di.active ? '<span class="chip good">active day</span>' : '<span class="chip warn">' + di.minutes + ' of ' + mm + ' min</span>') + '</div><div class="done-list" style="margin-top:4px">';
     if (rest) h += '<button type="button" data-a="rest-undo"><span>🛌 Rest day</span><span class="muted">tap to remove</span></button>';
@@ -2327,6 +2521,7 @@ OV.act = {
     const a = ACTS[o.k], pid = me(), caution = actCaution(pid, o.k), fav = P(pid).favorites.includes(o.k), min = Number(o.min) || 0;
     let h = '<div class="ov" role="dialog" aria-modal="true" aria-label="Log ' + esc(a.name) + '">' + ovHead(a.icon + ' ' + esc(a.name), rel(o.date) + ' · ' + (a.mv === false ? 'recovery, does not count toward active minutes' : IMPACT[a.impact])) +
       '<p class="muted">' + esc(a.desc) + '</p>';
+    if (painFlag(pid, o.k)) h += '<div class="banner">You noted pain on this ' + painCount(pid, o.k) + ' times in the last ' + PAIN_DAYS + ' days. Rest it, shorten it or pick something else, and talk to your doctor or physical therapist if it keeps happening.</div>';
     if (caution.length) h += '<div class="banner">Loads an area you are protecting: ' + caution.map(x => AREAS[x].toLowerCase()).join(', ') + '. Keep it short and easy, or pick something else.</div>';
     if (o.k === 'other') h += '<label class="f">What did you do?<input type="text" data-ovf="name" value="' + esc(o.name || '') + '" placeholder="Name the activity" maxlength="40"></label>';
     h += '<div><div class="eyebrow">Minutes</div><div class="stepper" style="margin-top:4px"><button type="button" data-a="act-min" data-d="-5" aria-label="5 fewer minutes">−</button><input type="number" id="actMin" data-ovf="min" inputmode="numeric" pattern="[0-9]*" min="1" max="300" value="' + esc(o.min) + '" aria-label="Minutes"><button type="button" data-a="act-min" data-d="5" aria-label="5 more minutes">+</button></div></div>' +
@@ -2449,6 +2644,36 @@ ACT['rest-len'] = async el => { await saveSettings({ rest: Number(el.dataset.v) 
 ACT.protect = async el => { const cur = P(me()).move.protect || [], k = el.dataset.k; await saveProfile(me(), { move: { protect: cur.includes(k) ? cur.filter(x => x !== k) : cur.concat([k]) } }); render(); };
 
 /* ---------- History ---------- */
+// By exercise: weight over time (most reps for a bodyweight move), with deload sessions drawn hollow, and the best set.
+function liftTrendHTML(sel) {
+  const ex = EX[sel], rows = records().filter(r => r.n.ex[sel]);
+  const pts = rows.map(r => { const e = r.n.ex[sel], reps = e.reps.filter(x => x != null); return { d: r.date, v: ex.bw ? (reps.length ? Math.max.apply(null, reps) : null) : e.w, deload: !!r.rec.deload }; }).filter(p => isNum(p.v));
+  let best = null; // the heaviest weight, then the most reps at it (less assistance counts as heavier; bodyweight: the most reps)
+  rows.forEach(r => { const e = r.n.ex[sel]; e.reps.forEach(x => { if (x == null || (!ex.bw && e.w == null)) return; const w = ex.bw ? 0 : (ex.inc < 0 ? -e.w : e.w); if (!best || w > best.rank || (w === best.rank && x > best.reps)) best = { rank: w, w: e.w, reps: x, date: r.date }; }); });
+  let h = '';
+  if (pts.length >= 2) {
+    const W = 300, H = 64, pad = 7, vs = pts.map(p => p.v), mn = Math.min.apply(null, vs), mx = Math.max.apply(null, vs), span = (mx - mn) || 1;
+    const x = i => pad + (W - 2 * pad) * i / (pts.length - 1), y = v => pad + (H - 2 * pad) * (1 - (v - mn) / span);
+    h += '<svg class="spark trend" id="exTrend" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc(ex.name) + ': ' + (ex.bw ? 'best reps' : 'weight') + ' over ' + pts.length + ' sessions, from ' + pts[0].v + ' to ' + pts[pts.length - 1].v + '"><path d="' + pts.map((p, i) => (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(p.v).toFixed(1)).join(' ') + '"/>' +
+      pts.map((p, i) => '<circle class="' + (p.deload ? 'dl' : '') + '" cx="' + x(i).toFixed(1) + '" cy="' + y(p.v).toFixed(1) + '" r="' + (p.deload ? 3.5 : 2.5) + '"/>').join('') + '</svg>';
+  }
+  if (best) h += '<p class="tiny" id="exBest" style="margin-top:6px"><b>Best set:</b> ' + esc((ex.bw ? '' : fmtW(sel, best.w) + ' × ') + best.reps + (ex.bw ? ' reps' : '')) + ' <span class="muted">· ' + nice(best.date) + (pts.some(p => p.deload) ? ' · hollow dots are deload sessions' : '') + '</span></p>';
+  return h;
+}
+// "Something hurt" notes, so a pattern is visible: which activities, which areas they load, and what was written.
+function painCardHTML(pid) {
+  const pn = painNotes(pid); if (!pn.list.length && P(pid).plan !== 'choice') return '';
+  let h = '<section class="card stack" id="painCard"><div class="row between"><h3>Pain notes</h3><span class="chip' + (pn.list.length ? ' warn' : '') + '">' + pn.list.length + ' in the last ' + PAIN_DAYS + ' days</span></div>';
+  if (!pn.list.length) h += '<p class="tiny muted">Nothing noted. Tap "Something hurt" when you log an activity and the pattern shows up here.</p>';
+  else {
+    const acts = Object.keys(pn.byAct).map(k => pn.byAct[k]).sort((a, b) => b.n - a.n), areas = Object.keys(pn.byArea).sort((a, b) => pn.byArea[b] - pn.byArea[a]);
+    h += '<div id="painByAct"><div class="eyebrow">By activity</div><p>' + acts.map(a => esc(a.name) + ' <b>' + a.n + '×</b>').join(' · ') + '</p></div>' +
+      (areas.length ? '<div id="painByArea"><div class="eyebrow">By body area those activities load</div><p>' + areas.map(a => AREAS[a] + ' <b>' + pn.byArea[a] + '×</b>').join(' · ') + '</p></div>' : '') +
+      '<div class="tbl" id="painList"><table>' + pn.list.map(x => '<tr><td>' + esc(x.name) + (x.note ? '<br><span class="tiny muted">“' + esc(x.note) + '”</span>' : '') + '</td><td>' + nice(x.date) + '</td></tr>').join('') + '</table></div>' +
+      '<p class="tiny muted">An activity with two or more notes in ' + PAIN_DAYS + ' days is flagged in the menu, sorted lower, and skipped by Surprise me.</p>';
+  }
+  return h + '<p class="tiny muted">This is a log, not medical advice. With past injuries, or if pain is sharp, new, or keeps coming back, talk to your doctor or physical therapist before doing that activity again.</p></section>';
+}
 function renderHistory() {
   const pid = me(), list = records().filter(r => r.n.kind !== 'empty' || r.n.ambiguous).reverse();
   let h = '<section class="card"><div class="row between"><h2>History</h2><span class="chip">' + list.length + ' saved</span></div>';
@@ -2469,6 +2694,7 @@ function renderHistory() {
     if (n.keys.length) line.push(n.keys.length + ' exercise' + (n.keys.length === 1 ? '' : 's'));
     if (n.program && n.acts.length) line.push(n.actMin + ' min of activities');
     if (n.phase) line.push('Phase ' + n.phase);
+    if (r.rec.deload && n.kind === 'strength') line.push('deload');
     h += '<details class="hi" data-hdate="' + r.date + '"><summary><div class="hdate num">' + nice(r.date).replace(/^(\w+) /, '$1<br>') + '</div><div><b>' + esc(what) + '</b><div class="tiny muted">' + esc(line.join(' · ') || '—') + '</div></div>' + chip + '</summary><div class="hbody">';
     if (n.ambiguous) h += '<p class="tiny" style="color:var(--warn)">Saved as a lift day by the earlier version, but it has no lifting sets. Treated as ' + (n.kind === 'cardio' ? 'treadmill only' : 'no activity') + ' until you edit it.</p>';
     if (n.legacy && n.keys.length) h += '<p class="tiny muted">Saved by the earlier version: blank sets were stored as 0 and are shown as not logged.</p>';
@@ -2492,6 +2718,7 @@ function renderHistory() {
   });
   h += '</div></section>';
 
+  h += painCardHTML(pid);
   const used = Object.keys(EX).filter(k => records().some(r => r.n.ex[k]));
   if (used.length || P(pid).plan === 'program') {
     h += '<section class="card"><h3>By exercise</h3>';
@@ -2500,7 +2727,8 @@ function renderHistory() {
       const sel = used.includes(state.exHist) ? state.exHist : used[0];
       h += '<select id="exHist" style="margin-top:8px" aria-label="Exercise">' + used.map(k => '<option value="' + k + '"' + (k === sel ? ' selected' : '') + '>' + esc(EX[k].name) + '</option>').join('') + '</select>';
       const rows = records().filter(r => r.n.ex[sel]).reverse();
-      h += '<div class="tbl" style="margin-top:8px"><table>' + rows.map(r => '<tr><td>' + nice(r.date) + '</td><td>' + esc((r.n.ex[sel].w != null ? fmtW(sel, r.n.ex[sel].w) + ' × ' : '') + fmtReps(r.n.ex[sel].reps)) + '</td></tr>').join('') + '</table></div>';
+      h += liftTrendHTML(sel);
+      h += '<div class="tbl" style="margin-top:8px"><table>' + rows.map(r => '<tr><td>' + nice(r.date) + (r.rec.deload ? ' <span class="chip">deload</span>' : '') + '</td><td>' + esc((r.n.ex[sel].w != null ? fmtW(sel, r.n.ex[sel].w) + ' × ' : '') + fmtReps(r.n.ex[sel].reps)) + '</td></tr>').join('') + '</table></div>';
       h += '<p class="tiny muted" style="margin-top:6px">Target ' + EX[sel].sets + ' × ' + EX[sel].lo + '–' + EX[sel].hi + (EX[sel].per ? '. Weight is per hand.' : '.') + '</p>';
     }
     h += '</section>';
@@ -2537,9 +2765,12 @@ function renderFuel() {
     '<p class="tiny muted">' + (inRange ? '<span class="chip good">in range</span> ' : '') + 'A day counts for the competition between ' + commas(g.lo) + ' and ' + commas(g.hi) + ' calories. ' + (changed ? 'These are the targets locked for that week. Your new ones start ' + nice(nextMonday()).replace(/^\w+ /, 'Mon ') + '.' : live.kcalSrc === 'doctor' ? 'Target from your doctor.' : live.kcalSrc === 'estimate' ? 'Target estimated from your numbers.' : '') + '</p></section>';
   h += '<section class="card">';
   MEALS.forEach(m => {
-    const items = (day.items || []).filter(it => it.meal === m[0]), kc = sum(items, it => (it.n && it.n[0]) || 0);
-    h += '<div class="meal"><div class="mh"><h3>' + m[1] + (items.length ? ' <span class="muted num" style="font-weight:400;font-size:.875rem">' + commas(kc) + ' cal</span>' : '') + '</h3><button type="button" class="small" data-a="food-add" data-meal="' + m[0] + '" aria-label="Add food to ' + m[1] + '">+ Add</button></div>' +
-      items.map(it => '<button type="button" class="fooditem" data-a="food-item" data-id="' + esc(it.id) + '"><span class="fn">' + esc(it.name) + '</span><span class="fk">' + commas((it.n && it.n[0]) || 0) + '</span><span class="fq">' + esc(fmtQty(it.qty) + ' × ' + it.unit) + '</span></button>').join('') + '</div>';
+    const items = (day.items || []).filter(it => it.meal === m[0]), kc = sum(items, it => (it.n && it.n[0]) || 0), yest = mealItems(pid, addDays(date, -1), m[0]);
+    h += '<div class="meal" data-mealsec="' + m[0] + '"><div class="mh"><h3>' + m[1] + (items.length ? ' <span class="muted num" style="font-weight:400;font-size:.875rem">' + commas(kc) + ' cal</span>' : '') + '</h3><button type="button" class="small" data-a="food-add" data-meal="' + m[0] + '" aria-label="Add food to ' + m[1] + '">+ Add</button></div>' +
+      items.map(it => '<button type="button" class="fooditem" data-a="food-item" data-id="' + esc(it.id) + '"><span class="fn">' + esc(it.name) + '</span><span class="fk">' + commas((it.n && it.n[0]) || 0) + '</span><span class="fq">' + esc(fmtQty(it.qty) + ' × ' + it.unit) + '</span></button>').join('') +
+      // repeat meals in one tap: the same meal from the day before, or keep this one under a name
+      (yest.length || items.length ? '<div class="mealtools">' + (yest.length ? '<button type="button" class="quiet" data-a="meal-copy" data-meal="' + m[0] + '">' + (items.length ? 'Add yesterday\'s ' + m[1].toLowerCase() + ' again' : 'Copy from yesterday') + '</button>' : '') +
+        (items.length ? '<button type="button" class="quiet" data-a="meal-saveas" data-meal="' + m[0] + '">Save as a meal</button>' : '') + '</div>' : '') + '</div>';
   });
   h += '</section>';
   if (t.count) h += '<details class="card plain" data-dk="dayfacts"><summary>Nutrition facts for the whole day</summary><div style="margin-top:10px">' + factsHTML(t.n, 'Everything logged ' + (rel(date) === nice(date) ? nice(date) : rel(date).toLowerCase()) + ' · ' + t.count + ' item' + (t.count === 1 ? '' : 's')) + '</div></details>';
@@ -2568,7 +2799,10 @@ function fillFoodResults() {
   if (!q) {
     const rec = recentFoods(me()); o.results = rec;
     const hint = foodDb.state === 'loading' ? 'Loading the food list…' : foodDb.state === 'error' ? 'The food list could not load. Quick add and your own foods still work.' : 'Type to search ' + (foodDb.list ? commas(foodDb.list.length) : 'thousands of') + ' foods.';
-    box.innerHTML = '<p class="muted tiny" style="padding:6px 0">' + hint + '</p>' + (rec.length ? '<div class="eyebrow" style="padding:4px 0">Recent · tap to add again</div>' + rec.map((it, i) => row('food-again', i, it.name, it.n[0], fmtQty(it.qty) + ' × ' + it.unit)).join('') : '');
+    const meals = savedMeals(me());
+    box.innerHTML = '<p class="muted tiny" style="padding:6px 0">' + hint + '</p>' +
+      (meals.length ? '<div class="eyebrow" style="padding:4px 0">My meals · tap to add all of it</div><div id="myMeals">' + meals.map(ml => '<div class="mealrow" data-mealrow="' + esc(ml.id) + '"><button type="button" class="fooditem" data-a="meal-add" data-id="' + esc(ml.id) + '"><span class="fn">' + esc(ml.name || 'Meal') + '</span><span class="fk num">' + commas(itemsKcal(ml.items)) + '</span><span class="fq">' + ml.items.length + ' item' + (ml.items.length === 1 ? '' : 's') + '</span></button><button type="button" class="small" data-a="meal-edit" data-id="' + esc(ml.id) + '" aria-label="Rename or delete ' + esc(ml.name || 'meal') + '">Edit</button></div>').join('') + '</div>' : '') +
+      (rec.length ? '<div class="eyebrow" style="padding:4px 0">Recent · tap to add again</div>' + rec.map((it, i) => row('food-again', i, it.name, it.n[0], fmtQty(it.qty) + ' × ' + it.unit)).join('') : '');
     return;
   }
   const res = searchFoods(q, 40); o.results = res;
@@ -2584,6 +2818,57 @@ OV.food = {
     '<div class="row"><button type="button" class="small" data-a="food-quick">Quick add calories</button><button type="button" class="small" data-a="food-custom">Create a food</button></div>' +
     '<div id="foodRes" class="results" aria-live="polite"></div></div>',
   after: o => { const loaded = loadFoods(); fillFoodResults(); const q = $('#foodQ'); if (q && !o.keepBlur) q.focus({ preventScroll: true }); loaded.then(() => { if (state.ov && state.ov.type === 'food') fillFoodResults(); }); } // start the load first, so the hint says it is loading
+};
+/* ---------- Saved meals and "copy from yesterday": a whole meal in one save, celebrated once ---------- */
+const mealWord = (m, n, kcal) => n + ' item' + (n === 1 ? '' : 's') + ', ' + commas(kcal) + ' cal';
+ACT['meal-copy'] = async el => {
+  const pid = me(), date = state.selDate, meal = el.dataset.meal, src = mealItems(pid, addDays(date, -1), meal); if (!src.length) return;
+  const before = scoreSnapshot(), items = cloneItems(src, meal);
+  const ok = await addFoodItems(date, items); if (!ok) return;
+  render(); celebrate('Copied yesterday\'s ' + MEAL_NAME[meal].toLowerCase() + ': ' + mealWord(meal, items.length, itemsKcal(items)) + '.', { before, ms: 3400 });
+};
+const mealListHTML = items => '<div class="tbl"><table>' + items.map(it => '<tr><td>' + esc(it.name) + '<br><span class="tiny muted">' + esc(fmtQty(it.qty) + ' × ' + it.unit) + '</span></td><td>' + commas((it.n && it.n[0]) || 0) + ' cal</td></tr>').join('') + '</table></div>';
+OV.mealname = {
+  html: o => { const items = mealItems(me(), o.date, o.meal);
+    return '<div class="ov" role="dialog" aria-modal="true" aria-label="Save as a meal">' + ovHead('Save as a meal', MEAL_NAME[o.meal] + ' · ' + rel(o.date).toLowerCase() + ' · ' + mealWord(o.meal, items.length, itemsKcal(items))) +
+      '<label class="f">Name<input type="text" id="mealName" data-ovf="name" maxlength="40" value="' + esc(o.name || '') + '" placeholder="Usual breakfast"></label>' + mealListHTML(items) +
+      '<p class="tiny muted">Saved for you. It shows up under My meals when you add food, and one tap logs all of it.</p>' +
+      '<div class="row"><button type="button" class="primary" data-a="meal-save">Save meal</button><button type="button" class="small" data-a="ov-close">Cancel</button></div></div>'; }
+};
+ACT['meal-saveas'] = el => { const meal = el.dataset.meal; openOv({ type: 'mealname', meal, date: state.selDate, name: 'Usual ' + MEAL_NAME[meal].toLowerCase() }); };
+ACT['meal-save'] = async () => {
+  const o = state.ov, pid = me(), name = String(o.name || '').trim().slice(0, 40), src = mealItems(pid, o.date, o.meal);
+  if (!name) { toast('Give the meal a name.'); return; }
+  if (!src.length) { toast('That meal has nothing in it now.'); closeOv(); return; }
+  // the meal keeps its own copy of each item, with the nutrition it was logged with: later edits to a day or a food do not reach it
+  const items = src.map(it => ({ name: it.name, qty: it.qty, unit: it.unit, grams: it.grams == null ? null : it.grams, src: it.src || '', n: (it.n || []).slice() }));
+  const ok = await write(PATH.meal(pid, uid()), { v: 1, name, items, createdAt: new Date().toISOString() }); if (!ok) return;
+  closeOv(); render(); toast('Saved "' + name + '": ' + mealWord(o.meal, items.length, itemsKcal(items)) + '. Find it under My meals when you add food.', 3800);
+};
+ACT['meal-add'] = async el => {
+  const o = state.ov, pid = me(), ml = state.data[pid].meals[el.dataset.id]; if (!o || !ml || !Array.isArray(ml.items) || !ml.items.length) return;
+  const before = scoreSnapshot(), items = cloneItems(ml.items, o.meal);
+  const ok = await addFoodItems(o.date, items); if (!ok) return;
+  closeOv(); render(); celebrate('Added ' + (ml.name || 'meal') + ' to ' + MEAL_NAME[o.meal] + ': ' + mealWord(o.meal, items.length, itemsKcal(items)) + '.', { before, ms: 3400 });
+};
+OV.mealedit = {
+  html: o => { const ml = state.data[me()].meals[o.id] || { items: [] };
+    return '<div class="ov" role="dialog" aria-modal="true" aria-label="Edit saved meal">' + ovHead('Saved meal', mealWord('', ml.items.length, itemsKcal(ml.items))) +
+      '<label class="f">Name<input type="text" id="mealName" data-ovf="name" maxlength="40" value="' + esc(o.name || '') + '"></label>' + mealListHTML(ml.items) +
+      '<p class="tiny muted">Renaming or deleting a saved meal never changes days already logged.</p>' +
+      '<div class="row"><button type="button" class="primary" data-a="meal-rename">Save name</button><button type="button" class="small danger" data-a="meal-del">' + (o.confirmDel ? 'Tap again to delete it' : 'Delete meal') + '</button><button type="button" class="small" data-a="food-back">Back</button></div></div>'; }
+};
+ACT['meal-edit'] = el => { const o = state.ov, ml = state.data[me()].meals[el.dataset.id]; if (!ml) return; openOv({ type: 'mealedit', id: el.dataset.id, name: ml.name || '', back: { type: 'food', meal: o.meal, date: o.date, q: o.q, keepBlur: true } }); };
+ACT['meal-rename'] = async () => {
+  const o = state.ov, pid = me(), cur = state.data[pid].meals[o.id], name = String(o.name || '').trim().slice(0, 40); if (!cur) { ACT['food-back'](); return; }
+  if (!name) { toast('Give the meal a name.'); return; }
+  const ok = await write(PATH.meal(pid, o.id), Object.assign({}, cur, { name, updatedAt: new Date().toISOString() })); if (!ok) return;
+  ACT['food-back'](); toast('Renamed to "' + name + '".');
+};
+ACT['meal-del'] = async () => {
+  const o = state.ov; if (!o.confirmDel) { o.confirmDel = true; renderOv(); return; }
+  const ok = await write(PATH.meal(me(), o.id), null); if (!ok) return;
+  ACT['food-back'](); toast('Meal deleted. Days already logged are unchanged.', 3200);
 };
 ACT['food-pick'] = el => {
   const o = state.ov, f = o.results && o.results[Number(el.dataset.i)]; if (!f) return;
@@ -2736,12 +3021,24 @@ OV.health = {
   html: o => '<div class="ov" role="dialog" aria-modal="true" aria-label="Import from Apple Health">' + ovHead('Import from Health', 'Into ' + esc(P(me()).name) + '\'s log') +
     '<p class="muted">Run your <b>Laps Health</b> shortcut on this iPhone, then tap the box and choose <b>Paste</b>.</p>' +
     '<textarea id="hkText" data-ovf="text" rows="6" placeholder="Paste here" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Text copied by the shortcut">' + esc(o.text || '') + '</textarea>' +
+    '<div class="row"><button type="button" class="small" id="hkPaste" data-a="hk-paste">Paste from clipboard</button><span class="tiny muted">or tap the box and choose Paste</span></div>' +
     '<div id="hkPreview" class="stack" aria-live="polite"></div>' +
     '<div class="row"><button type="button" class="primary" id="hkGo" data-a="hk-import" disabled>Import</button></div>' +
     '<details class="plain" id="hkHelp"><summary>Set up the shortcut, once per iPhone</summary><div style="margin-top:8px">' + shortcutStepsHTML() + '</div></details></div>',
   after: () => refreshHealthPreview()
 };
 ACT.health = () => openOv({ type: 'health', text: '', use: {} });
+// One tap instead of tap, hold, Paste. The page runs inside claude.ai, where reading the clipboard may be blocked:
+// when it is refused or missing, the box still works exactly as before.
+ACT['hk-paste'] = async () => {
+  const o = state.ov, box = $('#hkText'), manual = () => { toast('Tap the box and choose Paste instead.', 3400); if (box) box.focus(); };
+  let text;
+  try { if (!navigator.clipboard || typeof navigator.clipboard.readText !== 'function') { manual(); return; } text = await navigator.clipboard.readText(); }
+  catch (e) { manual(); return; }
+  if (state.ov !== o) return; // the sheet was closed while the phone asked for permission
+  if (!String(text || '').trim()) { toast('The clipboard is empty. Run the shortcut first, then try again.', 3400); return; }
+  o.text = text; const live = $('#hkText'); if (live) live.value = text; refreshHealthPreview();
+};
 ACT['hk-toggle'] = el => { const o = state.ov, k = el.dataset.k; o.use[k] = o.use[k] === false; refreshHealthPreview(); };
 ACT['hk-import'] = async () => {
   const o = state.ov, pid = me(), parsed = parseHealthPaste(o.text), plan = healthPlan(pid, parsed, state.selDate);
@@ -2791,17 +3088,33 @@ function countdownText(cd, banked) {
   const d = cd.days, when = d > 1 ? d + ' days to ' + cd.phrase : d === 1 ? '1 day to ' + cd.phrase : d === 0 ? 'Today: ' + cd.phrase : cd.phrase.charAt(0).toUpperCase() + cd.phrase.slice(1) + ' was ' + (-d) + ' day' + (d === -1 ? '' : 's') + ' ago';
   return when + (banked != null ? ' · ' + banked + ' team week' + (banked === 1 ? '' : 's') : '');
 }
+// last week's highlights for both of you, from the same day facts the score and History use
+function recapTableHTML(ws, order) {
+  const r = order.map(p => weekRecap(p, ws)), cell = (k, i, v) => '<b class="num" data-r="' + k + ':' + order[i] + '">' + v + '</b>';
+  const row = (label, k, f) => '<span class="muted">' + label + '</span>' + cell(k, 0, f(r[0])) + cell(k, 1, f(r[1]));
+  return '<div class="recap" data-recap="' + ws + '"><span></span>' + order.map(p => '<b>' + esc(P(p).name) + '</b>').join('') +
+    row('Active days', 'active', x => x.active) + row('Minutes', 'minutes', x => x.minutes) +
+    row('Best weight increase', 'best', x => x.best ? '+' + x.best.up + ' lb<br><span class="tiny muted">' + esc(x.best.name) + '</span>' : '–') +
+    row('Days in calorie range', 'cal', x => x.calDays) + row('Days water goal met', 'water', x => x.waterDays) +
+    row('Badges earned', 'badges', x => x.badges.length ? x.badges.map(b => '<span title="' + esc(b.name) + '">' + b.icon + '</span>').join(' ') : '–') + '</div>';
+}
+function recapCardHTML(pid) {
+  const w = lastWeek(); if (!w) return '';
+  const hi = Math.max(w.tyson, w.jacquie), lo = Math.min(w.tyson, w.jacquie), head = w.final ? (w.winner ? P(w.winner).name + ' won ' + hi + '–' + lo : 'Tied at ' + w.tyson) : (w.winner ? P(w.winner).name + ' leads ' + hi + '–' + lo : 'Tied at ' + w.tyson), owes = w.final ? stakesLine(w) : '';
+  return '<section class="card stack" id="recapCard"><div class="row between"><div><div class="eyebrow">Last week · ' + shortDate(w.ws) + ' to ' + shortDate(addDays(w.ws, 6)) + '</div><h3 id="recapHead">' + esc(head) + '</h3></div><span class="chip ' + (w.final ? 'good' : 'warn') + '" id="recapState">' + (w.final ? 'Final' : 'Provisional') + '</span></div>' +
+    (w.final ? (owes ? '<p class="tiny">' + esc(owes) + '</p>' : '') : '<p class="tiny muted" id="provLine">' + esc(provisionalText(w)) + '. The winner is announced once it is final, on Wednesday.</p>') +
+    recapTableHTML(w.ws, [pid, otherPid(pid)]) + '</section>';
+}
 function renderCompete() {
   const pid = me(), other = otherPid(pid), t = todayIso(), ws = weekStart(t), A = weekScore(pid, ws), B = weekScore(other, ws), c = coach(pid), pa = P(pid), pb = P(other), ga = thisWeek(pid);
   const diff = A.total - B.total, left = c.daysLeft, stakes = stakesFor(ws), all = compWeeks(), prev = all[all.length - 1];
   const lead = diff === 0 ? (A.total === 0 ? 'Green flag. First points take the lead.' : 'Dead heat.') : diff > 0 ? 'You lead by ' + diff + '.' : pb.name + ' leads by ' + (-diff) + '.';
   const lane = (p, sc) => '<div class="lane" style="' + avStyle(p) + ';--p:' + (clamp(sc.total, 0, 100) / 100).toFixed(3) + '" role="img" aria-label="' + esc(P(p).name) + ': ' + sc.total + ' of 100 points"><div class="fill"></div><div class="car">' + avatarHTML(p) + '</div></div>';
-  let h = '<section class="card stack"><div class="row between"><div><div class="eyebrow">Week of ' + shortDate(ws) + '</div><h2>' + (left === 0 ? 'Final day' : left + ' day' + (left === 1 ? '' : 's') + ' left') + '</h2></div><span class="chip">resets Monday</span></div>' +
+  let h = recapCardHTML(pid) + '<section class="card stack"><div class="row between"><div><div class="eyebrow">Week of ' + shortDate(ws) + '</div><h2>' + (left === 0 ? 'Final day' : left + ' day' + (left === 1 ? '' : 's') + ' left') + '</h2></div><span class="chip">resets Monday</span></div>' +
     '<div class="vs"><div class="side">' + avatarHTML(pid, 'lg') + '<b>' + esc(pa.name) + '</b><span class="pts" id="myPts">' + A.total + '</span></div><div class="mid">VS</div><div class="side">' + avatarHTML(other, 'lg') + '<b>' + esc(pb.name) + '</b><span class="pts" id="theirPts">' + B.total + '</span></div></div>' +
     '<div class="race">' + lane(pid, A) + lane(other, B) + '</div>' +
     '<p id="leadLine"><b>' + esc(lead) + '</b> <span class="muted">Out of 100. Each of you is scored against your own goals.</span></p>';
   // last week stays open for late entries through Tuesday: until then its result is only provisional, and says so quietly
-  if (prev && !prev.final && prev.played) h += '<p class="tiny muted" id="provLine">Last week · ' + esc(provisionalText(prev)) + '. The winner is announced once it is final.</p>';
   if (state.forms.stakes) h += '<div class="row" style="flex-wrap:nowrap"><input type="text" id="stakesIn" data-form="stakes" data-k="text" maxlength="80" value="' + esc(state.forms.stakes.text || '') + '" placeholder="Loser cooks Sunday dinner" aria-label="What is on the line this week"><button type="button" class="small" data-a="stakes-save">Save</button></div>';
   else h += stakes ? '<p class="tiny" id="stakesLine">On the line this week: <b>' + esc(stakes) + '</b> <button type="button" class="quiet" data-a="stakes-edit">Change</button></p>' : '<div id="stakesLine"><button type="button" class="quiet" data-a="stakes-edit">Add what\'s on the line this week</button></div>';
   h += '</section>';
@@ -2846,12 +3159,16 @@ function renderCompete() {
     '<li>Scores are worked out from the saved logs, so editing an entry updates the race and nothing counts twice.</li>' +
     '<li>A finished week stays open through Tuesday for anything you forgot to log. Until then its result is provisional. On Wednesday it is final, the winner is announced, and nothing can rewrite it.</li></ul></details>';
 
+  const owed = ious(), unpaid = p => owed.filter(x => !x.paid && x.loser === p).length;
   const weeks = all.filter(w => w.played).slice().reverse(), finals = weeks.filter(w => w.final), wins = p => finals.filter(w => w.winner === p).length, ties = finals.filter(w => !w.winner).length;
   h += '<section class="card stack" id="seasonCard"><div class="row between"><h3>Season</h3><span class="num">' + esc(pa.name) + ' <b>' + wins(pid) + '</b> – <b>' + wins(other) + '</b> ' + esc(pb.name) + (ties ? ' · ' + ties + ' tied' : '') + '</span></div>' +
+    // what is still owed from closed weeks. Either of you can mark one paid; the mark lives at iou/<monday>, never in the result
+    (owed.length ? '<p class="tiny" id="iouCount">' + esc(pa.name) + ' owes <b>' + unpaid(pid) + '</b> · ' + esc(pb.name) + ' owes <b>' + unpaid(other) + '</b></p><div class="ious" id="iouList">' + owed.map(x => '<div class="iou' + (x.paid ? ' paid' : '') + '" data-iou="' + x.ws + '"><span><b>' + esc(P(x.loser).name) + ' owes:</b> ' + esc(x.stakes) + '<br><span class="tiny muted">Week of ' + shortDate(x.ws) + ' · ' + esc(P(x.winner).name) + ' won</span></span><button type="button" class="small' + (x.paid ? ' on' : '') + '" data-a="iou-toggle" data-ws="' + x.ws + '" aria-pressed="' + x.paid + '">' + (x.paid ? 'Paid ✓' : 'Paid') + '</button></div>').join('') + '</div>' : '') +
     (weeks.length ? '<div class="weeks">' + weeks.slice(0, 10).map(w => { const sl = stakesLine(w); return '<div class="wk" data-wk="' + w.ws + '"><span>Week of ' + shortDate(w.ws) + (w.final ? (isTeamWeek(w.ws) ? ' <span class="chip good">team week</span>' : '') : ' <span class="chip">provisional · open through Tue</span>') + (sl ? '<br><span class="tiny muted">' + esc(sl) + '</span>' : '') + '</span><span class="num">' + (w.final ? (w.winner ? '<b>' + esc(P(w.winner).name) + '</b> ' : 'Tie ') : '') + w[pid] + '–' + w[other] + '</span></div>'; }).join('') + '</div>' : '<p class="muted tiny">The first result posts once a week has finished.</p>') +
     '<p class="tiny muted">Wins count once a week is final.</p></section>';
   return h;
 }
+ACT['iou-toggle'] = async el => { const ws = el.dataset.ws; if (!validIso(ws)) return; await write('iou/' + ws, { ws, paid: !iouPaid(ws), at: new Date().toISOString(), by: me() }); render(); };
 ACT['stakes-edit'] = () => { state.forms.stakes = { text: stakesFor(weekStart(todayIso())) }; render('#stakesIn'); };
 ACT['stakes-save'] = async () => {
   const text = String((state.forms.stakes || {}).text || '').trim().slice(0, 80), cur = weekStart(todayIso()), c = state.comp;
@@ -2956,6 +3273,11 @@ function renderMe() {
   h += '<section class="card stack" id="healthCard"><h3>Apple Health and Apple Watch</h3><p class="tiny muted">A web page cannot read Apple Health directly. A one-tap shortcut on your iPhone copies the day\'s Exercise Minutes, steps, active calories, water and weight, and you paste them in.</p>' +
     '<div class="row"><button type="button" class="small" data-a="health">Import from Health</button></div>' +
     '<details class="plain" data-dk="hksteps"><summary>Set up the shortcut, once per iPhone</summary><div style="margin-top:8px">' + shortcutStepsHTML() + '</div></details></section>';
+  const rf = state.forms.rem || {};
+  h += '<section class="card stack" id="remCard"><h3>Reminders</h3><p class="tiny muted">A web page cannot send notifications, but your iPhone can: three Shortcuts automations do it. The times you pick here are only used to fill in the steps below. Your phone does the reminding, so the automations are where the times really live.</p>' +
+    '<div class="formgrid"><label class="f">Weekday mornings<input type="time" data-form="rem" data-k="morning" value="' + esc('morning' in rf ? rf.morning : p.reminders.morning) + '"></label><label class="f">Afternoon water check<input type="time" data-form="rem" data-k="water" value="' + esc('water' in rf ? rf.water : p.reminders.water) + '"></label></div>' +
+    '<div class="row"><button type="button" class="small" data-a="rem-save">Save my times</button><span class="tiny muted">Sunday\'s reminder is at 7:00 PM.</span></div>' +
+    '<details class="plain" data-dk="remsteps"><summary>Set up the three reminders, once per iPhone</summary><div style="margin-top:8px" id="remSteps">' + reminderStepsHTML(pid) + '</div></details></section>';
   h += '<section class="card stack"><h3>Workout style</h3>' + seg('plan-set', 'plan', p.plan, { program: 'Lifting program', choice: 'Pick-your-own' }) +
     '<p class="tiny muted">' + (p.plan === 'program' ? 'Push, Pull, Legs rotation with weight suggestions. Weekly goal: ' + live.goal + ' activity days, ' + LIFT_GOAL + ' of them lifts. Walks and other activities can be added on any day.' : 'Choose from a gentle menu each day. Weekly goal: ' + live.goal + ' active days of ' + live.minMin + ' minutes or more. Adjust it under Train, Plan.') + ' Switching keeps everything already logged.</p>' +
     (live.plan !== wk.plan ? '<p class="tiny locknote" id="planLock"><span class="chip accent">' + mon + '</span> for scoring. Your Train tab switches now, but this week is still scored as ' + (wk.plan === 'program' ? 'the lifting program' : 'pick-your-own') + ', so the race already running does not change.</p>' : '') + '</section>';
@@ -2975,6 +3297,27 @@ ACT['name-save'] = async () => {
   typing = false;
   const ok = await saveProfile(me(), { name }); if (!ok) return; // a refused save keeps what was typed
   delete state.forms.name; render(); toast('Saved');
+};
+const APP_URL = 'https://claude.ai/artifact/WpxQrh73Td3TuyfYKvHaMr'; // this page's own link, for the "Open URLs" step (the page cannot read it from inside its frame)
+const CLOCK = /^([01]\d|2[0-3]):[0-5]\d$/;
+const fmtClock = v => { const m = CLOCK.exec(String(v || '')); if (!m) return ''; const h = Number(v.slice(0, 2)); return ((h + 11) % 12 + 1) + ':' + v.slice(3) + (h < 12 ? ' AM' : ' PM'); };
+// Three Personal Automations, written out with this person's own times.
+function reminderStepsHTML(pid) {
+  const r = P(pid).reminders, at = v => '<b>' + (fmtClock(v) || fmtClock('06:00')) + '</b>';
+  const common = 'Choose <b>Run Immediately</b> and turn <b>Notify When Run</b> off, then tap <b>Next</b> and <b>New Blank Automation</b>.';
+  return '<ol class="steps">' +
+    '<li>On your iPhone open the <b>Shortcuts</b> app and tap <b>Automation</b> at the bottom. You will make three, each starting with <b>+</b> (or <b>New Automation</b>) and <b>Time of Day</b>.</li>' +
+    '<li data-rem="morning"><b>Weekday mornings.</b> Set the time to ' + at(r.morning) + '. Under Repeat choose <b>Weekly</b> and tick Monday through Friday. ' + common + ' Add the action <b>Open URLs</b> and paste this link into it:<pre class="code">' + APP_URL + '</pre>Tap <b>Done</b>. Morning Laps opens by itself at that time.</li>' +
+    '<li data-rem="water"><b>Afternoon water check.</b> New automation, <b>Time of Day</b>, ' + at(r.water) + ', Repeat <b>Daily</b>. ' + common + ' Add the action <b>Show Notification</b> and type:<pre class="code">Water check: open Morning Laps and log a bottle.</pre>Tap <b>Done</b>.</li>' +
+    '<li data-rem="sunday"><b>Sunday evening.</b> New automation, <b>Time of Day</b>, <b>7:00 PM</b>, Repeat <b>Weekly</b> with only Sunday ticked. ' + common + ' Add <b>Show Notification</b> and type:<pre class="code">Last day of the week: see how to win it in Morning Laps.</pre>Tap <b>Done</b>.</li>' +
+    '<li>Each of you does this once on your own iPhone, with your own times. To change a time later, change it in the Shortcuts app; changing it here only rewrites these steps.</li></ol>' +
+    '<p class="tiny muted">If an automation asks before running, open it and switch <b>Run Immediately</b> on. Notifications from Shortcuts also need to be allowed under Settings, Notifications, Shortcuts.</p>';
+}
+ACT['rem-save'] = async () => {
+  const p = P(me()), f = state.forms.rem || {}, morning = 'morning' in f ? f.morning : p.reminders.morning, water = 'water' in f ? f.water : p.reminders.water;
+  if (!CLOCK.test(morning) || !CLOCK.test(water)) { toast('Pick both times.'); return; }
+  const ok = await saveProfile(me(), { reminders: { morning, water } }); if (!ok) return; // a refused save keeps what was picked
+  delete state.forms.rem; render(); toast('Steps updated: ' + fmtClock(morning) + ' on weekdays, water check at ' + fmtClock(water) + '.', 3400);
 };
 ACT['gym-save'] = async () => {
   const place = String((state.forms.gym || {}).place == null ? (P(me()).place || '') : state.forms.gym.place).trim().slice(0, 40);
@@ -3155,7 +3498,7 @@ main.addEventListener('focusout', e => {
 // one click handler for every data-a action, in the page and in overlays
 // Actions that save one thing per tap. A second tap while the first is still saving is dropped, so a slow
 // connection cannot log the same food or activity twice. Water is left out on purpose: tapping it twice means two glasses.
-const ONE_AT_A_TIME = ['act-log', 'act-del', 'rest', 'food-save', 'food-again', 'food-del', 'quick-save', 'custom-save', 'custom-del', 'hk-import', 'hk-off', 'body-save', 'weigh-save', 'name-save', 'gym-save', 'stakes-save', 'cd-save', 'cd-clear'];
+const ONE_AT_A_TIME = ['act-log', 'act-del', 'rest', 'food-save', 'food-again', 'food-del', 'quick-save', 'custom-save', 'custom-del', 'hk-import', 'hk-off', 'body-save', 'weigh-save', 'name-save', 'gym-save', 'stakes-save', 'cd-save', 'cd-clear', 'meal-copy', 'meal-save', 'meal-add', 'meal-rename', 'meal-del', 'hk-paste', 'iou-toggle', 'rem-save', 'nudge-yes', 'nudge-no', 'stall-reset', 'stall-swap', 'deload-take'];
 const busy = {};
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-a]'); if (!el || el.disabled) return;
@@ -3273,7 +3616,8 @@ function route() {
   if (changed && !jump) window.scrollTo(0, 0);
 }
 window.MorningLaps = { state, P, weekScore, coach, goalsFor, badgesFor, searchFoods, loadFoods, dayTotals, compWeeks, parseHealthPaste, foodCount: () => foodDb.list ? foodDb.list.length : 0,
-  EX, DAYS, normalize, dayInfo, weekFacts, scoreFacts, weekGoals, liveGoals, fuelParts, plannedFor, planSlots, swapOptions, defaultSwapOption, alts, teamStats, stakesFor, phaseFor, restT };
+  EX, DAYS, normalize, dayInfo, weekFacts, scoreFacts, weekGoals, liveGoals, fuelParts, plannedFor, planSlots, swapOptions, defaultSwapOption, alts, teamStats, stakesFor, phaseFor, restT,
+  suggest, stallFor, deloadOn, deloadState, completedWeeks, easier, weekRecap, lastWeek, ious, goalNudge, painNotes, painFlag, actList, surpriseActivity, savedMeals, mealItems };
 (function boot() {
   const saved = lsGet('ml.me', null);
   state.pid = PIDS.includes(saved) ? saved : null;

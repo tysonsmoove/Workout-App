@@ -78,6 +78,21 @@ Badges are derived from the logs and recorded on the profile the day they are ea
 - **Rest timer** (`src/55-rest.js`). Logging a set for today starts a countdown (60, 90 or 120 seconds for main lifts, set on the Program tab; 60 for core and bodyweight). It is its own element outside `#main` and never calls `render()`.
 - **Gym.** `profile.place`, edited on Me, shown in the header and the morning plan.
 
+## Additions that do not touch scoring (version 13)
+
+None of these changes how points are scored. Weekly targets, scoring versions and stored results are read, never altered.
+
+- **Saved meals and "Copy from yesterday"** (`src/70-ui-fuel.js`). A meal section offers the same meal from the day before, and "Save as a meal" keeps its items under a name at `profiles/<pid>/meals/<id>`. Add food lists "My meals" above Recent; one tap adds every item. Copies get new ids and keep the nutrition they were logged with; the whole meal is one write and one `celebrate()`.
+- **Stalled lifts** (`stallFor`). Three normal sessions at one weight, none earning an increase, show "Stuck at … for 3 sessions" on the exercise: Reset (the next suggestion is about 90%, rounded to the exercise's step, `settings.resets`), Swap for 4 weeks (a default swap plus `settings.swapBack`, with an offer to switch back when the four weeks are up), or Dismiss (`settings.stallSeen`, hidden until three later sessions stall). Not for bodyweight moves or lifts marked "Can't go higher".
+- **Deload weeks** (`deloadState`, `deloadOn`). After every 5 completed lift weeks the Train screen offers one: 2 sets per lift at about 90%. Sessions are saved with `deload: true`; `lastLog`, `suggest` and the stall check read past them, so the week after picks up from the last normal session. A deload set counts 4.5 minutes instead of 3, so a recovery week with the same lift days has the same minutes and the same points.
+- **History, By exercise**: a trend line of weight over time with deload sessions drawn hollow, and the best set.
+- **Reminders** (Me). Setup steps for three iOS Shortcuts automations, filled in with the times each person picks (`profile.reminders`). The times are only used for the instructions; the phone does the reminding.
+- **Paste from clipboard** in the Health import sheet. Uses `navigator.clipboard.readText()`; when that is refused or missing it says to paste by hand and the box works as before.
+- **Last week's recap** (Compete, and the final-result announcement): active days, minutes, best weight increase, days in calorie range, days the water goal was met, badges earned. Provisional until the week is final.
+- **IOUs** (Season). Every closed week with stakes and a winner, with a Paid toggle stored at `iou/<monday>`.
+- **Goal nudge** (`goalNudge`). After three finished weeks in a row with a full Move score at the current goal, Train offers one more day (never past 7, or 6 on the lifting program). "Raise it" changes the setting, which locks next Monday like any goal change; "Not now" hides the card for 3 weeks (`profile.goalNudge`).
+- **Pain notes** (`painNotes`). History counts "Something hurt" notes from the last 30 days by activity and by the body areas each activity loads. Two or more on one activity flag it in the menu, sort it last and keep Surprise me away from it.
+
 ## Apple Health and Apple Watch
 
 A web page cannot read Apple Health. A Shortcut on the iPhone copies the day's Exercise Minutes, steps, active calories, water and weight as text, and the user pastes it into the app. The steps to build the Shortcut are in `docs/apple-health-shortcut.md` and inside the app under Me. Imports are idempotent: Exercise Minutes become one entry holding only the minutes not already logged by hand.
@@ -96,6 +111,8 @@ One path-addressed document store, backed by the artifact database when signed i
 | `profiles/<pid>/settings/program` | Lifting settings for a non-Tyson profile |
 | `foods/<id>` | Custom foods, shared |
 | `results/<monday>` | Final weekly results: scores, winner, stakes, team week. Written once, never changed |
+| `iou/<monday>` | Whether what was on the line that week has been paid. Kept apart from `results/`, which is never modified |
+| `profiles/<pid>/meals/<id>` | A person's saved meals: a name and a copy of the items |
 | `profiles/<pid>/weekgoals/<monday>` | One snapshot of a person's targets for a week (see "Targets lock per week") |
 | `comp/settings` | Competition start week, stakes per week (`stakesBy`), the shared countdown |
 | `data/users/<id>/prefs` | Private to one signed-in person: which profile they use and the last weekly result shown (both per kind of device), badges already celebrated |
@@ -119,4 +136,5 @@ node tests/app.test.js   # profiles, looks, pick-your-own, nutrition, competitio
 node tests/review.test.js # review regressions: writes before the log loads, old-day drafts, double taps, day rollover, season tally, coach gains, calorie floor, plural food search, lead changes, a dead connection (50 checks)
 node tests/account.test.js # account memory: profile choice, weekly result and badges shown once, unsaved drafts, on a phone that empties its storage (29 checks)
 node tests/v12.test.js     # version 12: swaps, weekly locks, provisional/final results, Watch top-up, combined days, gym, stakes, custom foods, team, set shortcuts, rest timer, protein scoring, smoke of every tab (135 checks)
+node tests/v13.test.js     # version 13: saved meals, stalled lifts, deload weeks, reminders, clipboard paste, weekly recap, IOUs, goal nudge, pain notes, smoke of every tab (99 checks)
 ```

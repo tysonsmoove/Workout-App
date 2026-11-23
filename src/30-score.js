@@ -287,3 +287,37 @@ function badgesFor(pid) { // earned = true now, or recorded on the profile earli
   const s = statsFor(pid), p = P(pid), kept = p.badges;
   return BADGES.filter(b => !b.plan || b.plan === p.plan || kept[b.id]).map(b => { const live = !!b.has(s), earned = live || !!kept[b.id]; return { id: b.id, icon: b.icon, name: b.name, desc: b.desc, earned, live, since: kept[b.id] || null, prog: !earned && b.prog ? b.prog(s) : '' }; });
 }
+
+/* ---------- Last week's recap, IOUs, and the goal nudge (none of these changes a score) ---------- */
+// One person's highlights for a week, read from the same day facts the score and History use.
+function weekRecap(pid, ws) {
+  return cached('recap:' + pid + ':' + ws, () => {
+    const f = weekFacts(pid, ws), sc = scoreFacts(f), we = addDays(ws, 6), kept = P(pid).badges, recs = recordsOf(pid);
+    let best = null; // the biggest step up on any lift, against the last normal session of that exercise before it
+    recs.forEach((r, idx) => { if (r.date < ws || r.date > we || r.rec.deload) return; Object.keys(r.n.ex).forEach(k => {
+      const e = r.n.ex[k], ex = EX[k]; if (!ex || ex.bw || e.w == null) return;
+      let prev = null; for (let j = idx - 1; j >= 0 && prev == null; j--) { const q = recs[j]; if (!q.rec.deload && q.n.ex[k] && q.n.ex[k].w != null) prev = q.n.ex[k].w; }
+      if (prev == null) return; const up = ex.inc < 0 ? prev - e.w : e.w - prev;
+      if (up > 0 && (!best || up > best.up)) best = { k, up, w: e.w, name: ex.name }; }); });
+    const badges = BADGES.filter(b => typeof kept[b.id] === 'string' && kept[b.id] >= ws && kept[b.id] <= we).map(b => ({ id: b.id, icon: b.icon, name: b.name }));
+    return { ws, active: sc.active, lifts: sc.lifts, minutes: sc.minutes, best, calDays: f.days.filter(d => d.cal >= 1).length, waterDays: f.days.filter(d => d.water >= 1).length, badges, total: sc.total, plan: f.plan };
+  });
+}
+// the week the recap is about: the one that ended last Sunday, while it is part of the race
+function lastWeek() { const prev = addDays(weekStart(todayIso()), -7); return compWeeks().find(w => w.ws === prev && w.played) || null; }
+// What is still owed: every closed week that had stakes and a winner. Paid marks live at iou/<monday>; results never change.
+const iouPaid = ws => !!(state.iou[ws] && state.iou[ws].paid);
+function ious() {
+  return compWeeks().filter(w => w.final && w.winner && w.stakes).map(w => ({ ws: w.ws, winner: w.winner, loser: otherPid(w.winner), stakes: w.stakes, paid: iouPaid(w.ws) })).reverse();
+}
+// After three finished weeks in a row with a full Move score at the current goal: offer one more day, never past
+// 7 (6 on the lifting program). Null while a change is already waiting for Monday, or while "Not now" is still counting down.
+function goalNudge(pid) {
+  return cached('nudge:' + pid, () => {
+    const live = liveGoals(pid), wk = thisWeek(pid), cap = live.plan === 'program' ? 6 : 7, t = todayIso(), cur = weekStart(t), sn = P(pid).goalNudge;
+    if (live.goal >= cap || live.goal !== wk.goal || live.plan !== wk.plan) return null;
+    if (sn && validIso(sn.until) && t < sn.until) return null;
+    for (let i = 1; i <= 3; i++) { const ws = addDays(cur, -7 * i), g = weekGoals(pid, ws); if (g.plan !== live.plan || g.goal < live.goal || !weekScore(pid, ws).moveFull) return null; }
+    return { from: live.goal, to: live.goal + 1, plan: live.plan };
+  });
+}

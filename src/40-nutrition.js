@@ -74,6 +74,18 @@ async function addFoodItem(date, item) {
   const path = PATH.food(me(), date), cur = getDoc(path) || { v: 1, date, items: [], water: 0 };
   return write(path, Object.assign({}, cur, { items: (cur.items || []).concat([item]), updatedAt: new Date().toISOString() }));
 }
+// several items in one save: a copied or saved meal lands as one write, and is celebrated once
+async function addFoodItems(date, items) {
+  const path = PATH.food(me(), date), cur = getDoc(path) || { v: 1, date, items: [], water: 0 };
+  return write(path, Object.assign({}, cur, { items: (cur.items || []).concat(items), updatedAt: new Date().toISOString() }));
+}
+const mealItems = (pid, date, meal) => (foodDay(pid, date).items || []).filter(it => it && it.meal === meal);
+const itemsKcal = items => Math.round(sum(items, it => it && it.n && isNum(it.n[0]) ? it.n[0] : 0));
+// copies of logged items for another day or meal: new ids, the nutrition they were logged with
+const cloneItems = (items, meal) => items.map((it, i) => Object.assign({}, it, { id: uid() + i.toString(36), meal, n: (it.n || []).slice() }));
+// a person's saved meals, newest first
+const savedMeals = pid => Object.keys(state.data[pid].meals).map(id => Object.assign({}, state.data[pid].meals[id], { id }))
+  .filter(m => Array.isArray(m.items) && m.items.length).sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
 async function changeFoodItem(date, id, next) { // next = replacement item, or null to remove
   const path = PATH.food(me(), date), cur = getDoc(path); if (!cur) return false;
   const items = (cur.items || []).map(it => it.id === id ? next : it).filter(Boolean);

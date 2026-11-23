@@ -73,6 +73,11 @@ function renderMe() {
   h += '<section class="card stack" id="healthCard"><h3>Apple Health and Apple Watch</h3><p class="tiny muted">A web page cannot read Apple Health directly. A one-tap shortcut on your iPhone copies the day\'s Exercise Minutes, steps, active calories, water and weight, and you paste them in.</p>' +
     '<div class="row"><button type="button" class="small" data-a="health">Import from Health</button></div>' +
     '<details class="plain" data-dk="hksteps"><summary>Set up the shortcut, once per iPhone</summary><div style="margin-top:8px">' + shortcutStepsHTML() + '</div></details></section>';
+  const rf = state.forms.rem || {};
+  h += '<section class="card stack" id="remCard"><h3>Reminders</h3><p class="tiny muted">A web page cannot send notifications, but your iPhone can: three Shortcuts automations do it. The times you pick here are only used to fill in the steps below. Your phone does the reminding, so the automations are where the times really live.</p>' +
+    '<div class="formgrid"><label class="f">Weekday mornings<input type="time" data-form="rem" data-k="morning" value="' + esc('morning' in rf ? rf.morning : p.reminders.morning) + '"></label><label class="f">Afternoon water check<input type="time" data-form="rem" data-k="water" value="' + esc('water' in rf ? rf.water : p.reminders.water) + '"></label></div>' +
+    '<div class="row"><button type="button" class="small" data-a="rem-save">Save my times</button><span class="tiny muted">Sunday\'s reminder is at 7:00 PM.</span></div>' +
+    '<details class="plain" data-dk="remsteps"><summary>Set up the three reminders, once per iPhone</summary><div style="margin-top:8px" id="remSteps">' + reminderStepsHTML(pid) + '</div></details></section>';
   h += '<section class="card stack"><h3>Workout style</h3>' + seg('plan-set', 'plan', p.plan, { program: 'Lifting program', choice: 'Pick-your-own' }) +
     '<p class="tiny muted">' + (p.plan === 'program' ? 'Push, Pull, Legs rotation with weight suggestions. Weekly goal: ' + live.goal + ' activity days, ' + LIFT_GOAL + ' of them lifts. Walks and other activities can be added on any day.' : 'Choose from a gentle menu each day. Weekly goal: ' + live.goal + ' active days of ' + live.minMin + ' minutes or more. Adjust it under Train, Plan.') + ' Switching keeps everything already logged.</p>' +
     (live.plan !== wk.plan ? '<p class="tiny locknote" id="planLock"><span class="chip accent">' + mon + '</span> for scoring. Your Train tab switches now, but this week is still scored as ' + (wk.plan === 'program' ? 'the lifting program' : 'pick-your-own') + ', so the race already running does not change.</p>' : '') + '</section>';
@@ -92,6 +97,27 @@ ACT['name-save'] = async () => {
   typing = false;
   const ok = await saveProfile(me(), { name }); if (!ok) return; // a refused save keeps what was typed
   delete state.forms.name; render(); toast('Saved');
+};
+const APP_URL = 'https://claude.ai/artifact/WpxQrh73Td3TuyfYKvHaMr'; // this page's own link, for the "Open URLs" step (the page cannot read it from inside its frame)
+const CLOCK = /^([01]\d|2[0-3]):[0-5]\d$/;
+const fmtClock = v => { const m = CLOCK.exec(String(v || '')); if (!m) return ''; const h = Number(v.slice(0, 2)); return ((h + 11) % 12 + 1) + ':' + v.slice(3) + (h < 12 ? ' AM' : ' PM'); };
+// Three Personal Automations, written out with this person's own times.
+function reminderStepsHTML(pid) {
+  const r = P(pid).reminders, at = v => '<b>' + (fmtClock(v) || fmtClock('06:00')) + '</b>';
+  const common = 'Choose <b>Run Immediately</b> and turn <b>Notify When Run</b> off, then tap <b>Next</b> and <b>New Blank Automation</b>.';
+  return '<ol class="steps">' +
+    '<li>On your iPhone open the <b>Shortcuts</b> app and tap <b>Automation</b> at the bottom. You will make three, each starting with <b>+</b> (or <b>New Automation</b>) and <b>Time of Day</b>.</li>' +
+    '<li data-rem="morning"><b>Weekday mornings.</b> Set the time to ' + at(r.morning) + '. Under Repeat choose <b>Weekly</b> and tick Monday through Friday. ' + common + ' Add the action <b>Open URLs</b> and paste this link into it:<pre class="code">' + APP_URL + '</pre>Tap <b>Done</b>. Morning Laps opens by itself at that time.</li>' +
+    '<li data-rem="water"><b>Afternoon water check.</b> New automation, <b>Time of Day</b>, ' + at(r.water) + ', Repeat <b>Daily</b>. ' + common + ' Add the action <b>Show Notification</b> and type:<pre class="code">Water check: open Morning Laps and log a bottle.</pre>Tap <b>Done</b>.</li>' +
+    '<li data-rem="sunday"><b>Sunday evening.</b> New automation, <b>Time of Day</b>, <b>7:00 PM</b>, Repeat <b>Weekly</b> with only Sunday ticked. ' + common + ' Add <b>Show Notification</b> and type:<pre class="code">Last day of the week: see how to win it in Morning Laps.</pre>Tap <b>Done</b>.</li>' +
+    '<li>Each of you does this once on your own iPhone, with your own times. To change a time later, change it in the Shortcuts app; changing it here only rewrites these steps.</li></ol>' +
+    '<p class="tiny muted">If an automation asks before running, open it and switch <b>Run Immediately</b> on. Notifications from Shortcuts also need to be allowed under Settings, Notifications, Shortcuts.</p>';
+}
+ACT['rem-save'] = async () => {
+  const p = P(me()), f = state.forms.rem || {}, morning = 'morning' in f ? f.morning : p.reminders.morning, water = 'water' in f ? f.water : p.reminders.water;
+  if (!CLOCK.test(morning) || !CLOCK.test(water)) { toast('Pick both times.'); return; }
+  const ok = await saveProfile(me(), { reminders: { morning, water } }); if (!ok) return; // a refused save keeps what was picked
+  delete state.forms.rem; render(); toast('Steps updated: ' + fmtClock(morning) + ' on weekdays, water check at ' + fmtClock(water) + '.', 3400);
 };
 ACT['gym-save'] = async () => {
   const place = String((state.forms.gym || {}).place == null ? (P(me()).place || '') : state.forms.gym.place).trim().slice(0, 40);

@@ -92,15 +92,18 @@ function announce() {
   checkBadges(pid).slice(0, 3).forEach(b => queueOv({ type: 'badge', pid, badge: b }));
   const weeks = compWeeks(), finals = weeks.filter(w => w.final && w.played), last = weeks[weeks.length - 1];
   let seen = prefGet('ml.seenFinalWeek', null);
-  if (seen == null) { // first run with final-result tracking: what the old announcement already showed, or anything already final, is old news
-    const old = prefGet('ml.seenWeek', null);
-    // a week the old code announced while it was still open gets its real announcement once it is final
-    seen = typeof old === 'string' && validIso(old) ? (finalResult(old) ? old : addDays(old, -7)) : finals.length ? finals[finals.length - 1].ws : '';
+  if (seen == null) { // first run with final-result tracking on this phone
+    const old = prefGet('ml.seenWeek', null), lastWs = addDays(weekStart(todayIso()), -7), older = finals.filter(w => w.ws < lastWs);
+    // What the old announcement already showed is old news; a week it announced while still open gets its real
+    // announcement once final. A phone with no memory at all treats only the week that just ended as news, whether
+    // that week was closed before or after this phone picked its profile.
+    seen = typeof old === 'string' && validIso(old) ? (finalResult(old) ? old : addDays(old, -7)) : older.length ? older[older.length - 1].ws : '';
     prefSet('ml.seenFinalWeek', seen);
   }
   const fresh = finals.filter(w => w.ws > seen).slice(-2);
   if (fresh.length) { prefSet('ml.seenFinalWeek', fresh[fresh.length - 1].ws); fresh.forEach(w => queueOv({ type: 'weekwin', week: w })); }
-  if (last && !last.final && last.played && String(prefGet('ml.seenWeek', '')) < last.ws) { prefSet('ml.seenWeek', last.ws); toast(provisionalText(last), 5200); }
+  // only while late entries still count: from Wednesday the week is about to be closed and announced for real
+  if (last && !last.final && last.played && todayIso() < addDays(last.ws, 7 + GRACE_DAYS) && String(prefGet('ml.seenWeek', '')) < last.ws) { prefSet('ml.seenWeek', last.ws); toast(provisionalText(last), 5200); }
 }
 // With no profile on this device the page waits for the account to say which one this person uses, and asks only
 // when the account does not know either (or cannot be reached).
@@ -148,7 +151,7 @@ OV.weekwin = {
   html: o => {
     const w = o.week, win = w.winner, owes = stakesLine(w);
     const line = win ? esc(P(win).name) + ' wins, ' + Math.max(w.tyson, w.jacquie) + ' to ' + Math.min(w.tyson, w.jacquie) : 'Dead heat at ' + w.tyson;
-    return '<div class="ov" role="dialog" aria-modal="true" aria-label="Final result"><div class="eyebrow">Final · week of ' + shortDate(w.ws) + '</div><div class="pop">' + (win ? avatarHTML(win, 'lg') : '<div class="medal lg">🤝</div>') + '</div><h2>' + line + '</h2>' + (owes ? '<p><b>' + esc(owes) + '</b></p>' : '') + '<p class="muted">' + (win ? 'Late entries are in and the result is final. A new week is already running.' : 'Nobody gets bragging rights. Settle it this week.') + '</p><div class="row" style="width:100%"><button type="button" class="primary" data-a="ov-close">On to this week</button></div></div>';
+    return '<div class="ov" role="dialog" aria-modal="true" aria-label="Final result"><div class="eyebrow">Final · week of ' + shortDate(w.ws) + '</div><div class="pop">' + (win ? avatarHTML(win, 'lg') : '<div class="medal lg">🤝</div>') + '</div><h2>' + line + '</h2>' + (owes ? '<p><b>' + esc(owes) + '</b></p>' : '') + recapTableHTML(w.ws, win ? [win, otherPid(win)] : PIDS) + '<p class="muted">' + (win ? 'Late entries are in and the result is final. A new week is already running.' : 'Nobody gets bragging rights. Settle it this week.') + '</p><div class="row" style="width:100%"><button type="button" class="primary" data-a="ov-close">On to this week</button></div></div>';
   },
   after: o => { if (o.week.winner) burst({ pid: o.week.winner, kind: 'flags', y: 0.5, count: 140 }); }
 };
