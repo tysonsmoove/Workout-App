@@ -1,7 +1,7 @@
 /* ---------- Pick-your-own activities: a gentle menu, logged by minutes ---------- */
 // impact: 1 very gentle, 2 gentle. stress: body areas the activity loads, matched against a profile's "go easy on" list.
 // mv:false marks recovery sessions: they log and show in history but do not count toward active-day minutes.
-const ACT_CATS = [['walk', 'Walks'], ['mobility', 'Stretch'], ['cardio', 'Easy cardio'], ['strength', 'Light strength'], ['mind', 'Mind & body'], ['life', 'Everyday']];
+const ACT_CATS = [['healthplex', 'Healthplex'], ['walk', 'Walks'], ['mobility', 'Stretch'], ['cardio', 'Easy cardio'], ['strength', 'Light strength'], ['mind', 'Mind & body'], ['life', 'Everyday']];
 const IMPACT = { 1: 'very gentle', 2: 'gentle', 3: 'moderate' };
 const AREAS = { knee: 'Knees', back: 'Back', shoulder: 'Shoulders', hip: 'Hips', ankle: 'Ankles & feet', wrist: 'Wrists', neck: 'Neck' };
 const ACTS = {
@@ -39,8 +39,39 @@ const ACTS = {
   clean:      { name: 'House cleaning', cat: 'life', icon: '🧽', min: 20, impact: 2, stress: ['back'], desc: 'Vacuuming, mopping, scrubbing. It all counts as movement.' },
   stairs:     { name: 'Take the stairs', cat: 'life', icon: '🪜', min: 5, impact: 2, stress: ['knee'], desc: 'A few flights at an easy pace. Use the handrail.' },
   outing:     { name: 'Active outing', cat: 'life', icon: '🎈', min: 30, impact: 2, stress: [], desc: 'The zoo, a museum, a long shopping trip, a lap around the Speedway grounds.' },
-  other:      { name: 'Something else', cat: 'life', icon: '✏️', min: 15, impact: 2, stress: [], desc: 'Name it and log the minutes.' }
+  other:      { name: 'Something else', cat: 'life', icon: '✏️', min: 15, impact: 2, stress: [], desc: 'Name it and log the minutes.' },
+  // Indianapolis Healthplex, 3660 Guion Rd. Shown only to a profile whose gym is the Healthplex (see atHealthplex).
+  // wm: which workout-mode screen guides it. cls: a group class: optional, never suggested, never needed for a goal or badge.
+  // heat: a recovery room: logs as recovery, capped at `max` minutes.
+  hptrack:    { name: 'Track walk', cat: 'healthplex', icon: '🏟️', min: 15, impact: 1, stress: [], wm: 'laps', desc: 'The indoor track is 1/8 mile, so 8 laps make a mile. Easy pace. Log laps or minutes.' },
+  hprun:      { name: 'Track run/walk intervals', cat: 'healthplex', icon: '🏃', min: 15, impact: 3, stress: ['knee', 'ankle', 'hip'], wm: 'laps', desc: 'Run 1 lap, walk 1 lap, repeat. 8 laps make a mile. Stop running if a joint complains and walk it in.' },
+  hpswim:     { name: 'Lap swim, easy', cat: 'healthplex', icon: '🏊', min: 20, impact: 1, stress: ['shoulder'], wm: 'lengths', desc: 'The 6-lane lap pool is 25 yards and about 80°F. Easy lengths, rest at the wall as often as you like.' },
+  hppool:     { name: 'Therapy pool walk', cat: 'healthplex', icon: '🌊', min: 15, impact: 1, stress: [], wm: 'timer', desc: 'Warm water, about 90°F, and very gentle. Walk slow widths of the therapy pool. It counts as movement.' },
+  hpbike:     { name: 'Recumbent bike, easy', cat: 'healthplex', icon: '🚲', min: 15, impact: 1, stress: [], wm: 'timer', desc: 'On the cardio floor. The seat supports your back. Light resistance, steady pedaling.' },
+  hpcircuit:  { name: 'Light machine circuit', cat: 'healthplex', icon: '🏢', min: 15, impact: 2, stress: ['shoulder'], wm: 'circuit', desc: 'Leg press, seated row, chest press, lat pulldown. One or two easy sets of 10 to 12 on each, a weight you could lift 15 times.' },
+  hpbball:    { name: 'Basketball shoot-around', cat: 'healthplex', icon: '🏀', min: 15, impact: 2, stress: ['ankle', 'knee'], wm: 'timer', desc: 'Free throws and easy jump shots on the full court. No games, no sprints.' },
+  hpcourt:    { name: 'Pickleball, racquetball or tennis together', cat: 'healthplex', icon: '🎾', min: 30, impact: 3, stress: ['knee', 'ankle', 'shoulder'], wm: 'timer', desc: 'Pickleball gear is at the basketball court; there are tennis courts and one racquetball court. Each of you logs it on your own profile.' },
+  hpbodypump: { name: 'BodyPump class', cat: 'healthplex', icon: '🏋️', min: 45, impact: 3, stress: ['shoulder', 'back', 'knee'], wm: 'timer', cls: true, desc: 'A barbell class set to music. Start with the lightest plates.' },
+  hpcycle:    { name: 'Indoor cycling class', cat: 'healthplex', icon: '🚴', min: 45, impact: 3, stress: ['knee', 'back'], wm: 'timer', cls: true, desc: 'A group ride. You set your own resistance, so it is as hard as you make it.' },
+  hphiit:     { name: 'HIIT class', cat: 'healthplex', icon: '⚡', min: 30, impact: 3, stress: ['knee', 'ankle', 'back'], wm: 'timer', cls: true, desc: 'Short hard efforts with rests. Take the low-impact option whenever one is offered.' },
+  hpzumba:    { name: 'Zumba class', cat: 'healthplex', icon: '💃', min: 45, impact: 3, stress: ['knee', 'ankle'], wm: 'timer', cls: true, desc: 'Dance fitness. Keep the jumps out and it stays gentle.' },
+  hpyoga:     { name: 'Yoga class', cat: 'healthplex', icon: '🧘', min: 45, impact: 2, stress: ['wrist', 'knee'], wm: 'timer', cls: true, desc: 'Skip or change any pose that loads a sore joint.' },
+  hppilates:  { name: 'Pilates class', cat: 'healthplex', icon: '🤸', min: 45, impact: 2, stress: ['neck', 'wrist'], wm: 'timer', cls: true, desc: 'A mat class for the core. Support your head with a hand if your neck tires.' },
+  hpaqua:     { name: 'Aquatic fitness class', cat: 'healthplex', icon: '💦', min: 45, impact: 1, stress: ['shoulder'], wm: 'timer', cls: true, desc: 'Exercise in the pool. The water takes weight off the joints.' },
+  hpreformer: { name: 'Pilates Reformer', cat: 'healthplex', icon: '🛏️', min: 50, impact: 2, stress: ['neck', 'wrist'], wm: 'timer', cls: true, fee: true, desc: 'A specialty class on the reformer machine, booked and paid for separately.' },
+  hpsauna:    { name: 'Dry sauna', cat: 'healthplex', icon: '🔥', min: 10, max: 20, impact: 1, stress: [], mv: false, heat: true, wm: 'heat', desc: 'In the locker room. Towels are provided. Logs as recovery.' },
+  hpsteam:    { name: 'Steam room', cat: 'healthplex', icon: '♨️', min: 10, max: 20, impact: 1, stress: [], mv: false, heat: true, wm: 'heat', desc: 'In the locker room. Towels are provided. Logs as recovery.' },
+  hpwhirl:    { name: 'Whirlpool', cat: 'healthplex', icon: '🛁', min: 10, max: 20, impact: 1, stress: [], mv: false, heat: true, wm: 'heat', desc: 'In the locker room. Towels are provided. Logs as recovery.' }
 };
+const CLASS_TAG = 'Optional · may cost extra, check your membership.', FEE_TAG = 'Specialty class · extra fee.';
+const classTag = a => a.fee ? FEE_TAG : a.cls ? CLASS_TAG : '';
+const HEAT_NOTE = 'Keep it to 10–15 minutes, drink water after, and get out if you feel dizzy or unwell. Skip it after drinking alcohol.';
+const HEAT_KEYS = ['hpsauna', 'hpsteam', 'hpwhirl'];
+const TRACK_LAPS = 8, POOL_YARDS = 25, BOTTLE_OZ = 16.9; // 8 laps of the indoor track make a mile; one pool length is 25 yards
+const lapMiles = laps => Math.round(laps / TRACK_LAPS * 100) / 100;
+const milesText = laps => (laps / TRACK_LAPS).toFixed(laps % 4 === 0 ? 1 : 2) + ' mi';
+const atHealthplex = pid => /healthplex/i.test(P(pid).place || '');
+const HEALTHPLEX = 'Indianapolis Healthplex';
 const FEELS = { easy: 'Easy', good: 'Just right', tough: 'Tough' };
 
 function actCaution(pid, key) { // areas on the profile's go-easy list that this activity loads
@@ -48,19 +79,21 @@ function actCaution(pid, key) { // areas on the profile's go-easy list that this
   return a ? a.stress.filter(x => protect.includes(x)) : [];
 }
 function actList(pid, filter) {
-  const p = P(pid), favs = p.favorites, order = ACT_CATS.map(c => c[0]);
+  const p = P(pid), favs = p.favorites, order = ACT_CATS.map(c => c[0]), hp = atHealthplex(pid);
   return Object.keys(ACTS).filter(k => {
     const a = ACTS[k];
+    if (a.cat === 'healthplex' && !hp) return false; // only for a profile whose gym is the Healthplex
     if (filter.cat !== 'all' && a.cat !== filter.cat) return false;
     if (filter.quick && a.min > 10) return false;
     if (filter.fav && !favs.includes(k)) return false;
     return true;
-  }).map((k, i) => ({ k, i, fav: favs.includes(k), caution: actCaution(pid, k).length, pain: painFlag(pid, k) ? 1 : 0 }))
-    .sort((x, y) => (x.pain - y.pain) || (y.fav - x.fav) || (x.caution - y.caution) || (order.indexOf(ACTS[x.k].cat) - order.indexOf(ACTS[y.k].cat)) || (ACTS[x.k].impact - ACTS[y.k].impact) || (x.i - y.i))
+  }).map((k, i) => ({ k, i, fav: favs.includes(k), caution: actCaution(pid, k).length, pain: painFlag(pid, k) ? 1 : 0, cls: ACTS[k].cls ? 1 : 0 }))
+    .sort((x, y) => (x.pain - y.pain) || (y.fav - x.fav) || (x.cls - y.cls) || (x.caution - y.caution) || (order.indexOf(ACTS[x.k].cat) - order.indexOf(ACTS[y.k].cat)) || (ACTS[x.k].impact - ACTS[y.k].impact) || (x.i - y.i))
     .map(x => x.k);
 }
 function surpriseActivity(pid) {
-  const pool = Object.keys(ACTS).filter(k => k !== 'other' && ACTS[k].mv !== false && !actCaution(pid, k).length && !painFlag(pid, k)); // never something that has hurt twice lately
+  const hp = atHealthplex(pid); // classes are never picked for anyone, and Healthplex activities only for a member
+  const pool = Object.keys(ACTS).filter(k => k !== 'other' && ACTS[k].mv !== false && !ACTS[k].cls && (ACTS[k].cat !== 'healthplex' || hp) && !actCaution(pid, k).length && !painFlag(pid, k)); // never something that has hurt twice lately
   const recent = new Set(); const t = todayIso();
   for (let i = 0; i < 4; i++) dayInfo(pid, addDays(t, -i)).kinds.forEach(k => recent.add(k));
   const fresh = pool.filter(k => !recent.has(k));
@@ -101,12 +134,13 @@ function watchTopUp(pid, date, acts, program) {
 }
 // Adds or updates one activity. Next to a lift or treadmill entry it joins the same day; on its own it makes an
 // activity day (and replaces a rest day).
-async function logActivity(date, entry) {
+async function logActivity(date, entry, felt) { // felt: the day's check-in answer, when the activity came from one
   const pid = me(), path = PATH.session(pid, date), cur = getDoc(path), now = new Date().toISOString(), n = cur ? normalize(cur) : null, program = !!(n && n.program);
   let acts = cur && Array.isArray(cur.acts) ? cur.acts.filter(Boolean) : [];
   const i = acts.findIndex(x => x.id === entry.id); if (i >= 0) acts[i] = entry; else acts.push(entry);
   acts = watchTopUp(pid, date, acts, program);
-  return write(path, program ? Object.assign({}, cur, { acts, updatedAt: now }) : { v: SCHEMA, date, kind: 'activity', acts, savedAt: cur && cur.savedAt || now, updatedAt: now });
+  const ci = (felt && CHECKIN_WORDS[felt] ? felt : null) || (cur && cur.checkin) || null, keep = ci ? { checkin: ci } : null;
+  return write(path, program ? Object.assign({}, cur, { acts, updatedAt: now }, keep) : Object.assign({ v: SCHEMA, date, kind: 'activity', acts, savedAt: cur && cur.savedAt || now, updatedAt: now }, keep));
 }
 async function removeActivity(date, id) {
   const pid = me(), path = PATH.session(pid, date), cur = getDoc(path); if (!cur || !Array.isArray(cur.acts)) return false;
@@ -126,7 +160,7 @@ async function syncWatch(date) {
   else doc = after.length ? { v: SCHEMA, date, kind: 'activity', acts: after, savedAt: cur && cur.savedAt || now, updatedAt: now } : null;
   return (await write(path, doc)) ? (b ? 'added' : 'removed') : false;
 }
-async function logRest(date) {
+async function logRest(date, felt) {
   const now = new Date().toISOString();
-  return write(PATH.session(me(), date), { v: SCHEMA, date, kind: 'rest', notes: '', savedAt: now, updatedAt: now });
+  return write(PATH.session(me(), date), Object.assign({ v: SCHEMA, date, kind: 'rest', notes: '', savedAt: now, updatedAt: now }, felt && CHECKIN_WORDS[felt] ? { checkin: felt } : null));
 }

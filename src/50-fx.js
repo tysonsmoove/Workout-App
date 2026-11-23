@@ -66,6 +66,12 @@ function offerUndo(label, path, before) { // call once the removal has been save
   state.undo = { path, before: JSON.parse(JSON.stringify(before)), after: canon(getDoc(path)) };
   clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; t.classList.remove('act'); state.undo = null; }, 6000);
 }
+// A message with one button, for a follow-up offered right where the eyes already are ("+16.9 oz water").
+function toastAction(label, btn, action, ms) {
+  const t = $('#toast');
+  t.innerHTML = '<span>' + esc(label) + ' · </span><button type="button" class="undo" data-a="' + action + '">' + esc(btn) + '</button>'; t.classList.add('act'); t.hidden = false; state.undo = null;
+  clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; t.classList.remove('act'); }, ms || 6000);
+}
 ACT.undo = async () => {
   const u = state.undo; if (!u) return;
   if (canon(getDoc(u.path)) !== u.after) { toast('Can\'t undo, it changed on the other phone.', 3800); return; }

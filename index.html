@@ -416,6 +416,113 @@ textarea.plaintext { font-family: var(--body); min-height: 88px; }
 .estnums input { padding: 8px 4px; }
 .estnums label.f { letter-spacing: .04em; }
 
+/* ---------- Version 16: check-in, Healthplex cards, workout mode ---------- */
+.ci .cic { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; text-align: left; width: 100%; min-height: 52px; padding: 8px 12px; border-radius: calc(var(--r) * .8); }
+.ci .cic .ci-i { font-size: 1.375rem; line-height: 1; }
+.ci .cic .ci-t { display: grid; gap: 1px; min-width: 0; }
+.ci .cic .ci-t .tiny { color: var(--muted); font-weight: 400; }
+.ci .cic.sug { border-color: var(--accent); }
+.ci .cic.sel { border-color: var(--fg); box-shadow: 0 6px 16px rgba(0, 0, 0, .14); transform: translateY(-2px); }
+.ci .cic.fade { opacity: .45; }
+.cip { display: grid; gap: 8px; padding: 10px 12px; background: var(--soft); border-radius: calc(var(--r) * .8); transform-origin: top center; }
+.cip .primary { min-height: 52px; }
+.ci-moves { margin: 0; padding-left: 20px; display: grid; gap: 2px; font-size: .875rem; }
+.chipbtn { border-radius: 999px; min-height: 44px; padding: 6px 14px; font-size: .875rem; background: var(--accent-soft); border-color: transparent; }
+.act.hp.back { grid-template-columns: 1fr; gap: 6px; grid-column: 1 / -1; border: 1px solid var(--accent); background: var(--card); padding: 10px; }
+.act .aw[data-tag] { color: var(--muted); }
+.wm { position: fixed; inset: 0; height: 100vh; height: 100dvh; z-index: 35; background: var(--bg); color: var(--fg); display: flex; flex-direction: column; overflow: hidden; padding: env(safe-area-inset-top, 0px) 0 0; }
+.wm[hidden] { display: none; }
+.wm-top { display: flex; align-items: center; gap: 10px; padding: 8px 12px; flex: none; max-width: 560px; width: 100%; margin: 0 auto; }
+.wm-x { width: 44px; min-height: 44px; padding: 0; border-radius: 50%; background: var(--soft); border-color: transparent; font-size: 1rem; flex: none; }
+.wm-strip { --p: 0%; position: relative; flex: 1; height: 26px; border-radius: 13px; background: var(--soft); }
+.wm-fill { position: absolute; inset: 0 auto 0 0; width: max(26px, var(--p)); max-width: 100%; border-radius: 13px; background: hsl(var(--ah) var(--as) var(--al) / .3); }
+.wm-lapmark { position: absolute; top: 5px; bottom: 5px; width: 2px; background: var(--line); }
+.wm-car { position: absolute; top: 0; left: max(0px, calc(var(--p) - 26px)); z-index: 1; display: block; height: 26px; }
+.wm-end { position: absolute; right: 0; top: 0; bottom: 0; width: 12px; border-radius: 0 13px 13px 0; background: conic-gradient(var(--fg) 25%, var(--card) 0 50%, var(--fg) 0 75%, var(--card) 0) 0 0 / 8px 8px; opacity: .55; }
+.wm-clock { font-family: var(--display); font-size: 1.25rem; font-weight: 700; min-width: 3em; text-align: right; flex: none; }
+.wm-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 4px 16px 12px; display: grid; gap: 8px; align-content: start; max-width: 560px; width: 100%; margin: 0 auto; }
+.wm-body.wm-center { justify-items: center; text-align: center; align-content: center; gap: 12px; }
+.wm-body h2 { font-size: 1.75rem; }
+.wm-body h3 { font-size: 1.375rem; }
+.wm-target { font-size: 1.125rem; }
+.wm-how { display: grid; grid-template-columns: 112px 1fr; gap: 10px; align-items: center; }
+.wm-demo { background: var(--card); border: 1px solid var(--line); border-radius: 12px; aspect-ratio: 1; display: grid; place-items: center; overflow: hidden; }
+.wm-demo svg { width: 100%; height: 100%; display: block; }
+.wm-cues { margin: 0; padding-left: 20px; display: grid; gap: 4px; font-size: .9375rem; line-height: 1.25; }
+.wm-mistake { font-size: .875rem; background: var(--warn-soft); border-radius: 8px; padding: 6px 10px; }
+.wm-btn { min-height: 48px; padding: 8px 16px; font-size: 1rem; font-weight: 600; border-radius: 12px; }
+.wm-btn.sm { min-height: 44px; font-size: .875rem; padding: 6px 12px; }
+.wm-btn.on { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.wm-btn.danger { color: var(--bad); border-color: var(--bad); }
+.wm-pips { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.wm-pip { width: 48px; min-height: 48px; border-radius: 50%; padding: 0; font-family: var(--display); font-size: 1.25rem; font-weight: 700; color: var(--muted); background: var(--soft); border-color: transparent; }
+.wm-pip:disabled { opacity: 1; }
+.wm-pip.on { background: var(--accent); color: var(--accent-ink); }
+.wm-pip.next { box-shadow: 0 0 0 2px var(--fg); color: var(--fg); }
+.wm-pip.edit { box-shadow: 0 0 0 3px var(--fg); }
+.wm-steps { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; }
+.wm-steps.one { grid-template-columns: 1fr; }
+.wm-step { display: grid; gap: 4px; justify-items: center; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 8px; }
+.wm-step > div { display: grid; grid-template-columns: 52px 1fr 52px; align-items: center; width: 100%; text-align: center; }
+.wm-step button { min-height: 52px; font-size: 1.5rem; padding: 0; border-radius: 12px; }
+.wm-step b { font-family: var(--display); font-size: 2.25rem; line-height: 1; }
+.wm-log { width: 100%; min-height: 60px; font-size: 1.375rem; flex: none; }
+.wm-tap { width: 100%; min-height: 96px; font-size: 1.75rem; flex: none; }
+.wm-nav { display: flex; gap: 8px; padding: 8px 16px calc(8px + env(safe-area-inset-bottom, 0px)); flex: none; max-width: 560px; width: 100%; margin: 0 auto; }
+.wm-nav .wm-btn { flex: 1; padding: 8px 6px; }
+.wm-ring { position: relative; width: min(240px, 60vw); aspect-ratio: 1; display: grid; place-items: center; }
+.wm-ring svg { position: absolute; inset: 0; transform: rotate(-90deg); }
+.wm-ring circle { fill: none; stroke-width: 9; stroke-linecap: round; }
+.wm-ring .rbg { stroke: var(--soft); }
+.wm-ring .rfg { stroke: var(--accent); }
+.wm-ring b { font-family: var(--display); font-size: 3.5rem; }
+.wm-nextup { display: grid; gap: 2px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; width: 100%; }
+.wm-bigtime { font-family: var(--display); font-weight: 700; font-size: 4.5rem; line-height: 1; }
+.wm-stat { display: flex; gap: 22px; justify-content: center; }
+.wm-stat div { display: grid; justify-items: center; }
+.wm-stat b { font-family: var(--display); font-size: 2rem; line-height: 1; }
+.wm-stat span { font-size: .8125rem; color: var(--muted); }
+.wm-stations { display: grid; gap: 8px; width: 100%; }
+.wm-stations .wm-btn { display: flex; justify-content: space-between; align-items: center; }
+.wm-cue { font-size: 1.0625rem; }
+.wm-done { font-weight: 600; color: var(--good); }
+.wm-sum { display: grid; width: 100%; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 4px 14px; text-align: left; }
+.wm-sum > div { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); }
+.wm-sum > div:first-child { border-top: 0; }
+.wm-ups { font-size: .9375rem; }
+.wm-swaps { display: grid; gap: 6px; }
+.wm-flag { width: 120px; height: 100px; color: var(--fg); }
+.wm-start { position: absolute; inset: 0; width: 100%; min-height: 0; border: 0; border-radius: 0; background: #15181C; color: #fff; display: grid; place-content: center; justify-items: center; gap: 18px; }
+.wm-start .wm-flag { color: #fff; }
+.wm-lights { display: flex; gap: 14px; }
+.wm-lights i { width: 44px; height: 44px; border-radius: 50%; background: #3a3f47; box-shadow: inset 0 0 0 3px #000; }
+.wm-gotext { font-family: var(--display); font-size: 4rem; letter-spacing: .06em; line-height: 1; }
+@keyframes wmLight { to { background: #E0352B; box-shadow: 0 0 18px #E0352B; } }
+@keyframes wmGreen { to { background: #23C063; box-shadow: 0 0 18px #23C063; } }
+@keyframes wmShow { to { opacity: 1; } }
+@keyframes wmWave { from { transform: skewY(-4deg) scaleX(.97); } to { transform: skewY(4deg) scaleX(1.02); } }
+@keyframes wmZoom { from { transform: scale(.2); opacity: 0; } }
+@keyframes ciGrow { from { opacity: 0; transform: scaleY(.55); } }
+@keyframes ciLift { from { transform: none; box-shadow: none; } }
+@keyframes ciFade { from { opacity: 1; } }
+@keyframes hpFlip { from { transform: perspective(700px) rotateY(88deg); opacity: .2; } }
+/* Every pick animation is 400 ms or less and never holds a tap; all of it is off with reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .cip.grow { animation: ciGrow .32s cubic-bezier(.2, .9, .3, 1) both; }
+  .ci .cic.lift { animation: ciLift .3s ease both; }
+  .ci[data-anim] .cic.fade { animation: ciFade .3s ease both; }
+  .act.hp.back.flipin { animation: hpFlip .36s ease both; }
+  .wm.zoom { animation: wmZoom .32s cubic-bezier(.2, .9, .3, 1) both; }
+  .wm-lights i:nth-child(1) { animation: wmLight .01s linear .15s forwards, wmGreen .01s linear 2s forwards; }
+  .wm-lights i:nth-child(2) { animation: wmLight .01s linear .7s forwards, wmGreen .01s linear 2s forwards; }
+  .wm-lights i:nth-child(3) { animation: wmLight .01s linear 1.25s forwards, wmGreen .01s linear 2s forwards; }
+  .wm-start .wm-flag { opacity: 0; animation: wmShow .2s ease 1.6s forwards; }
+  .wm-gotext { opacity: 0; animation: wmShow .15s ease 2s forwards; }
+  .wm-wave { transform-origin: 16px 34px; animation: wmWave .4s ease-in-out 6 alternate; }
+}
+/* while workout mode is open, messages sit under its top strip, clear of the big buttons at the bottom */
+.wm:not([hidden]) ~ .toast { bottom: auto; top: calc(64px + env(safe-area-inset-top, 0px)); }
+
 </style>
 
 <div class="wrap">
@@ -438,6 +545,7 @@ textarea.plaintext { font-family: var(--body); min-height: 88px; }
 <div id="ov" class="ov-root" hidden></div>
 <canvas id="fx" class="fx" aria-hidden="true"></canvas>
 <div id="rest" class="restbar" role="timer" aria-label="Rest timer" hidden><i id="restFill"></i><b class="num" id="restTime">1:30</b><span id="restLabel">Rest</span><button type="button" class="small" data-a="timer-add" aria-label="Add 15 seconds">+15 s</button><button type="button" class="small" data-a="timer-x" aria-label="Dismiss rest timer">×</button></div>
+<div id="wm" class="wm" role="dialog" aria-modal="true" aria-label="Workout" hidden></div>
 <div id="toast" class="toast" role="status" hidden></div>
 
 <script>
@@ -910,7 +1018,7 @@ const EX = {
   legext:      { name: 'Leg extension machine', equip: 'Machine', sets: 3, lo: 10, hi: 15, inc: 5, start: 70, alt: ['splitsquat'] },
   splitsquat:  { name: 'Dumbbell split squat', equip: 'Dumbbells', sets: 3, lo: 10, hi: 12, inc: 5, start: 20, per: 'each hand', alt: ['legext'] },
   legcurl:     { name: 'Leg curl machine', equip: 'Machine (seated or lying)', sets: 3, lo: 10, hi: 15, inc: 5, start: 60, alt: ['dbrdl', 'hipthrust'] },
-  dbrdl:       { name: 'Dumbbell Romanian deadlift', equip: 'Dumbbells', sets: 3, lo: 10, hi: 12, inc: 5, start: 30, per: 'each hand', alt: ['legcurl', 'bbrdl', 'hipthrust'] },
+  dbrdl:       { name: 'Dumbbell Romanian deadlift', equip: 'Dumbbells', sets: 3, lo: 10, hi: 12, inc: 5, start: 30, per: 'each hand', alt: ['bbrdl', 'legcurl', 'hipthrust'] },
   calf:        { name: 'Standing calf raise', equip: 'Calf machine or step + dumbbell', sets: 3, lo: 12, hi: 15, inc: 10, start: 90, alt: ['goblet'] },
   squat:       { name: 'Barbell back squat', equip: 'Squat rack', sets: 3, lo: 6, hi: 10, inc: 10, start: 95, alt: ['legpress', 'goblet'] },
   lunge:       { name: 'Walking lunges', equip: 'Dumbbells', sets: 3, lo: 10, hi: 12, inc: 5, start: 15, per: 'each hand', alt: ['splitsquat', 'legext'] },
@@ -930,6 +1038,20 @@ const DAYS = {
     phases: { 1: ['legpress', 'legext', 'legcurl'].concat(CORE), 2: ['legpress', 'dbrdl', 'legext', 'legcurl', 'calf'].concat(CORE), 3: ['squat', 'dbrdl', 'lunge', 'legcurl', 'calf'].concat(CORE) } }
 };
 const ROTATION = ['push', 'pull', 'legs'];
+// Full Body A/B: everything is trained in two sessions, for weeks that are not regular. Each slot has its own set
+// count and rep range (`slots`); `optional` slots are there if time allows and are not needed for a finished session.
+// Phases do not apply: every phase is the same list, so the code that reads `phases` works unchanged.
+const fullDay = (name, sub, slots) => { const order = Object.keys(slots); return { name, sub, full: true, slots, phases: { 1: order, 2: order, 3: order } }; };
+const fbSlot = (sets, lo, hi, optional) => optional ? { sets, lo, hi, optional: true } : { sets, lo, hi };
+DAYS.fba = fullDay('Full Body A', 'Squat, press, pull, core', { squat: fbSlot(3, 6, 10), dbbench: fbSlot(3, 8, 12), latpull: fbSlot(3, 8, 12), dbshoulder: fbSlot(2, 8, 12), legcurl: fbSlot(2, 10, 15), legraise: fbSlot(2, 10, 15) });
+DAYS.fbb = fullDay('Full Body B', 'Hinge, press, row, shoulders', { dbrdl: fbSlot(3, 8, 12), inclinedb: fbSlot(3, 8, 12), seatedrow: fbSlot(3, 8, 12), lunge: fbSlot(2, 10, 12), latraise: fbSlot(2, 12, 15), facepull: fbSlot(2, 12, 15), dbcurl: fbSlot(2, 10, 12, true), pushdown: fbSlot(2, 10, 15, true) });
+const FULL_ROTATION = ['fba', 'fbb'];
+const EXPRESS_LIFTS = 3; // "short on time": the first three lifts of the day
+// The split is a setting. A profile that never chose one keeps Push / Pull / Legs; old days stay whatever they were.
+const splitOf = pid => state.data[pid || me()].settings.split === 'full' ? 'full' : 'ppl';
+const rotation = pid => splitOf(pid) === 'full' ? FULL_ROTATION : ROTATION;
+const nextAfter = (day, pid) => { const rot = rotation(pid); return rot[(rot.indexOf(day) + 1) % rot.length]; }; // a day from the other split leads to the first day of this one
+const slotOf = (kind, base) => (DAYS[kind] && DAYS[kind].slots && DAYS[kind].slots[base]) || null;
 const alts = k => { const a = EX[k] && EX[k].alt; return (Array.isArray(a) ? a : a ? [a] : []).filter(x => EX[x]); };
 // Two slots never land on the same exercise. An old saved swap can point at one that is also planned that day; then
 // the slot whose own planned exercise it is keeps it, and otherwise the earlier slot does, while the other slot goes
@@ -955,7 +1077,7 @@ function swapOptions(planned, p) {
 // A default swap applies to every future workout, so "the day's plan" is every phase the exercise appears in.
 function defaultSwapTaken(k) {
   const sw = state.settings.swaps || {}, taken = {};
-  ROTATION.forEach(r => Object.keys(DAYS[r].phases).forEach(ph => { const list = DAYS[r].phases[ph]; if (!list.includes(k)) return; list.forEach(b => { if (b === k) return; taken[b] = 1; if (sw[b] && EX[sw[b]]) taken[sw[b]] = 1; }); }));
+  Object.keys(DAYS).forEach(r => Object.keys(DAYS[r].phases).forEach(ph => { const list = DAYS[r].phases[ph]; if (!list.includes(k)) return; list.forEach(b => { if (b === k) return; taken[b] = 1; if (sw[b] && EX[sw[b]]) taken[sw[b]] = 1; }); }));
   return taken;
 }
 const defaultSwapOption = k => { const taken = defaultSwapTaken(k); return alts(k).find(a => !taken[a]) || null; };
@@ -1024,7 +1146,16 @@ function completedWeeks(asOf, pid) {
 }
 const phaseFor = (asOf, pid) => Math.min(3, 1 + completedWeeks(asOf, pid));
 function lastLift(beforeDate, pid) { const l = recordsOf(pid || me()).filter(r => r.date < beforeDate && r.n.qualifies && r.n.day); return l.length ? l[l.length - 1] : null; }
-function nextDayKey(beforeDate, pid) { const p = lastLift(beforeDate, pid); return p ? ROTATION[(ROTATION.indexOf(p.n.day) + 1) % ROTATION.length] : ROTATION[0]; }
+function nextDayKey(beforeDate, pid) { const p = lastLift(beforeDate, pid); return p ? nextAfter(p.n.day, pid) : rotation(pid)[0]; }
+// For deload offers a completed lift week is one that met the lift goal locked for that week (2 or 3), not a fixed 3.
+function deloadWeeks(asOf, pid) {
+  pid = pid || me();
+  return cached('dw:' + pid + ':' + asOf, () => {
+    let n = 0; let ws = weekStart(startDate(pid)); const thisWs = weekStart(asOf); let guard = 0;
+    while (ws < thisWs && guard++ < 520) { if (liftDays(ws, addDays(ws, 6), pid) >= weekGoals(pid, ws).liftGoal) n++; ws = addDays(ws, 7); }
+    return n;
+  });
+}
 function weekStats(asOf, pid) { // the top strip: the same days and the same goals the score uses
   pid = pid || me(); const ws = weekStart(asOf), sc = weekScore(pid, ws), g = weekGoals(pid, ws);
   return { activity: sc.active, lifts: sc.lifts, minutes: sc.minutes, goal: g.goal, liftGoal: g.liftGoal, plan: g.plan };
@@ -1051,7 +1182,7 @@ function deloadOn(date) {
 // A deload week is offered after every 5 completed lift weeks (counted the same way as phases).
 // Returns 'on' while this week is one, 'offer' when it should be suggested, or ''.
 function deloadState() {
-  const t = todayIso(), d = state.settings.deload, cw = completedWeeks(t);
+  const t = todayIso(), d = state.settings.deload, cw = deloadWeeks(t);
   if (d && d.ws === weekStart(t)) return 'on';
   return cw > 0 && cw % 5 === 0 && state.settings.deloadAsked !== cw ? 'offer' : '';
 }
@@ -1059,7 +1190,7 @@ function deloadState() {
 // Not for bodyweight moves or lifts marked "Can't go higher". Hidden while a reset is waiting, and after a dismissal
 // until three later sessions stall again.
 function stallFor(key, date) {
-  const ex = EX[key]; if (!ex || ex.bw || (state.settings.maxed || {})[key]) return null;
+  const ex = specFor(key, date); if (!ex || ex.bw || (state.settings.maxed || {})[key]) return null;
   const ss = liftLog(key, date).slice(-3); if (ss.length < 3) return null;
   const w = ss[0].n.ex[key].w; if (w == null) return null;
   const earned = e => { const l = e.reps.filter(r => r != null); return l.length >= ex.sets && l.every(r => r >= ex.hi); };
@@ -1075,8 +1206,16 @@ const stepUp = (ex, w) => Math.max(0, w + ex.inc);
 
 // Weight rule, as shown on the Program tab. Only logged sets count; blanks are not failures.
 // On top of the rule: a chosen reset replaces the next suggestion once, and a deload session is 2 sets at about 90%.
+// On a full-body day each slot has its own set count and rep range. The set count goes with the slot whatever is
+// swapped into it; the rep range is the slot's only for its own planned exercise. Anywhere else: the exercise's own.
+function specFor(key, date) {
+  const ex = EX[key]; if (!ex || !date) return ex;
+  const m = model(date), kind = kindFor(date, m); if (!DAYS[kind] || !DAYS[kind].slots) return ex;
+  const p = plannedFor(date, kind, m).find(x => x.key === key), s = p && slotOf(kind, p.base); if (!s) return ex;
+  return Object.assign({}, ex, { sets: s.sets }, p.key === p.base ? { lo: s.lo, hi: s.hi } : null, s.optional ? { optional: true } : null);
+}
 function suggest(key, date) {
-  const ex = EX[key], unit = ex.per ? ' lb each hand' : ' lb', base = suggestRule(key, date); let s = base;
+  const ex = specFor(key, date), unit = ex.per ? ' lb each hand' : ' lb', base = suggestRule(key, date); let s = base;
   const rs = (state.settings.resets || {})[key];
   // a reset waits until a normal session is logged on or after the day it was chosen (deload sessions do not use it up)
   const waiting = !ex.bw && !!rs && isNum(rs.w) && validIso(rs.at) && (!base.last || base.last.date < rs.at);
@@ -1091,7 +1230,7 @@ function suggest(key, date) {
   return s;
 }
 function suggestRule(key, date) {
-  const ex = EX[key]; const last = lastLog(key, date); const maxed = !!(state.settings.maxed || {})[key];
+  const ex = specFor(key, date); const last = lastLog(key, date); const maxed = !!(state.settings.maxed || {})[key];
   const logged = last ? last.reps.filter(r => r != null) : [];
   if (ex.bw) {
     if (!last) return { reps: ex.lo, sets: ex.sets, last: null, text: ex.sets + ' × ' + ex.lo, why: 'First time. Work toward ' + ex.hi + ' per set.' };
@@ -1114,6 +1253,9 @@ function suggestRule(key, date) {
   return { w: last.w, sets: ex.sets, last, text: last.w + unit, why: 'In range but not every set at ' + ex.hi + '. Same weight, chase ' + ex.hi + '.' };
 }
 
+// The daily check-in: how the day's "How are you feeling?" was answered. Saved as `checkin` on the day's record.
+const CHECKIN_WORDS = { strong: 'feeling strong', short: 'short on time', tired: 'tired, just want to move', sore: 'sore or run down', rest: 'not going today', good: 'feeling good', low: 'low energy', extra: 'class or game' };
+
 /* ---------- Drafts (this device, localStorage) ---------- */
 const emptyDraft = () => ({ kindSel: null, tm: { minutes: '', title: '' }, notes: '', ex: {}, swaps: {}, extra: {}, countAs: null, closed: {}, created: Date.now(), updatedAt: Date.now(), recovered: false, fromRecord: false });
 function seedFromRecord(rec) {
@@ -1121,7 +1263,7 @@ function seedFromRecord(rec) {
   d.fromRecord = true;
   d.kindSel = n.kind === 'strength' ? (n.day || null) : (n.kind === 'cardio' || n.kind === 'rest') ? n.kind : null;
   d.tm = { minutes: n.tm ? String(n.tm.minutes) : '', title: n.tm && n.tm.title ? n.tm.title : '' };
-  d.notes = n.notes; d.swaps = Object.assign({}, n.swaps); d.countAs = n.qualifyOverride;
+  d.notes = n.notes; d.swaps = Object.assign({}, n.swaps); d.countAs = n.qualifyOverride; if (rec.checkin) d.checkin = rec.checkin;
   Object.keys(n.ex).forEach(k => { d.ex[k] = { w: n.ex[k].w == null ? '' : String(n.ex[k].w), reps: n.ex[k].reps.map(r => r == null ? '' : String(r)) }; });
   return d;
 }
@@ -1154,6 +1296,7 @@ function plannedFor(date, kind, m) {
   if (n && n.kind === 'strength' && n.day === kind && n.plannedBase) bases = n.plannedBase.filter(k => EX[k]);
   else if (n && n.kind === 'strength' && n.day === kind && n.legacy) bases = Array.from(new Set((DAYS[kind].phases[phaseOf(date)] || []).concat(n.keys)));
   else bases = DAYS[kind].phases[phaseOf(date)];
+  if (m.checkin === 'short' && !(n && n.kind === 'strength' && n.day === kind && n.plannedBase)) bases = bases.slice(0, EXPRESS_LIFTS); // an express session plans the first three lifts
   // a saved lift day keeps the exercises it was saved with: today's default swaps apply to new workouts only
   const own = n && n.kind === 'strength' && n.day === kind;
   const dflt = own ? (n.swaps || {}) : (state.settings.swaps || {});
@@ -1166,7 +1309,7 @@ function plannedFor(date, kind, m) {
 function setCount(key, m, date) {
   const sg = suggest(key, date);
   const have = m.ex[key] ? m.ex[key].reps.length : 0;
-  return Math.min(MAX_SETS, Math.max(sg.deload ? 2 : EX[key].sets, sg.sets || 0, have, m.extra[key] || 0)); // a deload session shows 2 sets
+  return Math.min(MAX_SETS, Math.max(sg.deload ? 2 : specFor(key, date).sets, sg.sets || 0, have, m.extra[key] || 0)); // a deload session shows 2 sets
 }
 function parseDraft(date, m) {
   // Turns the draft into a record. Returns { doc, errors, kind }.
@@ -1176,6 +1319,7 @@ function parseDraft(date, m) {
   const existing = state.sessions[date];
   const now = new Date().toISOString();
   const doc = { v: SCHEMA, date, phase, savedAt: existing && existing.savedAt || now, updatedAt: now, progAt: now };
+  const felt = m.checkin || (existing && existing.checkin); if (felt && CHECKIN_WORDS[felt]) doc.checkin = felt; // how the day's check-in was answered, kept with the day
   // activities already logged on the day stay with it. The Watch top-up does not: next to a lift or treadmill entry the Watch minutes are shown, not added.
   const kept = existing && Array.isArray(existing.acts) ? existing.acts.filter(a => a && !isHk(a)) : [];
   if (kind === 'rest') {
@@ -1212,7 +1356,7 @@ function parseDraft(date, m) {
     doc.swaps = {}; plannedPairs.forEach(p => { if (p.key !== p.base) doc.swaps[p.base] = p.key; });
     doc.qualifyOverride = m.countAs; doc.qualifies = m.countAs == null ? auto : !!m.countAs;
     if (deloadOn(date)) doc.deload = true; // a recovery session: it counts as a lift day, and the weight rule reads past it
-    doc.complete = doc.planned.every(k => ex[k]);
+    doc.complete = plannedPairs.filter(p => !(slotOf(kind, p.base) || {}).optional).every(p => ex[p.key]); // "if there's time" lifts are not needed for a finished session
     return { doc, errors, kind: 'strength', mainLogged, auto };
   }
   if (doc.treadmill && doc.treadmill.minutes > 0) { doc.kind = 'cardio'; return { doc, errors, kind: 'cardio', fromLift: !!DAYS[kind], liftKind: kind }; }
@@ -1299,7 +1443,7 @@ async function saveSettings(patch) {
 /* ---------- Pick-your-own activities: a gentle menu, logged by minutes ---------- */
 // impact: 1 very gentle, 2 gentle. stress: body areas the activity loads, matched against a profile's "go easy on" list.
 // mv:false marks recovery sessions: they log and show in history but do not count toward active-day minutes.
-const ACT_CATS = [['walk', 'Walks'], ['mobility', 'Stretch'], ['cardio', 'Easy cardio'], ['strength', 'Light strength'], ['mind', 'Mind & body'], ['life', 'Everyday']];
+const ACT_CATS = [['healthplex', 'Healthplex'], ['walk', 'Walks'], ['mobility', 'Stretch'], ['cardio', 'Easy cardio'], ['strength', 'Light strength'], ['mind', 'Mind & body'], ['life', 'Everyday']];
 const IMPACT = { 1: 'very gentle', 2: 'gentle', 3: 'moderate' };
 const AREAS = { knee: 'Knees', back: 'Back', shoulder: 'Shoulders', hip: 'Hips', ankle: 'Ankles & feet', wrist: 'Wrists', neck: 'Neck' };
 const ACTS = {
@@ -1337,8 +1481,39 @@ const ACTS = {
   clean:      { name: 'House cleaning', cat: 'life', icon: '🧽', min: 20, impact: 2, stress: ['back'], desc: 'Vacuuming, mopping, scrubbing. It all counts as movement.' },
   stairs:     { name: 'Take the stairs', cat: 'life', icon: '🪜', min: 5, impact: 2, stress: ['knee'], desc: 'A few flights at an easy pace. Use the handrail.' },
   outing:     { name: 'Active outing', cat: 'life', icon: '🎈', min: 30, impact: 2, stress: [], desc: 'The zoo, a museum, a long shopping trip, a lap around the Speedway grounds.' },
-  other:      { name: 'Something else', cat: 'life', icon: '✏️', min: 15, impact: 2, stress: [], desc: 'Name it and log the minutes.' }
+  other:      { name: 'Something else', cat: 'life', icon: '✏️', min: 15, impact: 2, stress: [], desc: 'Name it and log the minutes.' },
+  // Indianapolis Healthplex, 3660 Guion Rd. Shown only to a profile whose gym is the Healthplex (see atHealthplex).
+  // wm: which workout-mode screen guides it. cls: a group class: optional, never suggested, never needed for a goal or badge.
+  // heat: a recovery room: logs as recovery, capped at `max` minutes.
+  hptrack:    { name: 'Track walk', cat: 'healthplex', icon: '🏟️', min: 15, impact: 1, stress: [], wm: 'laps', desc: 'The indoor track is 1/8 mile, so 8 laps make a mile. Easy pace. Log laps or minutes.' },
+  hprun:      { name: 'Track run/walk intervals', cat: 'healthplex', icon: '🏃', min: 15, impact: 3, stress: ['knee', 'ankle', 'hip'], wm: 'laps', desc: 'Run 1 lap, walk 1 lap, repeat. 8 laps make a mile. Stop running if a joint complains and walk it in.' },
+  hpswim:     { name: 'Lap swim, easy', cat: 'healthplex', icon: '🏊', min: 20, impact: 1, stress: ['shoulder'], wm: 'lengths', desc: 'The 6-lane lap pool is 25 yards and about 80°F. Easy lengths, rest at the wall as often as you like.' },
+  hppool:     { name: 'Therapy pool walk', cat: 'healthplex', icon: '🌊', min: 15, impact: 1, stress: [], wm: 'timer', desc: 'Warm water, about 90°F, and very gentle. Walk slow widths of the therapy pool. It counts as movement.' },
+  hpbike:     { name: 'Recumbent bike, easy', cat: 'healthplex', icon: '🚲', min: 15, impact: 1, stress: [], wm: 'timer', desc: 'On the cardio floor. The seat supports your back. Light resistance, steady pedaling.' },
+  hpcircuit:  { name: 'Light machine circuit', cat: 'healthplex', icon: '🏢', min: 15, impact: 2, stress: ['shoulder'], wm: 'circuit', desc: 'Leg press, seated row, chest press, lat pulldown. One or two easy sets of 10 to 12 on each, a weight you could lift 15 times.' },
+  hpbball:    { name: 'Basketball shoot-around', cat: 'healthplex', icon: '🏀', min: 15, impact: 2, stress: ['ankle', 'knee'], wm: 'timer', desc: 'Free throws and easy jump shots on the full court. No games, no sprints.' },
+  hpcourt:    { name: 'Pickleball, racquetball or tennis together', cat: 'healthplex', icon: '🎾', min: 30, impact: 3, stress: ['knee', 'ankle', 'shoulder'], wm: 'timer', desc: 'Pickleball gear is at the basketball court; there are tennis courts and one racquetball court. Each of you logs it on your own profile.' },
+  hpbodypump: { name: 'BodyPump class', cat: 'healthplex', icon: '🏋️', min: 45, impact: 3, stress: ['shoulder', 'back', 'knee'], wm: 'timer', cls: true, desc: 'A barbell class set to music. Start with the lightest plates.' },
+  hpcycle:    { name: 'Indoor cycling class', cat: 'healthplex', icon: '🚴', min: 45, impact: 3, stress: ['knee', 'back'], wm: 'timer', cls: true, desc: 'A group ride. You set your own resistance, so it is as hard as you make it.' },
+  hphiit:     { name: 'HIIT class', cat: 'healthplex', icon: '⚡', min: 30, impact: 3, stress: ['knee', 'ankle', 'back'], wm: 'timer', cls: true, desc: 'Short hard efforts with rests. Take the low-impact option whenever one is offered.' },
+  hpzumba:    { name: 'Zumba class', cat: 'healthplex', icon: '💃', min: 45, impact: 3, stress: ['knee', 'ankle'], wm: 'timer', cls: true, desc: 'Dance fitness. Keep the jumps out and it stays gentle.' },
+  hpyoga:     { name: 'Yoga class', cat: 'healthplex', icon: '🧘', min: 45, impact: 2, stress: ['wrist', 'knee'], wm: 'timer', cls: true, desc: 'Skip or change any pose that loads a sore joint.' },
+  hppilates:  { name: 'Pilates class', cat: 'healthplex', icon: '🤸', min: 45, impact: 2, stress: ['neck', 'wrist'], wm: 'timer', cls: true, desc: 'A mat class for the core. Support your head with a hand if your neck tires.' },
+  hpaqua:     { name: 'Aquatic fitness class', cat: 'healthplex', icon: '💦', min: 45, impact: 1, stress: ['shoulder'], wm: 'timer', cls: true, desc: 'Exercise in the pool. The water takes weight off the joints.' },
+  hpreformer: { name: 'Pilates Reformer', cat: 'healthplex', icon: '🛏️', min: 50, impact: 2, stress: ['neck', 'wrist'], wm: 'timer', cls: true, fee: true, desc: 'A specialty class on the reformer machine, booked and paid for separately.' },
+  hpsauna:    { name: 'Dry sauna', cat: 'healthplex', icon: '🔥', min: 10, max: 20, impact: 1, stress: [], mv: false, heat: true, wm: 'heat', desc: 'In the locker room. Towels are provided. Logs as recovery.' },
+  hpsteam:    { name: 'Steam room', cat: 'healthplex', icon: '♨️', min: 10, max: 20, impact: 1, stress: [], mv: false, heat: true, wm: 'heat', desc: 'In the locker room. Towels are provided. Logs as recovery.' },
+  hpwhirl:    { name: 'Whirlpool', cat: 'healthplex', icon: '🛁', min: 10, max: 20, impact: 1, stress: [], mv: false, heat: true, wm: 'heat', desc: 'In the locker room. Towels are provided. Logs as recovery.' }
 };
+const CLASS_TAG = 'Optional · may cost extra, check your membership.', FEE_TAG = 'Specialty class · extra fee.';
+const classTag = a => a.fee ? FEE_TAG : a.cls ? CLASS_TAG : '';
+const HEAT_NOTE = 'Keep it to 10–15 minutes, drink water after, and get out if you feel dizzy or unwell. Skip it after drinking alcohol.';
+const HEAT_KEYS = ['hpsauna', 'hpsteam', 'hpwhirl'];
+const TRACK_LAPS = 8, POOL_YARDS = 25, BOTTLE_OZ = 16.9; // 8 laps of the indoor track make a mile; one pool length is 25 yards
+const lapMiles = laps => Math.round(laps / TRACK_LAPS * 100) / 100;
+const milesText = laps => (laps / TRACK_LAPS).toFixed(laps % 4 === 0 ? 1 : 2) + ' mi';
+const atHealthplex = pid => /healthplex/i.test(P(pid).place || '');
+const HEALTHPLEX = 'Indianapolis Healthplex';
 const FEELS = { easy: 'Easy', good: 'Just right', tough: 'Tough' };
 
 function actCaution(pid, key) { // areas on the profile's go-easy list that this activity loads
@@ -1346,19 +1521,21 @@ function actCaution(pid, key) { // areas on the profile's go-easy list that this
   return a ? a.stress.filter(x => protect.includes(x)) : [];
 }
 function actList(pid, filter) {
-  const p = P(pid), favs = p.favorites, order = ACT_CATS.map(c => c[0]);
+  const p = P(pid), favs = p.favorites, order = ACT_CATS.map(c => c[0]), hp = atHealthplex(pid);
   return Object.keys(ACTS).filter(k => {
     const a = ACTS[k];
+    if (a.cat === 'healthplex' && !hp) return false; // only for a profile whose gym is the Healthplex
     if (filter.cat !== 'all' && a.cat !== filter.cat) return false;
     if (filter.quick && a.min > 10) return false;
     if (filter.fav && !favs.includes(k)) return false;
     return true;
-  }).map((k, i) => ({ k, i, fav: favs.includes(k), caution: actCaution(pid, k).length, pain: painFlag(pid, k) ? 1 : 0 }))
-    .sort((x, y) => (x.pain - y.pain) || (y.fav - x.fav) || (x.caution - y.caution) || (order.indexOf(ACTS[x.k].cat) - order.indexOf(ACTS[y.k].cat)) || (ACTS[x.k].impact - ACTS[y.k].impact) || (x.i - y.i))
+  }).map((k, i) => ({ k, i, fav: favs.includes(k), caution: actCaution(pid, k).length, pain: painFlag(pid, k) ? 1 : 0, cls: ACTS[k].cls ? 1 : 0 }))
+    .sort((x, y) => (x.pain - y.pain) || (y.fav - x.fav) || (x.cls - y.cls) || (x.caution - y.caution) || (order.indexOf(ACTS[x.k].cat) - order.indexOf(ACTS[y.k].cat)) || (ACTS[x.k].impact - ACTS[y.k].impact) || (x.i - y.i))
     .map(x => x.k);
 }
 function surpriseActivity(pid) {
-  const pool = Object.keys(ACTS).filter(k => k !== 'other' && ACTS[k].mv !== false && !actCaution(pid, k).length && !painFlag(pid, k)); // never something that has hurt twice lately
+  const hp = atHealthplex(pid); // classes are never picked for anyone, and Healthplex activities only for a member
+  const pool = Object.keys(ACTS).filter(k => k !== 'other' && ACTS[k].mv !== false && !ACTS[k].cls && (ACTS[k].cat !== 'healthplex' || hp) && !actCaution(pid, k).length && !painFlag(pid, k)); // never something that has hurt twice lately
   const recent = new Set(); const t = todayIso();
   for (let i = 0; i < 4; i++) dayInfo(pid, addDays(t, -i)).kinds.forEach(k => recent.add(k));
   const fresh = pool.filter(k => !recent.has(k));
@@ -1399,12 +1576,13 @@ function watchTopUp(pid, date, acts, program) {
 }
 // Adds or updates one activity. Next to a lift or treadmill entry it joins the same day; on its own it makes an
 // activity day (and replaces a rest day).
-async function logActivity(date, entry) {
+async function logActivity(date, entry, felt) { // felt: the day's check-in answer, when the activity came from one
   const pid = me(), path = PATH.session(pid, date), cur = getDoc(path), now = new Date().toISOString(), n = cur ? normalize(cur) : null, program = !!(n && n.program);
   let acts = cur && Array.isArray(cur.acts) ? cur.acts.filter(Boolean) : [];
   const i = acts.findIndex(x => x.id === entry.id); if (i >= 0) acts[i] = entry; else acts.push(entry);
   acts = watchTopUp(pid, date, acts, program);
-  return write(path, program ? Object.assign({}, cur, { acts, updatedAt: now }) : { v: SCHEMA, date, kind: 'activity', acts, savedAt: cur && cur.savedAt || now, updatedAt: now });
+  const ci = (felt && CHECKIN_WORDS[felt] ? felt : null) || (cur && cur.checkin) || null, keep = ci ? { checkin: ci } : null;
+  return write(path, program ? Object.assign({}, cur, { acts, updatedAt: now }, keep) : Object.assign({ v: SCHEMA, date, kind: 'activity', acts, savedAt: cur && cur.savedAt || now, updatedAt: now }, keep));
 }
 async function removeActivity(date, id) {
   const pid = me(), path = PATH.session(pid, date), cur = getDoc(path); if (!cur || !Array.isArray(cur.acts)) return false;
@@ -1424,9 +1602,9 @@ async function syncWatch(date) {
   else doc = after.length ? { v: SCHEMA, date, kind: 'activity', acts: after, savedAt: cur && cur.savedAt || now, updatedAt: now } : null;
   return (await write(path, doc)) ? (b ? 'added' : 'removed') : false;
 }
-async function logRest(date) {
+async function logRest(date, felt) {
   const now = new Date().toISOString();
-  return write(PATH.session(me(), date), { v: SCHEMA, date, kind: 'rest', notes: '', savedAt: now, updatedAt: now });
+  return write(PATH.session(me(), date), Object.assign({ v: SCHEMA, date, kind: 'rest', notes: '', savedAt: now, updatedAt: now }, felt && CHECKIN_WORDS[felt] ? { checkin: felt } : null));
 }
 
 /* ---- 30-score.js ---- */
@@ -1442,7 +1620,7 @@ const planOf = pid => P(pid).plan === 'program' ? 'program' : 'choice';
 function liveGoals(pid) { // what the settings say right now: the numbers next week will lock
   return cached('lg:' + pid, () => {
     const p = P(pid), g = goalsFor(pid), plan = planOf(pid);
-    return { plan, goal: plan === 'program' ? clamp(state.data[pid].settings.goal || GOAL, 3, 7) : clamp(p.move.goalDays || 3, 1, 7), liftGoal: LIFT_GOAL,
+    return { plan, goal: plan === 'program' ? clamp(state.data[pid].settings.goal || GOAL, 3, 7) : clamp(p.move.goalDays || 3, 1, 7), liftGoal: plan === 'program' && state.data[pid].settings.liftGoal === 2 ? 2 : LIFT_GOAL, // lift days that fill the lift share: 2 or 3 on the lifting program
       minMin: plan === 'program' ? 10 : clamp(p.move.minMinutes || 10, 5, 60), kcal: g.kcal, lo: g.lo, hi: g.hi, waterOz: g.waterOz, protein: g.protein, placeholder: !g.ready };
   });
 }
@@ -1747,10 +1925,12 @@ function ious() {
 function goalNudge(pid) {
   return cached('nudge:' + pid, () => {
     const live = liveGoals(pid), wk = thisWeek(pid), cap = live.plan === 'program' ? 6 : 7, t = todayIso(), cur = weekStart(t), sn = P(pid).goalNudge;
-    if (live.goal >= cap || live.goal !== wk.goal || live.plan !== wk.plan) return null;
-    if (sn && validIso(sn.until) && t < sn.until) return null;
-    for (let i = 1; i <= 3; i++) { const ws = addDays(cur, -7 * i), g = weekGoals(pid, ws); if (g.plan !== live.plan || g.goal < live.goal || !weekScore(pid, ws).moveFull) return null; }
-    return { from: live.goal, to: live.goal + 1, plan: live.plan };
+    if (live.plan !== wk.plan || (sn && validIso(sn.until) && t < sn.until)) return null;
+    const three = ok => [1, 2, 3].every(i => { const ws = addDays(cur, -7 * i), g = weekGoals(pid, ws); return g.plan === live.plan && ok(g, weekScore(pid, ws)); });
+    if (live.goal < cap && live.goal === wk.goal && three((g, s) => g.goal >= live.goal && s.moveFull)) return { from: live.goal, to: live.goal + 1, plan: live.plan };
+    // the lift goal can be raised the same way: three weeks in a row with a lift more than the goal of 2 asked for
+    if (live.plan === 'program' && live.liftGoal === 2 && wk.liftGoal === 2 && three((g, s) => g.liftGoal === 2 && s.lifts >= 3)) return { kind: 'lift', from: 2, to: 3, plan: live.plan };
+    return null;
   });
 }
 
@@ -2172,6 +2352,12 @@ function offerUndo(label, path, before) { // call once the removal has been save
   state.undo = { path, before: JSON.parse(JSON.stringify(before)), after: canon(getDoc(path)) };
   clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; t.classList.remove('act'); state.undo = null; }, 6000);
 }
+// A message with one button, for a follow-up offered right where the eyes already are ("+16.9 oz water").
+function toastAction(label, btn, action, ms) {
+  const t = $('#toast');
+  t.innerHTML = '<span>' + esc(label) + ' · </span><button type="button" class="undo" data-a="' + action + '">' + esc(btn) + '</button>'; t.classList.add('act'); t.hidden = false; state.undo = null;
+  clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; t.classList.remove('act'); }, ms || 6000);
+}
 ACT.undo = async () => {
   const u = state.undo; if (!u) return;
   if (canon(getDoc(u.path)) !== u.after) { toast('Can\'t undo, it changed on the other phone.', 3800); return; }
@@ -2324,6 +2510,289 @@ ACT['timer-x'] = () => restStop();
 // tapping the bar must not take focus from the set field being typed in (on a phone that would close the keyboard)
 (function () { const bar = $('#rest'); if (bar) bar.addEventListener('pointerdown', e => e.preventDefault()); })();
 
+/* ---- 57-moves.js ---- */
+// 57-moves.js: movement demos and how-to text for workout mode.
+// MOVE_OF maps each exercise to one of 11 movement patterns, demoSVG(pattern) returns an animated line figure,
+// HOWTO holds three form cues and one common mistake per exercise, STRETCHES is the cool-down sequence.
+// Top-level names here are MOVE_OF, HOWTO, STRETCHES, demoSVG, plus helpers prefixed MV_.
+
+// Which demo animation each exercise uses. Eleven movement patterns cover all 33 exercises.
+const MOVE_OF = {
+  squat: 'squat', goblet: 'squat', legpress: 'squat',
+  dbrdl: 'hinge', bbrdl: 'hinge', hipthrust: 'hinge',
+  lunge: 'lunge', splitsquat: 'lunge',
+  chestpress: 'hpress', dbbench: 'hpress', inclinedb: 'hpress', pecdeck: 'hpress',
+  shoulderpress: 'vpress', dbshoulder: 'vpress',
+  latpull: 'vpull', assistpull: 'vpull',
+  seatedrow: 'hpull', dbrow: 'hpull', facepull: 'hpull', reardelt: 'hpull',
+  latraise: 'raise', cablelat: 'raise', calf: 'raise',
+  dbcurl: 'curl', cablecurl: 'curl', hammer: 'curl', legcurl: 'curl',
+  pushdown: 'extension', dbtri: 'extension', legext: 'extension',
+  crunch: 'core', legraise: 'core', benchtuck: 'core'
+};
+
+// Three form cues and one common mistake per exercise, in plain words.
+const HOWTO = {
+  chestpress: { cues: [
+    'Set the seat so the handles line up with the middle of your chest.',
+    'Press forward until your arms are almost straight.',
+    'Bring the handles back slowly, under control.'],
+    mistake: 'Shoulders rolling forward. Keep your back and head on the pad.' },
+  dbbench: { cues: [
+    'Lie back with your feet flat on the floor.',
+    'Lower the weights to the sides of your chest.',
+    'Press up until your arms are straight over your chest.'],
+    mistake: 'Elbows flared straight out. Tuck them a little toward your sides.' },
+  shoulderpress: { cues: [
+    'Set the seat so the handles start at shoulder height.',
+    'Press up until your arms are almost straight.',
+    'Lower slowly until your hands reach ear level.'],
+    mistake: 'Lower back arching. Keep it on the pad and tighten your belly.' },
+  dbshoulder: { cues: [
+    'Sit tall with your back against the pad.',
+    'Start with the weights beside your ears, palms forward.',
+    'Press straight up, then lower slowly to ear height.'],
+    mistake: 'Leaning back to push. Use a lighter weight and stay upright.' },
+  pushdown: { cues: [
+    'Stand tall and pin your elbows to your sides.',
+    'Push the bar down until your arms are straight.',
+    'Let it rise slowly until your forearms pass level.'],
+    mistake: 'Elbows drifting forward. Keep them glued to your ribs.' },
+  dbtri: { cues: [
+    'Hold one weight overhead with both hands.',
+    'Bend your elbows to lower it behind your head.',
+    'Straighten your arms to lift it back up.'],
+    mistake: 'Elbows flaring wide. Keep them pointing forward, near your head.' },
+  inclinedb: { cues: [
+    'Set the bench to a low incline and lie back.',
+    'Lower the weights to the sides of your upper chest.',
+    'Press up until your arms are straight above your shoulders.'],
+    mistake: 'Bench set too upright. Keep it low so your chest does the work.' },
+  pecdeck: { cues: [
+    'Sit tall with your back flat against the pad.',
+    'Keep a soft bend in your elbows the whole time.',
+    'Bring your hands together in front, then open slowly.'],
+    mistake: 'Opening too far back. Stop when your hands line up with your chest.' },
+  latraise: { cues: [
+    'Stand tall with the weights at your sides.',
+    'Lift your arms out to the sides, up to shoulder height.',
+    'Lower slowly. Do not let the weights drop.'],
+    mistake: 'Swinging the weights up. Go lighter and lift without a swing.' },
+  cablelat: { cues: [
+    'Stand side-on to the machine with the handle in your far hand.',
+    'Lift your arm out to the side, up to shoulder height.',
+    'Lower slowly and keep the cable tight.'],
+    mistake: 'Shoulder shrugging up. Keep it down, away from your ear.' },
+  latpull: { cues: [
+    'Sit with your thighs snug under the pads.',
+    'Pull the bar down to your upper chest.',
+    'Let the bar rise slowly until your arms are straight.'],
+    mistake: 'Leaning far back and yanking. Stay upright and pull smoothly.' },
+  assistpull: { cues: [
+    'Kneel on the pad and grip the bar just wider than your shoulders.',
+    'Pull your chest up toward the bar.',
+    'Lower slowly until your arms are straight.'],
+    mistake: 'Stopping halfway down. Lower until your arms are fully straight.' },
+  seatedrow: { cues: [
+    'Sit tall with your knees slightly bent.',
+    'Pull the handle to your belly button.',
+    'Squeeze your shoulder blades, then reach forward slowly.'],
+    mistake: 'Rocking back and forth. Keep your upper body still.' },
+  dbrow: { cues: [
+    'Put one hand and one knee on a bench, back flat.',
+    'Pull the weight up toward your hip.',
+    'Lower it slowly until your arm is straight.'],
+    mistake: 'Twisting your body to lift. Keep both shoulders level.' },
+  dbcurl: { cues: [
+    'Stand tall with your palms facing forward.',
+    'Curl the weights up toward your shoulders.',
+    'Lower slowly until your arms are straight.'],
+    mistake: 'Swinging your body. Keep your elbows by your sides and go lighter.' },
+  cablecurl: { cues: [
+    'Stand facing the machine with your elbows at your sides.',
+    'Curl the bar up toward your shoulders.',
+    'Lower slowly and keep the cable tight.'],
+    mistake: 'Elbows moving forward. Keep them still beside your ribs.' },
+  hammer: { cues: [
+    'Hold the weights with your palms facing each other.',
+    'Curl up without turning your wrists.',
+    'Lower slowly until your arms are straight.'],
+    mistake: 'Leaning back to lift. Stand tall and use a lighter weight.' },
+  facepull: { cues: [
+    'Set the rope at about face height.',
+    'Pull the rope toward your face, hands going past your ears.',
+    'Keep your elbows high, then return slowly.'],
+    mistake: 'Leaning back to pull. Stay upright and use less weight.' },
+  reardelt: { cues: [
+    'Bend forward at the hips and keep your back flat.',
+    'Lift your arms out to the sides with a soft bend in the elbows.',
+    'Squeeze your shoulder blades, then lower slowly.'],
+    mistake: 'Standing up as you lift. Keep your chest facing the floor.' },
+  legpress: { cues: [
+    'Place your feet shoulder-width apart on the platform.',
+    'Lower until your knees are bent to about a right angle.',
+    'Push through your heels until your legs are almost straight.'],
+    mistake: 'Snapping your knees straight. Stop just short of fully straight.' },
+  goblet: { cues: [
+    'Hold one weight against your chest with both hands.',
+    'Sit down between your knees and keep your chest up.',
+    'Push through your whole foot to stand.'],
+    mistake: 'Heels lifting. Sit back more and keep your heels down.' },
+  legext: { cues: [
+    'Set the pad just above your ankles.',
+    'Straighten your legs until they are level.',
+    'Lower slowly. Do not let the weight drop.'],
+    mistake: 'Kicking the weight up. Lift smoothly and pause at the top.' },
+  splitsquat: { cues: [
+    'Stand in a long step, one foot forward and one back.',
+    'Drop your back knee straight down toward the floor.',
+    'Push through your front heel to stand back up.'],
+    mistake: 'Front knee caving in. Keep it pointing over your toes.' },
+  legcurl: { cues: [
+    'Set the pad just above your heels.',
+    'Curl your heels toward your backside.',
+    'Let the pad return slowly, all the way.'],
+    mistake: 'Hips lifting off the pad. Press them down and go lighter.' },
+  dbrdl: { cues: [
+    'Stand tall with the weights in front of your thighs.',
+    'Push your hips back and slide the weights down your legs.',
+    'Stop at mid-shin, then push your hips forward to stand.'],
+    mistake: 'Back rounding. Keep your chest up and your back flat.' },
+  calf: { cues: [
+    'Stand with the balls of your feet on the step.',
+    'Rise onto your toes as high as you can.',
+    'Lower your heels slowly below the step.'],
+    mistake: 'Bouncing fast. Pause at the top and lower slowly.' },
+  squat: { cues: [
+    'Rest the bar on your upper back, not on your neck.',
+    'Sit back and down like reaching for a chair.',
+    'Push the floor away and stand tall.'],
+    mistake: 'Knees caving in. Push them out over your toes.' },
+  lunge: { cues: [
+    'Take a long step forward and keep your chest up.',
+    'Lower until both knees are bent to about a right angle.',
+    'Push through your front heel into the next step.'],
+    mistake: 'Steps too short. Step longer so your front heel stays down.' },
+  bbrdl: { cues: [
+    'Hold the bar against your thighs with soft knees.',
+    'Push your hips back and keep the bar close to your legs.',
+    'Stop just below your knees, then push your hips forward.'],
+    mistake: 'Bar drifting away from you. Keep it brushing your legs.' },
+  hipthrust: { cues: [
+    'Rest your upper back on a bench with the weight on your hips.',
+    'Push through your heels and lift your hips until level.',
+    'Squeeze at the top, then lower slowly.'],
+    mistake: 'Lower back arching. Tuck your chin and keep your ribs down.' },
+  crunch: { cues: [
+    'Lie on your back with your knees bent and feet flat.',
+    'Curl your shoulders off the floor toward your knees.',
+    'Lower slowly back down.'],
+    mistake: 'Pulling on your neck. Rest your fingertips lightly by your ears.' },
+  legraise: { cues: [
+    'Lie flat with your hands under your hips.',
+    'Lift your legs until they point at the ceiling.',
+    'Lower slowly and stop just above the floor.'],
+    mistake: 'Lower back lifting. Press it into the floor and bend your knees.' },
+  benchtuck: { cues: [
+    'Sit on the edge of a bench and lean back a little.',
+    'Pull your knees in toward your chest.',
+    'Stretch your legs back out without touching the floor.'],
+    mistake: 'Rushing the reps. Move slowly and keep your belly tight.' }
+};
+
+// Gentle cool-down, 4 min 50 s in total: standing first, then seated, then lying on a mat.
+const STRETCHES = [
+  { name: 'Chest opener', sec: 30, cue: 'Clasp your hands behind your back and gently lift your chest.' },
+  { name: 'Cross-body shoulder', sec: 40, cue: 'Hug one arm across your chest. Switch arms halfway.' },
+  { name: 'Standing calf stretch', sec: 40, cue: 'Step one foot back and press the heel down. Switch halfway.' },
+  { name: 'Seated forward reach', sec: 40, cue: 'Sit tall with legs out and reach toward your shins. No bouncing.' },
+  { name: 'Butterfly', sec: 30, cue: 'Soles of your feet together, sit tall, let your knees relax down.' },
+  { name: 'Figure four', sec: 40, cue: 'On your back, ankle over knee, pull in gently. Switch halfway.' },
+  { name: 'Knees to chest', sec: 30, cue: 'Lie back, hug both knees in, and breathe slowly.' },
+  { name: 'Child\'s pose', sec: 40, cue: 'Kneel, sit back on your heels, and reach your arms forward.' }
+];
+
+// How the figures move: each joint is a <g class="mvj"> drawn in its mid-rep pose, with its pivot in
+// transform-origin (viewBox units) and its two end poses in custom properties. --mva and --mvb are the rotation
+// at each end of the rep; --mvxa, --mvya, --mvxb and --mvyb are an optional slide. All six are reset on every
+// joint so that a nested joint never inherits its parent's values. One shared keyframe rule plays end A, mid,
+// end B, mid. The two cubic-beziers are the two halves of ease-in-out, so a rep eases in and out as a whole and
+// passes through the drawn pose exactly. With animation off, the drawn mid-rep pose shows.
+const MV_CSS = [
+  '.mv{display:block;width:140px;height:140px;max-width:100%;overflow:hidden;fill:none;stroke:var(--fg);stroke-width:4;stroke-linecap:round;stroke-linejoin:round}',
+  '.mv .mvh{fill:var(--fg);stroke:none}',
+  '.mv .mvw{fill:var(--accent);stroke:none}',
+  '.mv .mve{stroke:var(--accent)}',
+  '.mv .mvc{stroke:var(--accent);stroke-width:2}',
+  '.mv .mvf{stroke:var(--line);stroke-width:3}',
+  '.mv .mvj{--mva:0deg;--mvb:0deg;--mvxa:0px;--mvya:0px;--mvxb:0px;--mvyb:0px;transform-box:view-box;animation:mvk 2.4s ease-in-out infinite}',
+  '@keyframes mvk{',
+  '0%,100%{transform:translate(var(--mvxa),var(--mvya)) rotate(var(--mva));animation-timing-function:cubic-bezier(.42,0,.71,.5)}',
+  '25%,75%{transform:translate(0px,0px) rotate(0deg);animation-timing-function:cubic-bezier(.29,.5,.58,1)}',
+  '50%{transform:translate(var(--mvxb),var(--mvyb)) rotate(var(--mvb));animation-timing-function:cubic-bezier(.42,0,.71,.5)}}',
+  '@media (prefers-reduced-motion: reduce){.mv,.mv *{animation:none !important}}'
+].join('\n');
+(function () { const s = document.createElement('style'); s.id = 'mv-css'; s.textContent = MV_CSS; document.head.appendChild(s); })();
+
+const MV_LABEL = {
+  squat: 'Squat: hips drop and rise with a bar on the shoulders',
+  hinge: 'Hip hinge: torso tips forward with a flat back as the weight slides down the legs',
+  lunge: 'Lunge: the back knee drops toward the floor and rises',
+  hpress: 'Horizontal press: lying on a bench, arms press the weight up',
+  vpress: 'Vertical press: arms press the weights overhead',
+  vpull: 'Vertical pull: arms pull a bar down from overhead',
+  hpull: 'Horizontal pull: seated, arms pull a handle to the body',
+  raise: 'Raise: arms lift out to the sides',
+  curl: 'Curl: the forearm curls up at the elbow',
+  extension: 'Extension: the forearm straightens down at the elbow',
+  core: 'Core: lying on the floor, the legs lift'
+};
+
+// Line-figure artwork, one entry per pattern, in viewBox units (120 x 120). Classes: mvh head, mvw weight,
+// mve equipment, mvc cable, mvf floor or bench, mvj animated joint.
+const MV_ART = {
+  squat: '<path class="mvf" d="M8 111H112"/><path d="M54 107.5 67 107.5"/><g class="mvj" style="transform-origin:57px 106px;--mva:-13deg;--mvb:13deg"><path d="M57 106 63.4 85"/><g class="mvj" style="transform-origin:63.4px 85px;--mva:52deg;--mvb:-52deg">' +
+    '<path d="M63.4 85 48.4 68.9"/><g class="mvj" style="transform-origin:48.4px 68.9px;--mva:-55deg;--mvb:55deg"><path d="M48.4 68.9 58 42.6"/><path d="M58 42.6 48.1 49.3 52 41.4"/><circle class="mvw" cx="52" cy="41.4" r="6.5"/>' +
+    '<circle class="mvh" cx="61.4" cy="31.6" r="6.5"/></g></g></g>',
+  hinge: '<path class="mvf" d="M8 111H112"/><path d="M51 107.5 64 107.5"/><g class="mvj" style="transform-origin:54px 106px;--mva:4deg;--mvb:-4deg"><path d="M54 106 52.5 84.1"/><g class="mvj" style="transform-origin:52.5px 84.1px;--mva:7deg;--mvb:-7deg">' +
+    '<path d="M52.5 84.1 48.3 62.5"/><g class="mvj" style="transform-origin:48.3px 62.5px;--mva:-46deg;--mvb:46deg"><path d="M48.3 62.5 65.9 40.7"/><g class="mvj" style="transform-origin:65.9px 40.7px;--mva:23deg;--mvb:-23deg">' +
+    '<path d="M65.9 40.7 60.1 68.1"/><circle class="mvw" cx="60.1" cy="68.1" r="6"/></g><circle class="mvh" cx="73.1" cy="31.8" r="6.5"/></g></g></g>',
+  lunge: '<path class="mvf" d="M8 111H112"/><g class="mvj" style="--mvya:-6.5px;--mvyb:6.5px"><g class="mvj" style="transform-origin:57px 75.5px;--mva:5.6deg;--mvb:-0.2deg"><path d="M57 75.5 57.7 97.5"/>' +
+    '<g class="mvj" style="transform-origin:57.7px 97.5px;--mva:-23.6deg;--mvb:17.2deg"><path d="M57.7 97.5 36 101"/></g></g><g class="mvj" style="transform-origin:57px 75.5px;--mva:22.9deg;--mvb:-17.5deg"><path d="M57 75.5 77.3 84"/>' +
+    '<g class="mvj" style="transform-origin:77.3px 84px;--mva:-35.8deg;--mvb:21.7deg"><path d="M77.3 84 78 106"/></g></g><path d="M57 75.5 58.5 47.5"/><path d="M58.5 47.5 58.5 76.5"/><path class="mve" d="M53 77.5 64 77.5"/>' +
+    '<circle class="mvw" cx="53" cy="77.5" r="3.4"/><circle class="mvw" cx="64" cy="77.5" r="3.4"/><circle class="mvh" cx="59.1" cy="36.1" r="6.5"/></g><path d="M36 101 41.5 107.5"/><path d="M78 106 88 107.5"/>',
+  hpress: '<path class="mvf" d="M8 111H112"/><path class="mvf" d="M20 85H82M28 85V110M74 85V110"/><circle class="mvh" cx="27" cy="76.5" r="6.5"/><path d="M36 79 70 79 91 81 93 106.5 102 107.5"/>' +
+    '<g class="mvj" style="transform-origin:42px 78px;--mva:-30deg;--mvb:30deg"><path d="M42 78 52.4 67.2"/><g class="mvj" style="transform-origin:52.4px 67.2px;--mva:60deg;--mvb:-60deg"><path d="M52.4 67.2 42 56.4"/>' +
+    '<circle class="mvw" cx="42" cy="56.4" r="7"/></g></g>',
+  vpress: '<path class="mvf" d="M8 111H112"/><circle class="mvh" cx="60" cy="36" r="6.5"/><path d="M46 49 74 49"/><path d="M60 49 60 77"/><path d="M45.5 107.5 51 107 60 77 69 107 74.5 107.5"/>' +
+    '<g class="mvj" style="transform-origin:46px 49px;--mva:48deg;--mvb:-48deg"><path d="M46 49 32.8 42"/><g class="mvj" style="transform-origin:32.8px 42px;--mva:-46deg;--mvb:46deg"><path d="M32.8 42 33.3 27"/><path class="mve" d="M27.8 27 38.8 27"/>' +
+    '<circle class="mvw" cx="27.8" cy="27" r="3.4"/><circle class="mvw" cx="38.8" cy="27" r="3.4"/></g></g><g class="mvj" style="transform-origin:74px 49px;--mva:-48deg;--mvb:48deg"><path d="M74 49 87.2 42"/>' +
+    '<g class="mvj" style="transform-origin:87.2px 42px;--mva:46deg;--mvb:-46deg"><path d="M87.2 42 86.7 27"/><path class="mve" d="M81.2 27 92.2 27"/><circle class="mvw" cx="81.2" cy="27" r="3.4"/><circle class="mvw" cx="92.2" cy="27" r="3.4"/></g></g>',
+  vpull: '<path class="mvf" d="M8 111H112"/><path class="mvf" d="M38 94H82"/><g class="mvj" style="--mvya:-11.5px;--mvyb:11.5px"><path class="mvc" d="M60 44.5 60 -40"/><path class="mve" d="M30 44.5 90 44.5"/></g><circle class="mvh" cx="60" cy="47" r="6.5"/>' +
+    '<path d="M47 60 73 60"/><path d="M60 60 60 87"/><path d="M43.5 108 49 107 50 92 60 87 70 92 71 107 76.5 108"/><g class="mvj" style="transform-origin:47px 60px;--mva:50.3deg;--mvb:-51deg"><path d="M47 60 32 59"/>' +
+    '<g class="mvj" style="transform-origin:32px 59px;--mva:-74.1deg;--mvb:32.7deg"><path d="M32 59 36 44.5"/></g></g><g class="mvj" style="transform-origin:73px 60px;--mva:-50.3deg;--mvb:51deg"><path d="M73 60 88 59"/>' +
+    '<g class="mvj" style="transform-origin:88px 59px;--mva:74.1deg;--mvb:-32.7deg"><path d="M88 59 84 44.5"/></g></g>',
+  hpull: '<path class="mvf" d="M8 111H112"/><path class="mvf" d="M28 92H60M44 92V110"/><path d="M44 86 66 84 69 106.5 79 107.5"/><g class="mvj" style="transform-origin:44px 86px;--mva:2deg;--mvb:-2deg"><path d="M44 86 45.5 58"/>' +
+    '<g class="mvj" style="transform-origin:45.5px 58px;--mva:-55.6deg;--mvb:60.2deg"><path d="M45.5 58 48.4 72.8"/><g class="mvj" style="transform-origin:48.4px 72.8px;--mva:78.5deg;--mvb:-32.3deg"><path d="M48.4 72.8 61.8 66"/>' +
+    '<g class="mvj" style="transform-origin:61.8px 66px;--mva:-22.2deg;--mvb:-27.9deg"><path class="mvc" d="M61.8 66 171.1 78.4"/></g><circle class="mvw" cx="61.8" cy="66" r="3.4"/></g></g><circle class="mvh" cx="46.1" cy="46.6" r="6.5"/></g>',
+  raise: '<path class="mvf" d="M8 111H112"/><circle class="mvh" cx="60" cy="36" r="6.5"/><path d="M46 49 74 49"/><path d="M60 49 60 77"/><path d="M45.5 107.5 51 107 60 77 69 107 74.5 107.5"/>' +
+    '<g class="mvj" style="transform-origin:46px 49px;--mva:-40deg;--mvb:40deg"><path d="M46 49 24.4 68.4"/><circle class="mvw" cx="24.4" cy="68.4" r="4.6"/></g><g class="mvj" style="transform-origin:74px 49px;--mva:40deg;--mvb:-40deg">' +
+    '<path d="M74 49 95.6 68.4"/><circle class="mvw" cx="95.6" cy="68.4" r="4.6"/></g>',
+  curl: '<path class="mvf" d="M8 111H112"/><path d="M57 107.5 49 106 53 67 58 106 66 107.5"/><path d="M53 67 53 39"/><circle class="mvh" cx="53.4" cy="27.5" r="6.5"/><path d="M53 39 56.6 53.6"/>' +
+    '<g class="mvj" style="transform-origin:56.6px 53.6px;--mva:72.5deg;--mvb:-72.5deg"><path d="M56.6 53.6 71.6 54.2"/><circle class="mvw" cx="71.6" cy="54.2" r="5"/></g>',
+  extension: '<path class="mvf" d="M8 111H112"/><path d="M54 107.5 46 106 50 67 55 106 63 107.5"/><path d="M50 67 53.9 39.3"/><circle class="mvh" cx="55.9" cy="27.9" r="6.5"/><path d="M53.9 39.3 56.5 54"/>' +
+    '<g class="mvj" style="transform-origin:56.5px 54px;--mva:-58deg;--mvb:58deg"><path d="M56.5 54 70.6 59.2"/><g class="mvj" style="transform-origin:70.6px 59.2px;--mva:60.9deg;--mvb:-52.4deg"><path class="mvc" d="M70.6 59.2 83.7 -65.1"/></g>' +
+    '<circle class="mvw" cx="70.6" cy="59.2" r="3.6"/></g>',
+  core: '<path class="mvf" d="M8 111H112"/><circle class="mvh" cx="19.5" cy="102.5" r="6.5"/><path d="M29 101.5 58 101.5"/><path d="M32 102.5 40 106.5 53 106.5"/><g class="mvj" style="transform-origin:58px 101.5px;--mva:35deg;--mvb:-35deg">' +
+    '<path d="M58 101.5 89.1 70.4"/><path d="M89.1 70.4 84.2 65.4"/></g>'
+};
+
+// Returns the inline SVG for a movement pattern. Unknown patterns fall back to the squat.
+function demoSVG(pattern) {
+  const p = Object.prototype.hasOwnProperty.call(MV_ART, pattern) ? pattern : 'squat';
+  return '<svg class="mv mv-' + p + '" viewBox="0 0 120 120" role="img" aria-label="' + MV_LABEL[p] + '">' + MV_ART[p] + '</svg>';
+}
+
 /* ---- 60-ui-train.js ---- */
 /* ---------- Train: shared pieces ---------- */
 function subnav() {
@@ -2372,16 +2841,18 @@ function renderTrain() {
   const kind = kindFor(date, m); const isLift = !!DAYS[kind];
   const phase = phaseOf(date);
   const last = lastLift(date); const nextK = nextDayKey(date);
-  let why = last ? 'After ' + DAYS[last.n.day].name + ' on ' + nice(last.date) + ', ' + DAYS[nextK].name + ' is next.' : 'First lift of the program: Push.';
-  if (n && n.qualifies && n.day) why = 'Counted ' + DAYS[n.day].name + ' day. Next: ' + DAYS[ROTATION[(ROTATION.indexOf(n.day) + 1) % 3]].name + '.';
+  let why = last ? 'After ' + DAYS[last.n.day].name + ' on ' + nice(last.date) + ', ' + DAYS[nextK].name + ' is next.' : (splitOf() === 'full' ? 'Next lift: ' + DAYS[nextK].name + '.' : 'First lift of the program: Push.');
+  if (n && n.qualifies && n.day) why = 'Counted ' + DAYS[n.day].name + ' day. Next: ' + DAYS[nextAfter(n.day)].name + '.';
   else if (n && n.kind === 'strength') why = 'Partial lift, not counted. ' + DAYS[nextK].name + ' is still next.';
   else if (isLift && kind !== nextK) why += ' You picked ' + DAYS[kind].name + '.';
 
-  let h = trainTopHTML() + '<section class="card sess">' + dateHead('Logging for') +
-    '<div class="seg" id="kindSeg" aria-label="Workout type">' + ROTATION.map(k => '<button type="button" data-kind="' + k + '" class="' + (kind === k ? 'on' : '') + '" aria-pressed="' + (kind === k) + '">' + DAYS[k].name + '</button>').join('') +
+  const rot = rotation(), segDays = !DAYS[kind] || rot.includes(kind) ? rot : rot.concat([kind]), full = !!(DAYS[kind] ? DAYS[kind].full : splitOf() === 'full'); // an old day from the other split keeps its own button
+  let h = trainTopHTML() + checkinHTML() + '<section class="card sess">' + dateHead('Logging for') +
+    '<div class="seg" id="kindSeg" aria-label="Workout type">' + segDays.map(k => '<button type="button" data-kind="' + k + '" class="' + (kind === k ? 'on' : '') + '" aria-pressed="' + (kind === k) + '">' + DAYS[k].name + '</button>').join('') +
     '<button type="button" data-kind="cardio" class="' + (kind === 'cardio' ? 'on' : '') + '" aria-pressed="' + (kind === 'cardio') + '">Treadmill</button><button type="button" data-kind="rest" class="' + (kind === 'rest' ? 'on' : '') + '" aria-pressed="' + (kind === 'rest') + '">Rest</button></div>' +
-    '<div class="status"><span id="statusLine">' + esc(statusText(date)) + '</span><span>·</span><span>Phase ' + phase + '</span>' + healthButton() + '</div>' +
-    '<p class="tiny muted" id="whyLine" style="margin-top:-4px">' + esc(why) + '</p>' + hkLineHTML(date);
+    '<div class="status"><span id="statusLine">' + esc(statusText(date)) + '</span>' + (full ? '' : '<span>·</span><span>Phase ' + phase + '</span>') + healthButton() + '</div>' +
+    '<p class="tiny muted" id="whyLine" style="margin-top:-4px">' + esc(why) + '</p>' + hkLineHTML(date) +
+    (isLift && date <= todayIso() ? '<div class="row"><button type="button" class="small" id="wmStart" data-a="wm-lift">' + (wmDraftOn(date) ? 'Resume workout' : 'Start guided workout') + '</button><span class="tiny muted">full screen, one lift at a time</span></div>' : '');
   if (d && d.recovered && draftHasContent(d)) h += '<div class="banner"><span>Unsaved draft from ' + tzTime.format(new Date(d.updatedAt)) + ' restored. Not saved until you tap Save.</span><div class="row"><button type="button" class="small" id="discardDraft">Discard draft</button></div></div>';
   if (n && n.ambiguous) h += '<div class="banner">Saved as a ' + (DAYS[rec.day] ? DAYS[rec.day].name : 'lift') + ' day by the earlier version but has no lifting sets. It counts as ' + (n.kind === 'cardio' ? 'treadmill only' : 'no activity') + '. Add sets or re-save to confirm.</div>';
   h += '</section>';
@@ -2395,7 +2866,7 @@ function renderTrain() {
     return h;
   }
 
-  h += '<form id="logForm" autocomplete="off" class="sheet"><div class="blk"><div class="bhead"><h3>Treadmill · Apple Fitness+</h3><span class="tiny muted">target ' + TREAD_MIN[phase] + ' min</span></div>' +
+  h += '<form id="logForm" autocomplete="off" class="sheet"><div class="blk"><div class="bhead"><h3>' + (full && isLift ? 'Warm-up (track, treadmill or bike)' : 'Treadmill · Apple Fitness+') + '</h3><span class="tiny muted">target ' + (full && isLift ? '5–10' : TREAD_MIN[phase]) + ' min</span></div>' +
     '<div class="logrow" style="grid-template-columns:minmax(80px,1fr) 2fr"><label class="f">Minutes<input type="number" id="tmMin" data-field="tmMin" min="0" step="1" inputmode="numeric" pattern="[0-9]*" value="' + esc(m.tm.minutes) + '" placeholder="–"></label>' +
     '<label class="f">Workout (optional)<input type="text" id="tmTitle" data-field="tmTitle" value="' + esc(m.tm.title) + '" placeholder="Fitness+ workout name"></label></div></div>';
 
@@ -2413,7 +2884,7 @@ function renderTrain() {
       '<p class="tiny muted" style="margin-top:6px">A counted lift day advances the rotation and earns lift credit. Full rules on the Program tab.</p></details>';
   }
   h += '</form>';
-  h += extrasHTML(date) + renderSaveBar(date, m, saved);
+  h += extrasHTML(date) + heatChipHTML(date) + renderSaveBar(date, m, saved);
   h += renderMorning(phase, kind);
   return h;
 }
@@ -2434,14 +2905,14 @@ function extrasHTML(date) {
 function trainTopHTML() {
   const st = deloadState(), sb = state.settings.swapBack || {}, sw = state.settings.swaps || {}, t = todayIso(); let h = '';
   if (st === 'on') h += '<div class="banner good" id="deloadBanner"><span><b>Deload week is on.</b> 2 sets per lift at about 90% weight. Recovery week, same points.</span><div class="row"><button type="button" class="small" data-a="deload-off">End the deload early</button></div></div>';
-  else if (st === 'offer') h += '<div class="banner accent" id="deloadBanner"><span><b>Deload week:</b> 2 sets per lift at about 90% weight. Recovery week, same points.</span><span class="tiny muted">You have finished ' + completedWeeks(t) + ' full lift weeks. A lighter week now lets the next five go heavier. Lift days still count as lift days.</span><div class="row"><button type="button" class="small" data-a="deload-take">Take it</button><button type="button" class="small" data-a="deload-skip">Skip</button></div></div>';
+  else if (st === 'offer') h += '<div class="banner accent" id="deloadBanner"><span><b>Deload week:</b> 2 sets per lift at about 90% weight. Recovery week, same points.</span><span class="tiny muted">You have finished ' + deloadWeeks(t) + ' full lift weeks. A lighter week now lets the next five go heavier. Lift days still count as lift days.</span><div class="row"><button type="button" class="small" data-a="deload-take">Take it</button><button type="button" class="small" data-a="deload-skip">Skip</button></div></div>';
   Object.keys(sb).forEach(base => { const x = sb[base]; if (!x || !EX[base] || !EX[x.to] || !EX[x.from] || !validIso(x.until) || t < x.until || (sw[base] || base) !== x.to) return;
     h += '<div class="banner" data-swapback="' + base + '"><span><b>Four weeks on ' + esc(EX[x.to].name) + '.</b> Switch back to ' + esc(EX[x.from].name) + '?</span><div class="row"><button type="button" class="small" data-a="swapback-yes" data-base="' + base + '">Switch back</button><button type="button" class="small" data-a="swapback-no" data-base="' + base + '">Keep ' + esc(EX[x.to].name) + '</button></div></div>'; });
   return h + nudgeHTML(me());
 }
 function nudgeHTML(pid) {
   const n = goalNudge(pid); if (!n) return '';
-  return '<section class="card stack" id="nudgeCard"><p><b>Three full weeks in a row.</b> Raise your goal to ' + n.to + ' days starting Monday?</p><div class="row"><button type="button" class="small" data-a="nudge-yes">Raise it</button><button type="button" class="quiet" data-a="nudge-no">Not now</button></div>' +
+  return '<section class="card stack" id="nudgeCard"><p>' + (n.kind === 'lift' ? '<b>Three weeks with 3 lifts.</b> Raise your lift goal to 3 lift days starting Monday?' : '<b>Three full weeks in a row.</b> Raise your goal to ' + n.to + ' days starting Monday?') + '</p><div class="row"><button type="button" class="small" data-a="nudge-yes">Raise it</button><button type="button" class="quiet" data-a="nudge-no">Not now</button></div>' +
     '<p class="tiny muted">This week stays at ' + n.from + '. A raised goal locks in next Monday, like any goal change.</p></section>';
 }
 // where a stalled slot can go for four weeks: another alternate that is free in every phase, else back to its planned exercise
@@ -2458,8 +2929,8 @@ function stallHTML(p, date) {
     '<span class="tiny muted">Reset makes the next suggestion ' + st.to + unit + '.' + (to ? ' Swap uses ' + esc(EX[to].name) + ' for 4 weeks, then asks about switching back.' : ' Its alternates are already in that day\'s workout, so there is nothing to swap to.') + '</span></div>';
 }
 ACT['stall-open'] = el => { const k = el.dataset.key; state.stallOpen[k] = !state.stallOpen[k]; render('[data-a="stall-open"][data-key="' + k + '"]'); };
-ACT['deload-take'] = () => { const t = todayIso(), cw = completedWeeks(t); return saveSettings({ deload: { ws: weekStart(t), cw }, deloadAsked: cw }); };
-ACT['deload-skip'] = () => saveSettings({ deloadAsked: completedWeeks(todayIso()) });
+ACT['deload-take'] = () => { const t = todayIso(), cw = deloadWeeks(t); return saveSettings({ deload: { ws: weekStart(t), cw }, deloadAsked: cw }); };
+ACT['deload-skip'] = () => saveSettings({ deloadAsked: deloadWeeks(todayIso()) });
 ACT['deload-off'] = () => saveSettings({ deload: null });
 ACT['stall-x'] = el => { const key = el.dataset.key, st = stallFor(key, state.selDate); if (!st) return; return saveSettings({ stallSeen: Object.assign({}, state.settings.stallSeen, { [key]: st.last }) }); };
 ACT['stall-reset'] = async el => {
@@ -2485,6 +2956,7 @@ ACT['swapback-yes'] = el => {
 ACT['swapback-no'] = el => { const back = Object.assign({}, state.settings.swapBack); delete back[el.dataset.base]; return saveSettings({ swapBack: back }); };
 ACT['nudge-yes'] = async () => {
   const pid = me(), n = goalNudge(pid); if (!n) return;
+  if (n.kind === 'lift') { await saveSettings({ liftGoal: 3 }); settle(); render(); toast('Lift goal raised to 3 lift days. ' + startsNote() + '; this week stays at 2.', 4200); return; }
   if (n.plan === 'program') await saveSettings({ goal: n.to }); else if (!(await saveProfile(pid, { move: { goalDays: n.to } }))) return;
   settle(); render(); toast('Goal raised to ' + n.to + ' days. ' + startsNote() + '; this week stays at ' + n.from + '.', 4200);
 };
@@ -2496,12 +2968,12 @@ function exSummary(key, e, nSets) {
   return { loggedN, line, done: loggedN >= nSets && (ex.bw || e.w !== '') };
 }
 function renderExercise(p, m, date) {
-  const key = p.key; const ex = EX[key]; const sg = suggest(key, date);
+  const key = p.key; const ex = specFor(key, date); const sg = suggest(key, date); // on a full-body day: the slot's own sets and rep range
   const e = m.ex[key] || { w: '', reps: [] }; const maxed = !!(state.settings.maxed || {})[key];
   const nSets = setCount(key, m, date); const sm = exSummary(key, e, nSets);
   const closed = !!m.closed[key]; const menu = state.menu && state.menu.key === key ? state.menu : null;
   let h = '<section class="blk ex" data-ex="' + key + '" aria-label="' + esc(ex.name) + '">';
-  h += '<div class="bhead"><h3>' + esc(ex.name) + (key !== p.base ? ' <span class="chip">swapped</span>' : '') + '</h3>' +
+  h += '<div class="bhead"><h3>' + esc(ex.name) + (key !== p.base ? ' <span class="chip">swapped</span>' : '') + (ex.optional ? ' <span class="chip" data-optional="' + key + '">if there\'s time</span>' : '') + '</h3>' +
     '<button type="button" class="menubtn" data-menu="' + key + '" aria-label="Options for ' + esc(ex.name) + '" aria-haspopup="menu" aria-expanded="' + (menu ? 'true' : 'false') + '">···</button>' + renderMenu(key, p, m, date, menu) + '</div>';
   h += stallHTML(p, date);
   if (closed) {
@@ -2553,6 +3025,8 @@ function renderMenu(key, p, m, date, menu) {
   } else {
     h += '<button type="button" role="menuitem" data-act="swap" data-key="' + key + '"' + (opts.length ? '' : ' disabled') + '>Swap exercise<span class="sub">' + (opts.length ? 'this workout only' : alts(p.base).length ? 'unavailable: its alternates are already in today\'s workout' : 'no alternate for this one') + '</span></button>';
     if (!ex.bw) h += '<button type="button" role="menuitem" data-act="hold" data-key="' + key + '">' + (maxed ? 'Allow weight increases' : 'Can\'t go higher') + '<span class="sub">' + (maxed ? 'resume weight suggestions' : 'hold weight, progress by reps') + '</span></button>';
+    const stand = key === p.base ? defaultSwapOption(p.base) : null; // "Not at my gym": the free stand-in becomes the default for every future workout
+    h += '<button type="button" role="menuitem" data-act="notgym" data-key="' + key + '" data-base="' + p.base + '"' + (stand ? '' : ' disabled') + '>Not at my gym<span class="sub">' + (stand ? 'use ' + esc(EX[stand].name) + ' in every future workout' : key !== p.base ? 'already swapped' : 'no stand-in for this one') + '</span></button>';
     h += '<button type="button" role="menuitem" data-act="addset" data-key="' + key + '"' + (nSets >= MAX_SETS ? ' disabled' : '') + '>Add a set<span class="sub">' + (nSets >= MAX_SETS ? 'at the maximum of ' + MAX_SETS : nSets + ' of ' + MAX_SETS + ' shown') + '</span></button>';
     h += '<button type="button" role="menuitem" data-act="details" data-key="' + key + '">' + (state.details[key] ? 'Hide exercise details' : 'Exercise details') + '<span class="sub">equipment, why this weight</span></button>';
     h += '<button type="button" role="menuitem" data-act="' + (m.closed[key] ? 'expand' : 'collapse') + '" data-key="' + key + '">' + (m.closed[key] ? 'Expand' : 'Collapse') + '</button>';
@@ -2585,6 +3059,7 @@ function renderSaveBar(date, m, rec) {
   return h;
 }
 function renderMorning(phase, kind) {
+  if (atHealthplex(me())) return hpMorningHTML(kind); // the Healthplex has its own hours and its own plan
   return '<details class="card plain" data-dk="morning"><summary>Morning plan · at IMS by 9</summary><div class="sched" style="margin-top:8px">' +
     '<span class="t num">10:30</span><span>Lights out. Bag packed, Fitness+ workout picked.</span>' +
     '<span class="t num">6:00</span><span>Up. Water, small bite, drive to ' + esc(P(me()).place || 'the gym') + '.</span>' +
@@ -2597,10 +3072,11 @@ function renderMorning(phase, kind) {
 function actGridHTML(pid) { // the activity menu: filters and the grid, shared by the Train screen and the picker sheet
   const f = state.filter, list = actList(pid, f);
   const chip = (on, a, extra, label) => '<button type="button" data-a="' + a + '" ' + extra + ' class="' + (on ? 'on' : '') + '" aria-pressed="' + on + '">' + label + '</button>';
-  return '<div class="chips" aria-label="Filter activities">' + chip(f.cat === 'all', 'filter', 'data-cat="all"', 'All') + ACT_CATS.map(c => chip(f.cat === c[0], 'filter', 'data-cat="' + c[0] + '"', c[1])).join('') + '</div>' +
+  return '<div class="chips" aria-label="Filter activities">' + chip(f.cat === 'all', 'filter', 'data-cat="all"', 'All') + ACT_CATS.filter(c => c[0] !== 'healthplex' || atHealthplex(pid)).map(c => chip(f.cat === c[0], 'filter', 'data-cat="' + c[0] + '"', c[1])).join('') + '</div>' +
     '<div class="chips">' + chip(f.quick, 'filter-quick', '', '10 min or less') + chip(f.fav, 'filter-fav', '', 'Favorites') + '</div>' +
     '<div class="acts">' + list.map(k => {
       const a = ACTS[k], caution = actCaution(pid, k), fav = P(pid).favorites.includes(k);
+      if (a.cat === 'healthplex') return hpCardHTML(pid, k); // a Healthplex card flips to show its details
       return '<button type="button" class="act' + (fav ? ' fav' : '') + '" data-a="act" data-k="' + k + '"><span class="ai" aria-hidden="true">' + a.icon + '</span><span class="an">' + esc(a.name) + '</span><span class="am">' + a.min + ' min · ' + (a.mv === false ? 'recovery' : IMPACT[a.impact]) + '</span>' + (caution.length ? '<span class="aw">Go easy: ' + caution.map(x => AREAS[x].toLowerCase()).join(', ') + '</span>' : '') + (painFlag(pid, k) ? '<span class="aw" data-pain="' + k + '">Pain noted ' + painCount(pid, k) + '× recently</span>' : '') + '</button>';
     }).join('') + '</div>' + (list.length ? '' : '<p class="muted tiny">Nothing matches those filters.</p>');
 }
@@ -2612,7 +3088,7 @@ function renderMove() {
   if (rest) status = 'Rest day logged';
   else if (program) status = progText + (acts.length ? ' + ' + n.actMin + ' min of activities' : '') + ' · counts as an active day';
   else if (acts.length) status = n.allMin + ' min logged · ' + (di.active ? 'counts as an active day' : (mm - di.minutes) + ' more min of movement to count');
-  let h = nudgeHTML(pid) + '<section class="card sess">' + dateHead('Logging for') + '<div class="status"><span id="statusLine">' + esc(status) + '</span>' + healthButton() + '</div>' + hkLineHTML(date) + '</section>';
+  let h = nudgeHTML(pid) + checkinHTML() + '<section class="card sess">' + dateHead('Logging for') + '<div class="status"><span id="statusLine">' + esc(status) + '</span>' + healthButton() + '</div>' + hkLineHTML(date) + '</section>' + heatChipHTML(date);
   if (acts.length || rest || program) {
     h += '<section class="card"><div class="row between"><h3>Logged ' + (rel(date) === nice(date) ? nice(date) : rel(date).toLowerCase()) + '</h3>' + (rest ? '<span class="chip">rest</span>' : di.active ? '<span class="chip good">active day</span>' : '<span class="chip warn">' + di.minutes + ' of ' + mm + ' min</span>') + '</div><div class="done-list" style="margin-top:4px">';
     if (rest) h += '<button type="button" data-a="rest-undo"><span>🛌 Rest day</span><span class="muted">tap to remove</span></button>';
@@ -2642,15 +3118,17 @@ OV.actpick = { // the same menu, from the lifting log
 ACT['act-pick'] = () => openOv({ type: 'actpick', date: state.selDate });
 ACT['go-history'] = () => { location.hash = 'history'; };
 const redrawPicker = () => { render(); if (state.ov && state.ov.type === 'actpick') renderOv(); };
+const lapLine = laps => { const n = Math.round(Number(laps)); return n > 0 ? n + ' lap' + (n === 1 ? '' : 's') + ' = ' + milesText(n) : 'Each lap is 1/8 mile.'; };
 OV.act = {
   html: o => {
     const a = ACTS[o.k], pid = me(), caution = actCaution(pid, o.k), fav = P(pid).favorites.includes(o.k), min = Number(o.min) || 0;
     let h = '<div class="ov" role="dialog" aria-modal="true" aria-label="Log ' + esc(a.name) + '">' + ovHead(a.icon + ' ' + esc(a.name), rel(o.date) + ' · ' + (a.mv === false ? 'recovery, does not count toward active minutes' : IMPACT[a.impact])) +
-      '<p class="muted">' + esc(a.desc) + '</p>';
+      '<p class="muted">' + esc(a.desc) + '</p>' + (classTag(a) ? '<p class="banner" id="clsTag">' + classTag(a) + '</p>' : '') + (a.heat ? '<p class="banner" id="heatNote">' + HEAT_NOTE + '</p>' : '');
+    if (a.wm === 'laps') h += '<label class="f">Laps (8 = 1 mile)<input type="number" id="actLaps" data-ovf="laps" inputmode="numeric" pattern="[0-9]*" min="0" max="400" value="' + esc(o.laps || '') + '" placeholder="–"></label><p class="tiny muted num" id="lapMiles">' + lapLine(o.laps) + '</p>';
     if (painFlag(pid, o.k)) h += '<div class="banner">You noted pain on this ' + painCount(pid, o.k) + ' times in the last ' + PAIN_DAYS + ' days. Rest it, shorten it or pick something else, and talk to your doctor or physical therapist if it keeps happening.</div>';
     if (caution.length) h += '<div class="banner">Loads an area you are protecting: ' + caution.map(x => AREAS[x].toLowerCase()).join(', ') + '. Keep it short and easy, or pick something else.</div>';
     if (o.k === 'other') h += '<label class="f">What did you do?<input type="text" data-ovf="name" value="' + esc(o.name || '') + '" placeholder="Name the activity" maxlength="40"></label>';
-    h += '<div><div class="eyebrow">Minutes</div><div class="stepper" style="margin-top:4px"><button type="button" data-a="act-min" data-d="-5" aria-label="5 fewer minutes">−</button><input type="number" id="actMin" data-ovf="min" inputmode="numeric" pattern="[0-9]*" min="1" max="300" value="' + esc(o.min) + '" aria-label="Minutes"><button type="button" data-a="act-min" data-d="5" aria-label="5 more minutes">+</button></div></div>' +
+    h += '<div><div class="eyebrow">Minutes</div><div class="stepper" style="margin-top:4px"><button type="button" data-a="act-min" data-d="-5" aria-label="5 fewer minutes">−</button><input type="number" id="actMin" data-ovf="min" inputmode="numeric" pattern="[0-9]*" min="1" max="' + (a.max || 300) + '" value="' + esc(o.min) + '" aria-label="Minutes"><button type="button" data-a="act-min" data-d="5" aria-label="5 more minutes">+</button></div></div>' +
       '<div><div class="eyebrow">How did it feel?</div><div class="seg" style="margin-top:4px">' + Object.keys(FEELS).map(k => '<button type="button" data-a="act-feel" data-v="' + k + '" class="' + (o.feel === k ? 'on' : '') + '" aria-pressed="' + (o.feel === k) + '">' + FEELS[k] + '</button>').join('') + '</div></div>' +
       '<div class="row"><button type="button" class="small ' + (o.hurt ? 'on' : '') + '" data-a="act-hurt" aria-pressed="' + !!o.hurt + '">Something hurt</button><button type="button" class="small ' + (fav ? 'on' : '') + '" data-a="act-fav" aria-pressed="' + fav + '">' + (fav ? '★ Favorite' : '☆ Favorite') + '</button></div>';
     if (o.hurt) h += '<div class="banner">Stop if the pain is sharp or new. Rest today. If it lingers, tell your doctor or physical therapist before doing this one again.</div>';
@@ -2664,7 +3142,7 @@ ACT['act-edit'] = el => {
   const rec = state.sessions[state.selDate], a = rec && (rec.acts || []).find(x => x.id === el.dataset.id); if (!a) return;
   openOv({ type: 'act', id: a.id, k: ACTS[a.a] ? a.a : 'other', date: state.selDate, min: String(a.min), feel: a.feel || null, hurt: !!a.hurt, note: a.note || '', name: a.a === 'other' ? a.name : '', at: a.at });
 };
-ACT['act-min'] = el => { const o = state.ov; o.min = String(clamp((Number(o.min) || 0) + Number(el.dataset.d), 1, 300)); renderOv(); };
+ACT['act-min'] = el => { const o = state.ov; o.min = String(clamp((Number(o.min) || 0) + Number(el.dataset.d), 1, (ACTS[o.k] && ACTS[o.k].max) || 300)); renderOv(); };
 ACT['act-feel'] = el => { const o = state.ov; o.feel = o.feel === el.dataset.v ? null : el.dataset.v; renderOv(); };
 ACT['act-hurt'] = () => { state.ov.hurt = !state.ov.hurt; renderOv(); };
 ACT['act-fav'] = async () => {
@@ -2673,12 +3151,14 @@ ACT['act-fav'] = async () => {
 };
 ACT['act-log'] = async () => {
   const o = state.ov, a = ACTS[o.k], min = Math.round(Number(o.min));
-  if (!(min > 0) || min > 300) { toast('Enter minutes between 1 and 300.'); return; }
+  const cap = a.max || 300, laps = a.wm === 'laps' ? Math.round(Number(o.laps)) : 0;
+  if (!(min > 0) || min > cap) { toast('Enter minutes between 1 and ' + cap + '.'); return; }
   const name = o.k === 'other' ? (String(o.name || '').trim() || 'Activity') : a.name;
-  const entry = { id: o.id || uid(), a: o.k, name, min, feel: o.feel || null, hurt: !!o.hurt, note: String(o.note || '').trim(), mv: a.mv !== false, at: o.at || new Date().toISOString() };
+  const entry = { id: o.id || uid(), a: o.k, name, min, feel: o.feel || null, hurt: !!o.hurt, note: [laps > 0 && !/\blaps?\b/.test(String(o.note || '')) ? laps + ' lap' + (laps === 1 ? '' : 's') + ' (' + milesText(laps) + ')' : '', String(o.note || '').trim()].filter(Boolean).join(' · '), mv: a.mv !== false, at: o.at || new Date().toISOString() };
   const before = scoreSnapshot();
-  const ok = await logActivity(o.date, entry); if (!ok) return;
+  const ok = await logActivity(o.date, entry, o.felt); if (!ok) return;
   closeOv(); render();
+  if (a.heat) { celebrate('', { before }); state.waterDate = o.date; toastAction(min + ' min of ' + name.toLowerCase() + ' logged', '+' + BOTTLE_OZ + ' oz water', 'water-bottle', 8000); return; }
   const di = dayInfo(me(), o.date);
   celebrate(min + ' min of ' + name.toLowerCase() + ' logged. ' + (a.mv === false ? 'Recovery counts for you, not for points.' : di.active ? 'That is an active day.' : (weekGoals(me(), weekStart(o.date)).minMin - di.minutes) + ' more min makes it count.'), { force: di.active, before });
 };
@@ -2693,31 +3173,36 @@ ACT['rest-undo'] = async () => { const path = PATH.session(me(), state.selDate),
 /* ---------- Program tab ---------- */
 function renderProgram() {
   const t = todayIso(); const phase = phaseFor(t); const cw = completedWeeks(t); const ws = weekStats(t);
-  let h = '<section class="card"><div class="eyebrow">How the rotation works</div><h2>Push → Pull → Legs, repeat</h2>' +
-    '<p style="margin-top:8px">Days aren\'t tied to weekdays. The next lift is the one after your last <b>counted</b> lift day. Skip a morning and nothing goes out of sync. Every session opens with a Fitness+ treadmill workout. Aim for ' + ws.goal + ' activity days a week: ' + LIFT_GOAL + ' lifts, the rest treadmill-only or any ' + minMin(me()) + '-minute activity.</p></section>';
+  const fullSplit = splitOf() === 'full', rot = rotation(), lg = liveGoals(me()).liftGoal;
+  let h = gymBannerHTML() + '<section class="card stack" id="splitCard"><div class="row between"><h3>Split</h3><span class="tiny muted">changes the next lift, never your history</span></div>' +
+    '<div class="seg" aria-label="Split"><button type="button" data-a="split-set" data-v="full" class="' + (fullSplit ? 'on' : '') + '" aria-pressed="' + fullSplit + '">Full body A/B</button><button type="button" data-a="split-set" data-v="ppl" class="' + (fullSplit ? '' : 'on') + '" aria-pressed="' + !fullSplit + '">Push / Pull / Legs</button></div>' +
+    '<p class="tiny muted">' + (fullSplit ? 'Two sessions train everything, so a week with only two lifts still covers the whole body. A and B alternate after each counted lift day.' : 'Three sessions train everything. Each day repeats once the other two are done.') + '</p></section>' + gymCardHTML() +
+    '<section class="card"><div class="eyebrow">How the rotation works</div><h2>' + (fullSplit ? 'Full Body A → B, repeat' : 'Push → Pull → Legs, repeat') + '</h2>' +
+    '<p style="margin-top:8px">Days aren\'t tied to weekdays. The next lift is the one after your last <b>counted</b> lift day. Skip a morning and nothing goes out of sync. ' + (fullSplit ? 'Every session opens with a 5 to 10 minute warm-up on the track, treadmill or bike.' : 'Every session opens with a Fitness+ treadmill workout.') + ' Aim for ' + ws.goal + ' activity days a week: ' + ws.liftGoal + ' lifts, the rest treadmill-only or any ' + minMin(me()) + '-minute activity.</p></section>';
   const upcoming = nextDayKey(addDays(t, 1)); const lastL = lastLift(addDays(t, 1));
-  h += '<section class="card"><div class="row between"><div><div class="eyebrow">Progress</div><h3 style="font-family:var(--display);font-size:1.25rem">Week ' + (cw + 1) + ' · Phase ' + phase + (phase === 3 ? ' (full)' : '') + '</h3></div><span class="chip ' + (ws.lifts >= LIFT_GOAL ? 'good' : '') + '">' + ws.lifts + '/' + LIFT_GOAL + ' lift days this week</span></div>' +
+  h += '<section class="card"><div class="row between"><div><div class="eyebrow">Progress</div><h3 style="font-family:var(--display);font-size:1.25rem">Week ' + (cw + 1) + (fullSplit ? '' : ' · Phase ' + phase + (phase === 3 ? ' (full)' : '')) + '</h3></div><span class="chip ' + (ws.lifts >= ws.liftGoal ? 'good' : '') + '">' + ws.lifts + '/' + ws.liftGoal + ' lift days this week</span></div>' +
     '<p style="margin-top:8px" id="nextLift"><b>Next lift day: ' + DAYS[upcoming].name + '</b>' + (lastL ? ' <span class="muted tiny">after ' + DAYS[lastL.n.day].name + ' on ' + nice(lastL.date) + '</span>' : ' <span class="muted tiny">first lift of the program</span>') + '</p>' +
     '<ul class="rules" style="margin-top:8px">' +
     '<li><b>Activity day:</b> a saved entry with treadmill minutes or any logged set, or ' + minMin(me()) + ' minutes of any other activity (a walk, a hike) on a day with no lift. Rest entries don\'t count.</li>' +
     '<li><b>Lift day:</b> a saved entry where at least ' + QUALIFY_MIN + ' lifts (core moves don\'t count) have a logged set. Only lift days advance the rotation and earn lift credit. Session options under the notes field can override this either way.</li>' +
     '<li><b>Finished vs partial:</b> finished means every planned exercise has a logged set. Partial sessions still save and can still count.</li>' +
-    '<li><b>Week complete:</b> ' + LIFT_GOAL + ' lift days Mon–Sun. Each completed week unlocks the next phase: Phase 2 adds exercises, Phase 3 swaps in squats, lunges and flys. Phase 3 is the full program.</li>' +
+    (fullSplit ? '<li><b>Finished on a full-body day:</b> every lift except the two marked "if there\'s time". An express session plans the first ' + EXPRESS_LIFTS + ' lifts and still counts as a lift day.</li><li><b>Week complete:</b> your weekly lift goal met, Mon–Sun. Phases do not apply to the full-body split.</li>'
+      : '<li><b>Week complete:</b> ' + LIFT_GOAL + ' lift days Mon–Sun. Each completed week unlocks the next phase: Phase 2 adds exercises, Phase 3 swaps in squats, lunges and flys. Phase 3 is the full program.</li>') +
     '<li>Credit is computed from saved entries, so re-saving or editing never double-counts, and removing an entry removes its credit.</li></ul></section>';
-  ROTATION.forEach(k => {
+  rot.forEach(k => {
     const d = DAYS[k];
     h += '<section class="card"><div class="row between"><h3>' + d.name + ' day</h3><span class="muted tiny">' + d.sub + '</span></div><div class="plan"><ul>';
-    h += '<li><span>Treadmill (Apple Fitness+)</span><span class="muted num">' + TREAD_MIN[phase] + ' min</span></li>';
+    h += d.full ? '<li><span>Warm-up (track, treadmill or bike)</span><span class="muted num">5–10 min</span></li>' : '<li><span>Treadmill (Apple Fitness+)</span><span class="muted num">' + TREAD_MIN[phase] + ' min</span></li>';
     planSlots(k, phase, state.settings.swaps).forEach(sl => {
-      const bk = sl.base, key = sl.key, ex = EX[key];
-      h += '<li><span>' + esc(ex.name) + (key !== bk ? ' <span class="chip">default swap</span>' : '') + '<br><span class="tiny muted">' + esc(ex.equip) + (ex.per ? ' · weight per hand' : '') + '</span></span><span class="muted num">' + ex.sets + ' × ' + ex.lo + '–' + ex.hi + '</span></li>';
+      const bk = sl.base, key = sl.key, so = slotOf(k, bk), ex = so ? Object.assign({}, EX[key], { sets: so.sets }, key === bk ? { lo: so.lo, hi: so.hi } : null) : EX[key];
+      h += '<li><span>' + esc(ex.name) + (key !== bk ? ' <span class="chip">default swap</span>' : '') + (so && so.optional ? ' <span class="chip">if there\'s time</span>' : '') + '<br><span class="tiny muted">' + esc(ex.equip) + (ex.per ? ' · weight per hand' : '') + '</span></span><span class="muted num">' + ex.sets + ' × ' + ex.lo + '–' + ex.hi + '</span></li>';
     });
     h += '</ul></div>';
-    if (phase < 3) { const next = d.phases[phase + 1].filter(x => !d.phases[phase].includes(x)); if (next.length) h += '<p class="tiny muted" style="margin-top:8px">Unlocks in Phase ' + (phase + 1) + ': ' + next.map(x => EX[x].name).join(', ') + '.</p>'; }
+    if (phase < 3 && !d.full) { const next = d.phases[phase + 1].filter(x => !d.phases[phase].includes(x)); if (next.length) h += '<p class="tiny muted" style="margin-top:8px">Unlocks in Phase ' + (phase + 1) + ': ' + next.map(x => EX[x].name).join(', ') + '.</p>'; }
     h += '</section>';
   });
   h += '<section class="card"><h3>Default swaps</h3><p class="tiny muted" style="margin-top:4px">Swap here to change every future workout. Swap from an exercise\'s ··· menu on the Log screen to change one workout only. Saved workouts keep whatever you did.</p><div class="plan" style="margin-top:8px"><ul>';
-  Object.keys(EX).filter(k => alts(k).length && !EX[k].bw && ROTATION.some(r => Object.values(DAYS[r].phases).some(p => p.includes(k)))).forEach(k => {
+  Object.keys(EX).filter(k => alts(k).length && !EX[k].bw && rot.some(r => Object.values(DAYS[r].phases).some(p => p.includes(k)))).forEach(k => {
     const cur = (state.settings.swaps || {})[k] && EX[state.settings.swaps[k]] ? state.settings.swaps[k] : k, opt = defaultSwapOption(k), clash = cur !== k && defaultSwapTaken(k)[cur];
     h += '<li data-swaprow="' + k + '"><span>' + esc(EX[k].name) + (cur !== k ? ' → <b>' + esc(EX[cur].name) + '</b>' : '') +
       (clash ? '<br><span class="tiny" style="color:var(--warn)">' + esc(EX[cur].name) + ' is already in that day\'s workout in some phases. There, ' + esc(EX[k].name) + ' stays.</span>' : cur === k && !opt ? '<br><span class="tiny muted">No swap: its alternates are already in that day\'s workout.</span>' : '') + '</span>' +
@@ -2733,7 +3218,9 @@ function renderProgram() {
     '<li><b>Can\'t go higher</b> (in an exercise\'s ··· menu) holds that exercise\'s weight: suggestions ask for one more rep per set, then a 4th set once every set is 3 past the top. It changes suggestions only, never saved entries.</li>' +
     '<li>Assisted pull-up is the one inverted machine: the weight is assistance, so "up" means less of it.</li></ul>' +
     '<div class="row" style="margin-top:10px"><label class="f" style="flex:1">Weekly activity goal<input type="number" id="goalIn" inputmode="numeric" min="3" max="7" value="' + (state.settings.goal || GOAL) + '"></label></div>' +
-    lockNote(me(), 'goal', v => v + ' activity days') + '</section>';
+    lockNote(me(), 'goal', v => v + ' activity days') +
+    '<div class="stack" id="liftGoalRow" style="margin-top:10px"><div class="eyebrow">Weekly lift goal</div><div class="seg">' + [2, 3].map(v => '<button type="button" data-a="lift-goal" data-v="' + v + '" class="' + (lg === v ? 'on' : '') + '" aria-pressed="' + (lg === v) + '">' + v + ' lift days</button>').join('') + '</div>' +
+    '<p class="tiny muted">Lift days that fill the lift share of your Move score.</p>' + lockNote(me(), 'liftGoal', v => v + ' lift days') + '</div></section>';
   const rs = restSeconds();
   h += '<section class="card stack" id="restCard"><h3>Rest timer</h3><p class="tiny muted">Logging a set for today starts a countdown: this long for main lifts, 60 seconds for core and bodyweight moves. It shows above the Save button with +15 s and a dismiss button, and never makes a sound.</p>' +
     '<div class="seg">' + [60, 90, 120].map(v => '<button type="button" data-a="rest-len" data-v="' + v + '" class="' + (rs === v ? 'on' : '') + '" aria-pressed="' + (rs === v) + '">' + v + ' s</button>').join('') + '</div></section>';
@@ -2816,10 +3303,12 @@ function renderHistory() {
     if (n.program && n.acts.length) { const names = n.acts.map(actName); what += ' + ' + names[0] + (names.length > 1 ? ' +' + (names.length - 1) : ''); }
     const line = [];
     if (n.kind === 'activity') line.push(n.allMin + ' min');
-    if (n.tm) line.push(n.tm.minutes > 0 ? n.tm.minutes + ' min treadmill' : 'treadmill, minutes not entered');
+    const fb = !!(n.day && DAYS[n.day].full); // full-body days: a warm-up, and no phase
+    if (n.tm) line.push(n.tm.minutes > 0 ? n.tm.minutes + (fb ? ' min warm-up' : ' min treadmill') : fb ? 'warm-up, minutes not entered' : 'treadmill, minutes not entered');
     if (n.keys.length) line.push(n.keys.length + ' exercise' + (n.keys.length === 1 ? '' : 's'));
     if (n.program && n.acts.length) line.push(n.actMin + ' min of activities');
-    if (n.phase) line.push('Phase ' + n.phase);
+    if (n.phase && !fb) line.push('Phase ' + n.phase);
+    if (CHECKIN_WORDS[r.rec.checkin]) line.push('Felt: ' + CHECKIN_WORDS[r.rec.checkin]);
     if (r.rec.deload && n.kind === 'strength') line.push('deload');
     h += '<details class="hi" data-hdate="' + r.date + '"><summary><div class="hdate num">' + nice(r.date).replace(/^(\w+) /, '$1<br>') + '</div><div><b>' + esc(what) + '</b><div class="tiny muted">' + esc(line.join(' · ') || '—') + '</div></div>' + chip + '</summary><div class="hbody">';
     if (n.ambiguous) h += '<p class="tiny" style="color:var(--warn)">Saved as a lift day by the earlier version, but it has no lifting sets. Treated as ' + (n.kind === 'cardio' ? 'treadmill only' : 'no activity') + ' until you edit it.</p>';
@@ -2864,6 +3353,592 @@ function renderHistory() {
   if (names.length) h += '<section class="card"><h3>By activity</h3><div class="tbl" style="margin-top:8px"><table>' + names.slice(0, 12).map(k => '<tr><td>' + tally[k].icon + ' ' + esc(k) + '</td><td>' + tally[k].n + '× · ' + tally[k].min + ' min</td></tr>').join('') + '</table></div></section>';
   return h;
 }
+
+/* ---- 62-ui-checkin.js ---- */
+/* ---------- The daily check-in, the Healthplex, and the settings that go with them ---------- */
+// "How are you feeling?" on Train, for today. Picking a choice only opens its preview: nothing is written until a
+// session is saved, and what is saved carries the answer as `checkin`. Classes and court games are a separate, smaller
+// link: they are never the suggested choice and nothing needs them.
+
+/* --- settings: split, weekly lift goal, "Not at my gym" --- */
+ACT['split-set'] = async el => {
+  const v = el.dataset.v === 'full' ? 'full' : 'ppl'; if (v === splitOf()) return;
+  await saveSettings({ split: v }); // old days keep the day they were saved as; only the next lift changes
+  toast(v === 'full' ? 'Full body A/B. Your next lift is ' + DAYS[nextDayKey(addDays(todayIso(), 1))].name + '.' : 'Push / Pull / Legs. Your next lift is ' + DAYS[nextDayKey(addDays(todayIso(), 1))].name + '.', 3600);
+};
+ACT['lift-goal'] = async el => {
+  const v = Number(el.dataset.v) === 2 ? 2 : 3; if (v === liveGoals(me()).liftGoal) return;
+  await saveSettings({ liftGoal: v }); settle();
+  toast('Weekly lift goal: ' + v + ' lift days. ' + startsNote() + '; this week stays at ' + thisWeek(me()).liftGoal + '.', 4200);
+};
+// The exercise's free stand-in becomes the default for every future workout. No slot is ever dropped.
+async function notAtMyGym(base) {
+  const to = EX[base] ? defaultSwapOption(base) : null;
+  if (!to) { toast('There is no stand-in for ' + (EX[base] ? EX[base].name : 'that one') + '. Use Swap for this workout.', 3800); return false; }
+  const d = state.drafts[state.selDate]; if (d && d.swaps[base] != null) { delete d.swaps[base]; persistDrafts(); } // this workout follows the new default too
+  await saveSettings({ swaps: Object.assign({}, state.settings.swaps, { [base]: to }) });
+  toast(EX[to].name + ' replaces ' + EX[base].name + ' in every future workout. Undo it on the Program tab.', 4600);
+  return true;
+}
+
+/* --- the gym: facts, the first-week note, the morning plan --- */
+// From the Healthplex website, November 2026. No equipment list is published.
+const HP = { phone: '(317) 920-7400', weekday: '5:15 a.m.–10 p.m.', weekend: '7 a.m.–8 p.m.' };
+const isWeekend = date => { const d = dow(date); return d === 0 || d === 6; };
+function gymCardHTML() {
+  if (!atHealthplex(me())) return '';
+  const row = (k, v) => '<li><span>' + k + '</span><span class="muted" style="text-align:right">' + v + '</span></li>';
+  return '<section class="card" id="gymInfo"><div class="row between"><h3>Your gym</h3><span class="muted tiny">' + HEALTHPLEX + ' · 3660 Guion Rd</span></div><div class="plan" style="margin-top:6px"><ul>' +
+    row('Hours', 'Mon–Fri ' + HP.weekday + '<br>Sat–Sun ' + HP.weekend) +
+    row('Track', 'Indoor, 1/8 mile · 8 laps = 1 mile') +
+    row('Pools', '25-yard lap pool, 6 lanes, about 80°F<br>Therapy pool, about 90°F') +
+    row('Recovery', 'Dry sauna, steam room and whirlpool<br>in both locker rooms · towels provided') +
+    row('Courts', 'Basketball (with volleyball and pickleball gear)<br>Tennis: 6 indoor, 3 outdoor · 1 racquetball') +
+    row('Floors', 'Cardio and strength: squat racks,<br>machines and free weights') +
+    row('Also', 'Massage therapist on site') +
+    row('Fitness desk', '<a href="tel:+13179207400">' + HP.phone + '</a>') + '</ul></div>' +
+    '<p class="tiny muted" style="margin-top:8px">Hours as of Nov 2026. Check the Healthplex site before holidays. Classes are optional and never needed for a goal or a badge.</p></section>';
+}
+// For a week after a lifting profile's gym changes: one note about machines that are not there.
+function gymBannerHTML() {
+  const p = P(me()), since = state.data[me()].profile && state.data[me()].profile.placeSince, t = todayIso();
+  if (p.plan !== 'program' || !atHealthplex(me()) || !validIso(since) || t < since || t >= addDays(since, 7)) return '';
+  return '<div class="banner accent" id="gymBanner">First week at the Healthplex: if a machine isn\'t there, use ··· → Not at my gym.</div>';
+}
+function hpMorningHTML(kind) {
+  const t = state.selDate, wkend = isWeekend(t), pick = state.ci && state.ci.date === t ? state.ci.choice : (state.sessions[t] && state.sessions[t].checkin) || null, row = (a, b) => '<span class="t num">' + a + '</span><span>' + b + '</span>';
+  let rows, title = 'Morning plan · at IMS by 9';
+  if (pick === 'tired') rows = row('6:00', 'Up. Water, small bite.') + row('6:20', 'At the Healthplex. Easy cardio, 20 to 30 min: track, treadmill, bike, elliptical or the lap pool.') + row('7:00', 'Optional sauna or steam, 10 min. Drink water.') + row('7:20', 'Shower. Out the door by 8:15, at IMS by 9.');
+  else if (pick === 'sore') rows = row('6:00', 'Up. Water, small bite.') + row('6:20', 'At the Healthplex. 10 easy minutes on the track or in the therapy pool, then stretch.') + row('6:40', 'Sauna, steam or whirlpool, 10 min. Drink water.') + row('7:00', 'Shower. Out the door by 8:15, at IMS by 9.');
+  else if (pick === 'rest' || kind === 'rest') rows = row('6:30', 'Up. Water, breakfast, no gym today.') + row('8:15', 'Out the door, at IMS by 9.');
+  else rows = row('6:00', 'Up. Water, small bite.') + row('6:20', 'At the Healthplex. Warm-up 5–10 min.') + row('6:30', (DAYS[kind] ? DAYS[kind].name : 'Lift') + ' (about ' + (pick === 'short' ? '25 min, express' : '40 min, or 25 for express') + ').') +
+    row('7:15', 'Optional sauna or steam, 10 min. Drink water.') + row('7:35', 'Shower. Out the door by 8:15, at IMS by 9.');
+  return '<details class="card plain" data-dk="morning" id="morningPlan"><summary>' + title + '</summary><div class="sched" style="margin-top:8px">' + rows + '</div>' +
+    '<p class="tiny muted" style="margin-top:8px" id="morningHours">' + (wkend ? 'Weekend: the Healthplex opens at 7, so everything starts later. Open ' + HP.weekend + '.' : 'Weekdays the Healthplex opens at 5:15. Open ' + HP.weekday + '.') + ' Missed a morning? Nothing shifts: the next lift is still the next one.</p></details>';
+}
+
+/* --- recovery rooms: the chip after a workout, the water offer --- */
+const heatDone = (pid, date) => { const r = state.data[pid].sessions[date]; return !!(r && Array.isArray(r.acts) && r.acts.some(a => a && HEAT_KEYS.includes(a.a))); };
+function heatChipHTML(date) {
+  const pid = me(), di = dayInfo(pid, date);
+  if (!atHealthplex(pid) || date !== todayIso() || !di.logged || di.rest || heatDone(pid, date)) return '';
+  return '<div class="row" id="heatChip"><button type="button" class="chipbtn" data-a="heat-open">🔥 Sauna, steam or whirlpool after?</button></div>';
+}
+OV.heat = {
+  html: o => '<div class="ov" role="dialog" aria-modal="true" aria-label="Recovery rooms">' + ovHead('After your workout', 'Recovery: it logs, but does not count toward active minutes') +
+    '<p class="banner" id="heatNote">' + HEAT_NOTE + '</p><div class="results">' + HEAT_KEYS.map(k => '<button type="button" class="fooditem" data-a="heat-pick" data-k="' + k + '"><span class="fn">' + ACTS[k].icon + ' ' + ACTS[k].name + '</span><span class="fk">' + ACTS[k].min + ' min</span><span class="fq">locker room · towels provided</span></button>').join('') + '</div>' +
+    '<div class="row"><button type="button" class="small" data-a="ov-close">Not today</button></div></div>'
+};
+ACT['heat-open'] = () => openOv({ type: 'heat', date: state.selDate });
+ACT['heat-pick'] = el => { const k = el.dataset.k, a = ACTS[k]; openOv({ type: 'act', k, date: state.ov.date || state.selDate, min: String(a.min), feel: null, hurt: false, note: '', name: '' }); };
+ACT['water-bottle'] = async () => {
+  const pid = me(), date = state.waterDate || todayIso(), before = scoreSnapshot();
+  const ok = await addWater(date, BOTTLE_OZ); if (!ok) return;
+  if (wm) wmDraw(); else render();
+  celebrate('+' + BOTTLE_OZ + ' oz · ' + Math.round(dayTotals(pid, date).water) + ' of ' + weekGoals(pid, weekStart(date)).waterOz, { ms: 2200, before });
+};
+
+/* --- Healthplex cards in the activity menu: a tap flips the card to its details --- */
+function hpCardHTML(pid, k) {
+  const a = ACTS[k], caution = actCaution(pid, k), open = state.hpFlip === k, anim = open && state.hpAnim === k, tag = classTag(a);
+  if (anim) state.hpAnim = null; // the flip plays once, for the tap that caused it
+  if (!open) return '<button type="button" class="act hp" data-a="hp-flip" data-k="' + k + '" aria-expanded="false"><span class="ai" aria-hidden="true">' + a.icon + '</span><span class="an">' + esc(a.name) + '</span><span class="am">' + a.min + ' min · ' + (a.mv === false ? 'recovery' : IMPACT[a.impact]) + '</span>' +
+    (tag ? '<span class="aw" data-tag="' + k + '">' + tag + '</span>' : '') + (caution.length ? '<span class="aw">Go easy: ' + caution.map(x => AREAS[x].toLowerCase()).join(', ') + '</span>' : '') + (painFlag(pid, k) ? '<span class="aw" data-pain="' + k + '">Pain noted ' + painCount(pid, k) + '× recently</span>' : '') + '</button>';
+  return '<div class="act hp back' + (anim ? ' flipin' : '') + '" data-hpback="' + k + '"><span class="an">' + a.icon + ' ' + esc(a.name) + '</span><span class="aw" style="color:var(--muted)">' + esc(a.desc) + '</span>' +
+    (tag ? '<span class="aw" data-tag="' + k + '">' + tag + '</span>' : '') + (a.heat ? '<span class="aw">' + HEAT_NOTE + '</span>' : '') +
+    (caution.length ? '<span class="aw">Loads an area you are protecting: ' + caution.map(x => AREAS[x].toLowerCase()).join(', ') + '.</span>' : '') +
+    '<span class="row" style="grid-column:1/-1;gap:6px"><button type="button" class="small on" data-a="hp-start" data-k="' + k + '">Start</button><button type="button" class="small" data-a="act" data-k="' + k + '">Log it</button><button type="button" class="quiet" data-a="hp-flip" data-k="' + k + '">Close</button></span></div>';
+}
+ACT['hp-flip'] = el => { const k = el.dataset.k; state.hpFlip = state.hpFlip === k ? null : k; state.hpAnim = state.hpFlip; redrawPicker(); };
+ACT['hp-start'] = el => { const k = el.dataset.k, a = ACTS[k]; if (!a) return; if (state.ov) closeOv(); wmOpen(stagePlan(a.name, null, [stageFor(k)]), el); };
+// Classes and court games, from the small link under the check-in.
+OV.hpextra = {
+  html: o => { const pid = me(), keys = Object.keys(ACTS).filter(k => ACTS[k].cls || k === 'hpcourt' || k === 'hpbball');
+    return '<div class="ov tall" role="dialog" aria-modal="true" aria-label="Class or game">' + ovHead('Class or game', 'Optional. Never suggested, never needed for a goal or a badge') +
+      '<div class="results" id="hpExtra">' + keys.map(k => { const a = ACTS[k], tag = classTag(a); return '<button type="button" class="fooditem" data-a="hpextra-pick" data-k="' + k + '"><span class="fn">' + a.icon + ' ' + esc(a.name) + '</span><span class="fk">' + a.min + ' min</span><span class="fq">' + (tag || 'Counts as an activity day like anything else') + (actCaution(pid, k).length ? ' · go easy: ' + actCaution(pid, k).map(x => AREAS[x].toLowerCase()).join(', ') : '') + '</span></button>'; }).join('') + '</div>' +
+      '<p class="tiny muted">Classes count as activity days like anything else. Check the Healthplex schedule for times.</p></div>'; }
+};
+ACT['hp-extra'] = () => openOv({ type: 'hpextra', date: state.selDate });
+ACT['hpextra-pick'] = el => { const k = el.dataset.k, a = ACTS[k]; openOv({ type: 'act', k, date: state.ov.date || state.selDate, min: String(a.min), feel: null, hurt: false, note: '', name: '', felt: 'extra' }); };
+
+/* --- the check-in --- */
+const CI_PROGRAM = [['strong', '💪', 'Feeling strong'], ['short', '⏱️', 'Short on time'], ['tired', '🚶', 'Tired, just want to move'], ['sore', '🧊', 'Sore or run down'], ['rest', '🛌', 'Not going today']];
+const CI_CHOICE = [['good', '🙂', 'Feeling good'], ['low', '🌤️', 'Low energy'], ['sore', '🧊', 'Sore or run down'], ['rest', '🛌', 'Not today']];
+const ciShown = pid => P(pid).plan === 'program' || atHealthplex(pid); // a pick-your-own profile gets it once its gym is the Healthplex
+const safeAct = (pid, k) => !actCaution(pid, k).length && !painFlag(pid, k);
+const whyNot = (pid, k) => actCaution(pid, k).length ? ACTS[k].name + ' loads ' + actCaution(pid, k).map(x => AREAS[x].toLowerCase()).join(' and ') + ', which you asked to go easy on.' : ACTS[k].name + ' has hurt ' + painCount(pid, k) + ' times lately.';
+// the most recent saved days before `date`, newest first, and whether each one was a sore day
+function soreTrail(pid, date) {
+  return recordsOf(pid).filter(r => r.date < date).slice(-2).reverse().map(r => r.rec.checkin === 'sore' || r.n.acts.some(a => a.hurt));
+}
+const liftKindFor = date => { const k = kindFor(date, model(date)); return DAYS[k] ? k : nextDayKey(date); };
+// The suggestion, by the rules in order. Returns { choice, why }.
+function checkinSuggest(pid, date) {
+  const sore = soreTrail(pid, date), wasSore = sore[0] && !sore[1]; // one recovery day after a sore day, not an endless run of them
+  if (P(pid).plan !== 'program') {
+    let choice = wasSore ? 'sore' : dayInfo(pid, addDays(date, -1)).active ? 'low' : 'good', why = wasSore ? 'Last time was a sore day.' : choice === 'low' ? 'You were active yesterday.' : 'A normal day: a little cardio, then the machines.';
+    // never something that loads a protected area or has hurt twice lately: step down to the next gentlest
+    if (choice === 'good') { const g = ciStages(pid, 'good'); if (g.blocked) { choice = 'low'; why = g.blocked + ' Low energy is the next gentlest.'; } else if (g.note) why = g.note; }
+    if (choice === 'low') { const l = ciStages(pid, 'low'); if (l.blocked) { choice = 'sore'; why = l.blocked + ' Stretching is the next gentlest.'; } else if (l.note && !/next gentlest/.test(why)) why = l.note; }
+    return { choice, why };
+  }
+  if (wasSore) return { choice: 'sore', why: 'Last time was a sore day.' };
+  const rec = recordsOf(pid), y = rec.find(r => r.date === addDays(date, -1)), ws = weekStart(date), g = weekGoals(pid, ws);
+  if (y && y.n.kind === 'strength') return { choice: 'tired', why: 'You lifted yesterday.' };
+  const done = rec.filter(r => r.date >= ws && r.date < date && r.n.qualifies).length, need = g.plan === 'program' ? Math.max(0, g.liftGoal - done) : 0, left = 7 - ((dow(date) + 6) % 7);
+  if (need > 0 && left <= 2 * need - 1) return { choice: 'short', why: need + ' lift' + (need === 1 ? '' : 's') + ' to go, ' + left + ' day' + (left === 1 ? '' : 's') + ' left.' }; // no room left to skip a day between lifts
+  const last = lastLift(date, pid), gap = last ? Math.round((toUTC(date) - toUTC(last.date)) / 86400000) : null;
+  if (gap != null && gap >= 3) return { choice: 'strong', why: gap + ' days since your last lift.' };
+  return isWeekend(date) ? { choice: 'tired', why: 'A weekend: keep it easy.' } : { choice: 'strong', why: 'A weekday: a good day for the full lift.' };
+}
+// Cardio a lifting profile can pick when tired: [activity key or 'treadmill', label].
+const cardioOptions = pid => atHealthplex(pid) ? [['hptrack', 'Track walk'], ['hprun', 'Track run/walk'], ['treadmill', 'Treadmill (Fitness+)'], ['bike', 'Bike'], ['elliptical', 'Elliptical'], ['hpswim', 'Lap swim']] : [['treadmill', 'Treadmill (Fitness+)'], ['bike', 'Bike'], ['elliptical', 'Elliptical'], ['walkbrisk', 'Brisk walk']];
+// A pick-your-own check-in choice as stages. `blocked`: the choice has a part with no safe option. `note`: a safe stand-in was used.
+function ciStages(pid, choice) {
+  const first = (keys, min) => { const k = keys.find(x => safeAct(pid, x)); return { k: k || keys[0], min, swapped: !!k && k !== keys[0], none: !k, from: keys[0] }; };
+  if (choice === 'good') {
+    const a = first(['hptrack', 'hpbike'], 10), c = first(['hpcircuit'], 15);
+    return { stages: [stageFor(a.k, a.min), stageFor(c.k, c.min)], blocked: c.none ? whyNot(pid, 'hpcircuit') : a.none ? whyNot(pid, a.from) : '', note: a.swapped ? ACTS[a.k].name + ' instead: ' + whyNot(pid, a.from) : '' };
+  }
+  if (choice === 'low') { const a = first(['hppool', 'hpbike'], 15); return { stages: [stageFor(a.k, a.min)], blocked: a.none ? whyNot(pid, a.from) : '', note: a.swapped ? ACTS[a.k].name + ' instead: ' + whyNot(pid, a.from) : '' }; }
+  return { stages: [{ type: 'stretch', act: 'stretchfull', name: 'Gentle stretch', min: 10, rounds: 2 }, { type: 'heat', act: 'hpsauna', name: 'Sauna, steam or whirlpool', min: 10 }], blocked: '', note: '' };
+}
+// What a choice will be: a title, how long, the first moves, and the plan workout mode runs.
+function ciPreview(pid, date, choice, opt) {
+  const program = P(pid).plan === 'program';
+  if (choice === 'rest') return { title: 'Rest day', time: '', moves: ['Doesn\'t count as activity' + (program ? ' and doesn\'t move the rotation.' : '.')], rest: true };
+  if (!program) {
+    const s = ciStages(pid, choice), mins = sum(s.stages, x => x.min);
+    return { title: choice === 'good' ? 'Easy cardio, then the machines' : choice === 'low' ? 'Easy and short' : 'Stretch, then heat', time: 'about ' + mins + ' min', moves: s.stages.map(x => x.name + ' · ' + x.min + ' min'), warn: s.blocked, note: s.note, plan: stagePlan(choice === 'good' ? 'Feeling good' : choice === 'low' ? 'Low energy' : 'Recovery', choice, s.stages) };
+  }
+  if (choice === 'strong' || choice === 'short') {
+    const kind = liftKindFor(date), m = Object.assign({}, model(date), { kindSel: kind, checkin: choice }), slots = plannedFor(date, kind, m), main = slots.filter(p => !(slotOf(kind, p.base) || {}).optional);
+    return { title: (choice === 'short' ? 'Express ' : '') + DAYS[kind].name, time: choice === 'short' ? 'about 25 min' : 'about 45 min', lift: { kind, express: choice === 'short' },
+      moves: slots.slice(0, 3).map(p => { const sp = specFor(p.key, date), sg = suggest(p.key, date); return EX[p.key].name + ' · ' + (choice === 'short' ? 3 : sp.sets) + ' × ' + sp.lo + '–' + sp.hi + (sg.w != null ? ' · ' + sg.w + ' lb' : ''); }), more: choice === 'short' ? '' : main.length > 3 ? '+ ' + (slots.length - 3) + ' more' : '' };
+  }
+  if (choice === 'tired') {
+    const opts = cardioOptions(pid), k = opts.some(o => o[0] === opt) ? opt : opts[0][0], st = k === 'treadmill' ? { type: 'timer', act: 'treadmill', name: 'Treadmill (Fitness+)', min: 25 } : stageFor(k, 25);
+    return { title: 'Easy cardio', time: '20 to 30 min', opts, opt: k, moves: [st.name + (st.type === 'laps' ? ' · tap each lap, 8 laps = 1 mile' : st.type === 'lengths' ? ' · tap each 25-yard length' : ' · a timer, with optional intervals')], plan: stagePlan('Cardio', 'tired', [st]) };
+  }
+  // sore: an easy walk, a stretch, then a recovery room where there is one
+  const hp = atHealthplex(pid), opts = hp ? [['hptrack', 'Track'], ['hppool', 'Therapy pool']] : [['walkeasy', 'Easy walk']], k = opts.some(o => o[0] === opt) ? opt : opts[0][0];
+  const stages = [stageFor(k, 10), { type: 'stretch', act: k, name: 'Stretch', min: 5, rounds: 1 }].concat(hp ? [{ type: 'heat', act: 'hpsauna', name: 'Sauna, steam or whirlpool', min: 10 }] : []);
+  return { title: 'Recovery', time: hp ? 'about 25 min' : 'about 15 min', opts, opt: k, moves: stages.map(x => x.name + ' · ' + x.min + ' min'), plan: stagePlan('Recovery', 'sore', stages) };
+}
+function checkinHTML() {
+  const pid = me(), date = state.selDate, t = todayIso();
+  if (date !== t || !ciShown(pid)) return '';
+  const going = wmResumable(pid, date), rec = state.data[pid].sessions[date];
+  if (going) return '<section class="card stack ci" id="checkin"><div class="row between"><h3>Workout in progress</h3><span class="tiny muted">' + esc(going.title) + '</span></div><div class="row"><button type="button" class="primary" id="wmResume" data-a="wm-resume">Resume workout</button></div><p class="tiny muted">Everything you logged is kept. Finish or end it from inside.</p></section>';
+  if (rec && !(state.ci && state.ci.date === date && state.ci.pid === pid)) {
+    // a day that is already logged: the answer, if there was one, and a way back to the choices
+    const hp = atHealthplex(pid), felt = CHECKIN_WORDS[rec.checkin]; if (!felt && !hp) return '';
+    return '<section class="card ci" id="checkin"><div class="row between"><span id="ciDone">' + (felt ? 'Checked in: <b>' + felt + '</b>.' : 'Today is logged.') + '</span><button type="button" class="quiet" data-a="ci-again">Do something else too</button></div>' +
+      (hp ? '<div class="row"><button type="button" class="quiet" id="ciExtra" data-a="hp-extra">Class or game (optional)</button></div>' : '') + '</section>';
+  }
+  const program = P(pid).plan === 'program', list = program ? CI_PROGRAM : CI_CHOICE, sg = checkinSuggest(pid, date), sel = state.ci && state.ci.date === date && state.ci.pid === pid ? state.ci.choice : null, anim = sel && state.ciAnim === sel;
+  if (anim) state.ciAnim = null; // the expand plays once, for the tap that caused it
+  let h = '<section class="card stack ci" id="checkin"' + (sel ? ' data-open="' + sel + '"' : '') + (anim ? ' data-anim="1"' : '') + '><div class="row between"><h3>How are you feeling?</h3><span class="tiny muted">' + nice(date) + '</span></div>';
+  list.forEach(c => {
+    const on = sel === c[0], sug = sg.choice === c[0];
+    h += '<button type="button" class="cic' + (on ? ' sel' + (anim ? ' lift' : '') : sel ? ' fade' : '') + (sug ? ' sug' : '') + '" data-a="ci-pick" data-v="' + c[0] + '" aria-expanded="' + on + '"><span class="ci-i" aria-hidden="true">' + c[1] + '</span><span class="ci-t"><b>' + c[2] + '</b>' +
+      (sug ? '<span class="tiny" data-ci-why>' + esc(sg.why) + '</span>' : '') + '</span>' + (sug ? '<span class="chip accent" id="ciSuggested">Suggested</span>' : '') + '</button>';
+    if (!on) return;
+    const pv = ciPreview(pid, date, c[0], state.ci.opt);
+    h += '<div class="cip' + (anim ? ' grow' : '') + '" id="ciPreview"><div class="row between"><b id="ciTitle">' + esc(pv.title) + '</b><span class="muted tiny" id="ciTime">' + esc(pv.time) + '</span></div>' +
+      (pv.opts ? '<div class="chips wrapc" id="ciOpts">' + pv.opts.map(o => '<button type="button" data-a="ci-opt" data-v="' + o[0] + '" class="' + (pv.opt === o[0] ? 'on' : '') + '" aria-pressed="' + (pv.opt === o[0]) + '">' + o[1] + '</button>').join('') + '</div>' : '') +
+      '<ol class="ci-moves" id="ciMoves">' + pv.moves.map(x => '<li>' + esc(x) + '</li>').join('') + '</ol>' + (pv.more ? '<span class="tiny muted">' + pv.more + '</span>' : '') +
+      (pv.warn ? '<p class="banner" id="ciWarn">' + esc(pv.warn) + ' You can still do it: keep it short and easy.</p>' : pv.note ? '<p class="tiny muted" id="ciNote">' + esc(pv.note) + '</p>' : '') +
+      '<div class="row"><button type="button" class="primary" id="ciStart" data-a="' + (pv.rest ? 'ci-rest' : 'ci-start') + '">' + (pv.rest ? 'Log rest day' : 'Start') + '</button><button type="button" class="small" data-a="ci-back">Back</button></div></div>';
+  });
+  if (atHealthplex(pid)) h += '<div class="row"><button type="button" class="quiet" id="ciExtra" data-a="hp-extra">Class or game (optional)</button></div>';
+  return h + '</section>';
+}
+ACT['ci-pick'] = (el, e) => {
+  const v = el.dataset.v, r = el.getBoundingClientRect();
+  state.ci = { pid: me(), date: state.selDate, choice: v, opt: null }; state.ciAnim = v; state.ciPicks = (state.ciPicks || 0) + 1;
+  render('#ciStart');
+  burst({ count: 14, x: (r.left + r.width / 2) / window.innerWidth, y: Math.min(0.9, (r.top + r.height / 2) / window.innerHeight) });
+};
+ACT['ci-opt'] = el => { if (state.ci) { state.ci.opt = el.dataset.v; render('[data-a="ci-opt"][data-v="' + el.dataset.v + '"]'); } };
+ACT['ci-back'] = () => { const v = state.ci && state.ci.choice; state.ci = null; render(v ? '[data-a="ci-pick"][data-v="' + v + '"]' : null); };
+ACT['ci-again'] = () => { state.ci = { pid: me(), date: state.selDate, choice: null, opt: null }; render(); };
+ACT['ci-start'] = el => {
+  const c = state.ci; if (!c) return;
+  const pv = ciPreview(c.pid, c.date, c.choice, c.opt);
+  if (pv.lift) wmOpen({ kind: 'lift', title: pv.title, felt: c.choice, day: pv.lift.kind, express: pv.lift.express }, el);
+  else if (pv.plan) wmOpen(pv.plan, el);
+};
+ACT['ci-rest'] = async () => {
+  const c = state.ci, before = scoreSnapshot(); if (!c) return;
+  if (P(c.pid).plan === 'program') { const d = draft(c.date); d.kindSel = 'rest'; d.checkin = c.choice; persistDrafts(); state.ci = null; const ok = await save(); if (!ok) render(); return; }
+  const ok = await logRest(c.date, c.choice); if (!ok) return;
+  state.ci = null; render(); celebrate('Rest day logged. Rest is part of the plan.', { before });
+};
+
+/* ---- 65-workout.js ---- */
+/* ---------- Workout mode: a full-screen, guided session ---------- */
+// Its own element (#wm) outside #main. While it is open, render() leaves the page behind alone, and everything here
+// draws straight into #wm. It adds no data shape: lifts go into the same draft the lifting log uses and are saved by
+// the same save(); cardio, guided and recovery sessions are logged with the same logActivity() as the activity menu.
+const wmEl = $('#wm');
+let wm = null;            // the open session, or null
+const WM_KEY = 'ml.wm';   // a timed session in progress on this phone (laps, timers), so leaving keeps it
+const CIRCUIT = ['Leg press', 'Seated row', 'Chest press', 'Lat pulldown'];
+const stageFor = (k, min) => ({ type: (ACTS[k] && ACTS[k].wm) || 'timer', act: k, name: ACTS[k] ? ACTS[k].name : 'Cardio', min: min || (ACTS[k] ? ACTS[k].min : 15) });
+const stagePlan = (title, felt, stages) => ({ kind: 'stages', title, felt, stages });
+const wmDraftOn = date => { const d = state.drafts[date]; return !!(d && d.wm && draftHasContent(d)); };
+function wmResumable(pid, date) {
+  if (pid === me() && wmDraftOn(date)) return { kind: 'lift', title: state.drafts[date].wm.title || 'Lift' };
+  const s = lsGet(WM_KEY, null);
+  return s && s.pid === pid && s.date === date && s.plan && Array.isArray(s.plan.stages) && Array.isArray(s.st) ? { kind: 'stages', title: s.plan.title || 'Workout' } : null;
+}
+const wmTime = ms => { const s = Math.max(0, Math.floor(ms / 1000)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+const wmElapsed = () => wm.ms + (Date.now() - wm.started);
+
+/* --- opening and closing --- */
+function wmOpen(plan, fromEl, resume) {
+  if (wm) return;
+  if (state.ov) { state.ov = null; state.ovQ = []; renderOv(); }
+  wm = { pid: me(), date: state.selDate, plan, view: 'start', before: scoreSnapshot(), started: Date.now(), ms: 0, stale: false, i: -1, edit: null, quit: 0 };
+  if (plan.kind === 'lift') wmLiftInit(resume); else wmStagesInit(resume);
+  if (reducedMotion() || resume) wm.view = 'main'; // no start sequence with reduced motion, or when coming back
+  if (fromEl && fromEl.getBoundingClientRect) { const r = fromEl.getBoundingClientRect(); wmEl.style.transformOrigin = Math.round(r.left + r.width / 2) + 'px ' + Math.round(r.top + r.height / 2) + 'px'; }
+  wmEl.hidden = false; wmEl.classList.remove('zoom'); void wmEl.offsetWidth; wmEl.classList.add('zoom'); // the tapped card zooms into the session
+  document.body.style.overflow = 'hidden'; state.ci = null; state.wmOpens = (state.wmOpens || 0) + 1;
+  // Full screen and a screen that stays awake, where the browser allows them from this tap. A refusal is ignored.
+  try { const el = document.documentElement, f = el.requestFullscreen || el.webkitRequestFullscreen; if (f) { const pr = f.call(el); wm.fs = true; if (pr && pr.catch) pr.catch(() => { if (wm) wm.fs = false; }); } } catch (e) { /* not allowed here */ }
+  try { if (navigator.wakeLock && navigator.wakeLock.request) navigator.wakeLock.request('screen').then(l => { if (wm) wm.lock = l; else l.release(); }).catch(() => {}); } catch (e) { /* not allowed here */ }
+  wmDraw();
+  wm.tick = setInterval(wmTick, 250);
+  if (wm.view === 'start') wm.go = setTimeout(wmGo, 2500);
+}
+function wmGo() { if (!wm || wm.view !== 'start') return; clearTimeout(wm.go); wm.view = 'main'; wm.started = Date.now(); wmDraw(); }
+ACT['wm-go'] = () => wmGo(); // a tap skips the start sequence
+function wmClose() {
+  if (!wm) return;
+  clearInterval(wm.tick); clearTimeout(wm.go);
+  try { if (wm.lock) wm.lock.release(); } catch (e) { /* already gone */ }
+  try { if (wm.fs && (document.fullscreenElement || document.webkitFullscreenElement)) { const x = document.exitFullscreen || document.webkitExitFullscreen; if (x) { const pr = x.call(document); if (pr && pr.catch) pr.catch(() => {}); } } } catch (e) { /* not in full screen */ }
+  wm = null; wmEl.hidden = true; wmEl.innerHTML = ''; wmEl.classList.remove('zoom'); document.body.style.overflow = '';
+  render();
+}
+// Leaving keeps everything: the lift draft is already saved as typed; a timed session is paused and remembered.
+function wmKeep() {
+  if (!wm) return;
+  if (wm.plan.kind === 'lift') { const d = state.drafts[wm.date]; if (d && d.wm) { d.wm.ms = wmElapsed(); persistDrafts(); } }
+  else { wm.st.forEach((s, i) => { if (s.on) { s.ms = wmStageMs(i); s.on = false; } }); wmStore(); }
+}
+ACT['wm-resume'] = el => {
+  const r = wmResumable(me(), state.selDate); if (!r) { render(); return; }
+  if (r.kind === 'lift') { const d = state.drafts[state.selDate]; wmOpen({ kind: 'lift', title: d.wm.title || 'Lift', felt: d.checkin || null, day: kindFor(state.selDate, d), express: d.checkin === 'short' }, el, true); }
+  else { const s = lsGet(WM_KEY, null); wmOpen(s.plan, el, true); }
+};
+ACT['wm-lift'] = el => { // from the lifting log: this day's lift, guided
+  const date = state.selDate, m = model(date), kind = kindFor(date, m); if (!DAYS[kind]) return;
+  if (wmDraftOn(date)) { ACT['wm-resume'](el); return; }
+  wmOpen({ kind: 'lift', title: DAYS[kind].name, felt: m.checkin || null, day: kind, express: m.checkin === 'short' }, el);
+};
+
+/* --- the top strip: one lap per exercise or stage, the avatar moving along --- */
+function wmTopHTML(laps, cur, frac) {
+  const n = Math.max(1, laps), pct = clamp(frac, 0, 1) * 100;
+  let h = '<div class="wm-top"><button type="button" class="wm-x" data-a="wm-quit" aria-label="End early">✕</button><div class="wm-strip" id="wmStrip" role="img" aria-label="Lap ' + Math.min(n, cur + 1) + ' of ' + n + '" style="--p:' + pct.toFixed(1) + '%"><i class="wm-fill" id="wmFill"></i>';
+  for (let i = 1; i < n; i++) h += '<span class="wm-lapmark" style="left:' + (i / n * 100).toFixed(2) + '%"></span>';
+  return h + '<span class="wm-car" id="wmCar">' + avatarHTML(wm.pid, 'sm') + '</span><span class="wm-end" aria-hidden="true"></span></div><span class="wm-clock num" id="wmClock">' + wmTime(wmElapsed()) + '</span></div>';
+}
+const wmFlag = (cls, checkered) => '<svg class="wm-flag ' + cls + '" viewBox="0 0 120 100" aria-hidden="true"><defs><pattern id="wmChk" width="20" height="20" patternUnits="userSpaceOnUse"><rect width="20" height="20" fill="#fff"/><rect width="10" height="10" fill="#15181C"/><rect x="10" y="10" width="10" height="10" fill="#15181C"/></pattern></defs>' +
+  '<line x1="14" y1="6" x2="14" y2="96" stroke="currentColor" stroke-width="5" stroke-linecap="round"/><g class="wm-wave"><path d="M16 10 C40 0 60 22 84 12 S112 8 112 14 V60 C100 52 84 66 60 56 S34 50 16 58 Z" fill="' + (checkered ? 'url(#wmChk)' : '#1E9E5A') + '" stroke="currentColor" stroke-width="2"/></g></svg>';
+function wmDraw() {
+  if (!wm) return;
+  wmEl.dataset.view = wm.view; wmEl.dataset.kind = wm.plan.kind;
+  if (wm.view === 'start') { wmEl.innerHTML = '<button type="button" class="wm-start" id="wmStartSeq" data-a="wm-go" aria-label="Skip the start"><span class="wm-lights" aria-hidden="true"><i></i><i></i><i></i></span>' + wmFlag('green', false) + '<b class="wm-gotext">GO</b><span class="tiny">' + esc(wm.plan.title) + ' · tap to skip</span></button>'; return; }
+  if (wm.view === 'quit') { wmEl.innerHTML = wmQuitHTML(); return; }
+  if (wm.view === 'finish') { wmEl.innerHTML = wm.plan.kind === 'lift' ? wmLiftFinishHTML() : wmStagesFinishHTML(); return; }
+  wmEl.innerHTML = wm.plan.kind === 'lift' ? (wm.view === 'rest' ? wmRestHTML() : wmLiftHTML()) : wmStageHTML();
+}
+function wmTick() {
+  if (!wm || wm.view === 'start') return;
+  const c = $('#wmClock'); if (c) c.textContent = wmTime(wmElapsed());
+  if (wm.plan.kind === 'lift') { if (wm.view === 'rest') wmRestTick(); } else if (wm.view === 'main') wmStageTick();
+}
+
+/* --- ending early --- */
+function wmQuitHTML() {
+  const lift = wm.plan.kind === 'lift', any = lift ? wmLiftAny() : wmStageAny();
+  return '<div class="wm-body wm-center"><h2>End early?</h2><p class="muted">' + (any ? 'What you logged so far can be saved, kept for later, or thrown away.' : 'Nothing is logged yet.') + '</p>' + (wm.err ? '<p class="banner bad" id="wmErr">' + esc(wm.err) + '</p>' : '') +
+    '<div class="stack" style="width:100%">' + (any ? '<button type="button" class="primary" id="wmQuitSave" data-a="' + (lift ? 'wm-save' : 'wm-stagelog') + '">Save what\'s logged</button>' : '') +
+    '<button type="button" class="wm-btn" id="wmQuitKeep" data-a="wm-leave">' + (any ? 'Keep it and leave' : 'Leave') + '</button>' +
+    (any ? '<button type="button" class="wm-btn danger" id="wmQuitDrop" data-a="wm-drop">' + (wm.quit === 2 ? 'Tap again to discard everything' : 'Discard…') + '</button>' : '') +
+    '<button type="button" class="wm-btn" id="wmQuitBack" data-a="wm-unquit">Back to the workout</button></div></div>';
+}
+ACT['wm-quit'] = () => { if (!wm) return; if (wm.view === 'start') { wmGo(); } wm.back = wm.view === 'quit' ? wm.back : wm.view; wm.view = 'quit'; wm.quit = 1; wm.err = ''; wmDraw(); };
+ACT['wm-unquit'] = () => { wm.view = wm.back && wm.back !== 'quit' ? wm.back : 'main'; wm.quit = 0; wmDraw(); };
+ACT['wm-leave'] = () => { wmKeep(); if (wm.plan.kind === 'lift' && !wmLiftAny()) wmDropDraft(); if (wm.plan.kind !== 'lift' && !wmStageAny()) lsSet(WM_KEY, null); wmClose(); };
+function wmDropDraft() { const d = state.drafts[wm.date]; if (!d) return; delete state.drafts[wm.date]; delete state.formError[wm.date]; persistDrafts(); }
+ACT['wm-drop'] = () => { // discard needs a second tap
+  if (wm.quit !== 2) { wm.quit = 2; wmDraw(); return; }
+  if (wm.plan.kind === 'lift') wmDropDraft(); else lsSet(WM_KEY, null);
+  wmClose(); toast('Discarded. Nothing was saved.');
+};
+
+/* --- lifts: one exercise at a time --- */
+function wmLiftInit(resume) {
+  const d = draft(wm.date), p = wm.plan;
+  if (!resume) { if (DAYS[p.day] && kindFor(wm.date, d) !== p.day) d.kindSel = p.day; if (p.felt) d.checkin = p.felt; d.wm = { at: Date.now(), ms: 0, title: p.title }; d.recovered = false; persistDrafts(); }
+  else wm.ms = (d.wm && d.wm.ms) || 0;
+  const slots = wmSlots(), firstOpen = slots.findIndex(s => wmSets(s).next >= 0), touched = d.tm.minutes !== '' || wmLiftAny();
+  wm.i = touched ? (firstOpen < 0 ? slots.length - 1 : firstOpen) : -1; // a fresh session opens on the warm-up
+  wm.warm = d.tm.minutes !== '' ? Number(d.tm.minutes) || 0 : DAYS[wmKind()].full ? 5 : TREAD_MIN[phaseOf(wm.date)];
+  wmLoadEx();
+}
+const wmM = () => state.drafts[wm.date] || model(wm.date);
+const wmKind = () => kindFor(wm.date, wmM());
+const wmSlots = () => { const k = wmKind(); return DAYS[k] ? plannedFor(wm.date, k, wmM()) : []; };
+function wmSets(p) { // the sets of one slot: how many, which are logged, which is next
+  const m = wmM(), n = setCount(p.key, m, wm.date), e = m.ex[p.key] || { w: '', reps: [] }, reps = [];
+  for (let i = 0; i < n; i++) reps.push(e.reps[i] == null || e.reps[i] === '' ? null : Number(e.reps[i]));
+  return { n, w: e.w, reps, next: reps.indexOf(null), done: reps.filter(r => r != null).length };
+}
+const wmLiftAny = () => { const m = wmM(); return m.tm.minutes !== '' && Number(m.tm.minutes) > 0 || Object.keys(m.ex).some(k => m.ex[k].reps.some(r => r !== '' && r != null)); };
+function wmLiftFrac() { const s = wmSlots(); let done = 0, all = 0; s.forEach(p => { const x = wmSets(p); done += x.done; all += x.n; }); return all ? done / all : 0; }
+function wmLoadEx() { // the steppers start from the suggestion and from last time
+  const p = wmSlots()[wm.i]; wm.edit = null; wm.swap = false; if (!p) return;
+  const ex = EX[p.key], sg = suggest(p.key, wm.date), s = wmSets(p), i = s.next < 0 ? s.n - 1 : s.next, sp = specFor(p.key, wm.date);
+  wm.w = ex.bw ? null : s.w !== '' && isFinite(Number(s.w)) ? Number(s.w) : (sg.w != null ? sg.w : ex.start);
+  const prev = i > 0 && s.reps[i - 1] != null ? s.reps[i - 1] : null, last = sg.last && sg.last.reps[i] != null ? sg.last.reps[i] : null;
+  wm.r = prev != null ? prev : ex.bw && sg.reps ? sg.reps : last != null ? clamp(last, sp.lo, sp.hi + 5) : sp.lo;
+}
+function wmLiftHTML() {
+  const slots = wmSlots(), kind = wmKind(), day = DAYS[kind], n = slots.length;
+  let h = wmTopHTML(n + 1, wm.i + 1, (1 + wmLiftFrac() * n) / (n + 1) * (wm.i < 0 && !wmLiftAny() ? 0 : 1));
+  if (wm.i < 0) { // the warm-up lap
+    const full = day.full;
+    return h + '<div class="wm-body"><div class="eyebrow">Warm-up · ' + esc(day.name) + '</div><h2 id="wmName">' + (full ? 'Warm-up' : 'Treadmill · Fitness+') + '</h2>' +
+      '<p class="wm-target">' + (full ? 'Track, treadmill or bike. <b>5–10 easy minutes</b>, enough to feel warm.' : 'Pick a Fitness+ workout. <b>Target ' + TREAD_MIN[phaseOf(wm.date)] + ' min</b>.') + '</p>' +
+      '<div class="wm-steps one"><div class="wm-step"><span class="eyebrow">Minutes</span><div><button type="button" data-a="wm-warm" data-d="-1" aria-label="1 minute less">−</button><b class="num" id="wmWarm">' + wm.warm + '</b><button type="button" data-a="wm-warm" data-d="1" aria-label="1 minute more">+</button></div></div></div>' +
+      '<button type="button" class="primary wm-log" id="wmWarmLog" data-a="wm-warmlog">Log warm-up</button></div>' +
+      '<div class="wm-nav"><button type="button" class="wm-btn" data-a="wm-next">Skip warm-up</button></div>';
+  }
+  const p = slots[wm.i], key = p.key, ex = EX[key], sp = specFor(key, wm.date), sg = suggest(key, wm.date), s = wmSets(p), how = (typeof HOWTO === 'object' && HOWTO[key]) || { cues: [], mistake: '' };
+  const editing = wm.edit != null, idx = editing ? wm.edit : s.next, done = s.next < 0 && !editing, stand = key === p.base ? defaultSwapOption(p.base) : null, opts = swapOptions(slots, p);
+  h += '<div class="wm-body"><div class="eyebrow">Lift ' + (wm.i + 1) + ' of ' + n + ' · ' + esc(day.name) + '</div><h2 id="wmName">' + esc(ex.name) + (sp.optional ? ' <span class="chip">if there\'s time</span>' : '') + (key !== p.base ? ' <span class="chip">swapped</span>' : '') + '</h2>' +
+    '<p class="wm-target" id="wmTarget"><b>' + (sg.deload ? 2 : sp.sets) + ' × ' + sp.lo + '–' + sp.hi + '</b>' + (ex.bw ? ' · bodyweight' : ' · ' + sg.w + ' lb' + (ex.per ? ' each hand' : '')) + (sg.deload ? ' · deload' : sg.reset ? ' · reset' : '') + '</p>' +
+    '<p class="tiny muted" id="wmLast">' + (sg.last ? 'Last · ' + nice(sg.last.date) + ': ' + esc((sg.last.w != null ? fmtW(key, sg.last.w) + ' × ' : '') + fmtReps(sg.last.reps)) : 'First time. ' + esc(sg.why)) + '</p>' +
+    '<div class="wm-how"><div class="wm-demo" id="wmDemo">' + (typeof demoSVG === 'function' ? demoSVG(MOVE_OF[key]) : '') + '</div><ol class="wm-cues" id="wmCues">' + how.cues.map(c => '<li>' + esc(c) + '</li>').join('') + '</ol></div>' +
+    (how.mistake ? '<p class="wm-mistake" id="wmMistake"><b>Watch for:</b> ' + esc(how.mistake) + '</p>' : '') +
+    '<p class="tiny muted" id="wmEquip">' + esc(ex.equip) + (ex.per ? ' · weight is one dumbbell' : '') + '</p>' +
+    '<div class="row wm-tools"><button type="button" class="wm-btn sm" data-a="wm-swap"' + (opts.length ? '' : ' disabled') + ' aria-expanded="' + !!wm.swap + '">Swap</button><button type="button" class="wm-btn sm" id="wmNotGym" data-a="wm-notgym"' + (stand ? '' : ' disabled') + '>Not at my gym</button></div>';
+  if (wm.swap) h += '<div class="wm-swaps" id="wmSwaps">' + opts.map(k => '<button type="button" class="wm-btn" data-a="wm-swapto" data-base="' + p.base + '" data-to="' + k + '">' + esc(EX[k].name) + (k === p.base ? ' <span class="tiny muted">(planned)</span>' : '') + '</button>').join('') + '</div>';
+  h += '<div class="wm-pips" id="wmPips" aria-label="Sets">' + s.reps.map((r, i) => '<button type="button" class="wm-pip' + (r != null ? ' on' : '') + (wm.edit === i ? ' edit' : '') + (i === s.next && !editing ? ' next' : '') + '" data-a="wm-pip" data-i="' + i + '"' + (r == null ? ' disabled' : '') + ' aria-label="Set ' + (i + 1) + (r != null ? ': ' + r + ' reps, tap to change' : ', not logged') + '">' + (r != null ? r : i + 1) + '</button>').join('') + '</div>';
+  if (wm.err) h += '<p class="banner bad" id="wmErr">' + esc(wm.err) + '</p>';
+  if (done) h += '<p class="wm-done" id="wmDone">All ' + s.n + ' sets logged. Tap a set to change it.</p>';
+  else h += '<div class="wm-steps' + (ex.bw ? ' one' : '') + '">' + (ex.bw ? '' : '<div class="wm-step"><span class="eyebrow">Weight lb' + (ex.per ? ' each' : '') + '</span><div><button type="button" data-a="wm-w" data-d="-1" aria-label="Less weight">−</button><b class="num" id="wmW">' + wm.w + '</b><button type="button" data-a="wm-w" data-d="1" aria-label="More weight">+</button></div></div>') +
+    '<div class="wm-step"><span class="eyebrow">Reps</span><div><button type="button" data-a="wm-r" data-d="-1" aria-label="One rep fewer">−</button><b class="num" id="wmR">' + wm.r + '</b><button type="button" data-a="wm-r" data-d="1" aria-label="One rep more">+</button></div></div></div>' +
+    '<button type="button" class="primary wm-log" id="wmLog" data-a="wm-log">' + (editing ? 'Update set ' + (idx + 1) : 'Log set ' + (idx + 1)) + '</button>' +
+    (editing ? '<div class="row"><button type="button" class="wm-btn sm danger" id="wmDel" data-a="wm-del">Delete set ' + (idx + 1) + '</button><button type="button" class="wm-btn sm" data-a="wm-editx">Cancel</button></div>' : '');
+  h += '</div><div class="wm-nav"><button type="button" class="wm-btn" data-a="wm-prev">‹ ' + (wm.i === 0 ? 'Warm-up' : 'Back') + '</button>' +
+    (wm.i < n - 1 ? '<button type="button" class="wm-btn' + (done ? ' on' : '') + '" id="wmNext" data-a="wm-next">Next lift ›</button>' : '') + '<button type="button" class="wm-btn' + (wm.i === n - 1 || wmLiftAny() ? ' on' : '') + '" id="wmFinish" data-a="wm-finish">Finish</button></div>';
+  return h;
+}
+const wmPatch = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+ACT['wm-warm'] = el => { wm.warm = clamp(wm.warm + Number(el.dataset.d), 0, 60); wmPatch('wmWarm', wm.warm); };
+ACT['wm-warmlog'] = () => { const d = draft(wm.date); d.tm.minutes = String(wm.warm); d.recovered = false; persistDrafts(); wm.i = 0; wmLoadEx(); wmDraw(); };
+ACT['wm-w'] = el => { const p = wmSlots()[wm.i], step = Math.abs(EX[p.key].inc) || 5; wm.w = Math.max(0, Math.round((wm.w + Number(el.dataset.d) * step) * 100) / 100); wmPatch('wmW', wm.w); };
+ACT['wm-r'] = el => { wm.r = clamp(wm.r + Number(el.dataset.d), 0, 100); wmPatch('wmR', wm.r); };
+ACT['wm-pip'] = el => { const p = wmSlots()[wm.i], s = wmSets(p), i = Number(el.dataset.i); if (s.reps[i] == null) return; wm.edit = i; wm.r = s.reps[i]; if (!EX[p.key].bw && s.w !== '') wm.w = Number(s.w); wm.err = ''; wmDraw(); };
+ACT['wm-editx'] = () => { wmLoadEx(); wmDraw(); };
+function wmWrite(i, value) { // one set into the draft, exactly as typing it into the lifting log would
+  const p = wmSlots()[wm.i], key = p.key, d = draft(wm.date); d.ex[key] = d.ex[key] || { w: '', reps: [] };
+  if (!EX[key].bw && value !== '') d.ex[key].w = String(wm.w);
+  while (d.ex[key].reps.length <= i) d.ex[key].reps.push('');
+  d.ex[key].reps[i] = value; d.recovered = false; delete state.formError[wm.date]; persistDrafts();
+}
+ACT['wm-log'] = el => {
+  const slots = wmSlots(), p = slots[wm.i], s = wmSets(p), editing = wm.edit != null, i = editing ? wm.edit : s.next; if (i < 0) return;
+  wmWrite(i, String(wm.r)); wm.err = ''; state.wmLogs = (state.wmLogs || 0) + 1;
+  const r = el.getBoundingClientRect(); burst({ count: 16, x: (r.left + r.width / 2) / window.innerWidth, y: r.top / window.innerHeight }); // a small burst, in this person's style
+  if (editing) { wmLoadEx(); wmDraw(); return; }
+  const after = wmSets(p), last = after.next < 0, nextSlot = last ? slots.slice(wm.i + 1).find(x => wmSets(x).next >= 0) : null;
+  if (last && !nextSlot) { wmLoadEx(); wmDraw(); return; } // the last set of the last lift: no rest, straight to Finish
+  const sec = restFor(p.key);
+  wm.rest = { end: Date.now() + sec * 1000, total: sec, to: last ? slots.indexOf(nextSlot) : wm.i, over: false };
+  wm.view = 'rest'; wmDraw();
+};
+ACT['wm-del'] = () => { if (wm.edit == null) return; wmWrite(wm.edit, ''); wmLoadEx(); wmDraw(); };
+ACT['wm-swap'] = () => { wm.swap = !wm.swap; wmDraw(); };
+ACT['wm-swapto'] = el => { const d = draft(wm.date); d.swaps[el.dataset.base] = el.dataset.to; d.recovered = false; persistDrafts(); wmLoadEx(); wmDraw(); };
+ACT['wm-notgym'] = async () => { const p = wmSlots()[wm.i]; if (!p) return; if (await notAtMyGym(p.base)) { wmLoadEx(); wmDraw(); } };
+ACT['wm-prev'] = () => { if (wm.i >= 0) { wm.i--; wm.err = ''; wmLoadEx(); wmDraw(); } };
+ACT['wm-next'] = () => { const n = wmSlots().length; if (wm.i < n - 1) { wm.i++; wm.err = ''; wmLoadEx(); wmDraw(); } };
+// rest: a big ring, +15 s, Skip, and what comes next
+function wmRestHTML() {
+  const slots = wmSlots(), p = slots[wm.rest.to], s = wmSets(p), sg = suggest(p.key, wm.date), sp = specFor(p.key, wm.date), same = wm.rest.to === wm.i, C = 339.3;
+  return wmTopHTML(slots.length + 1, wm.i + 1, (1 + wmLiftFrac() * slots.length) / (slots.length + 1)) + '<div class="wm-body wm-center"><div class="eyebrow">Rest</div>' +
+    '<div class="wm-ring" id="wmRing"><svg viewBox="0 0 120 120" aria-hidden="true"><circle class="rbg" cx="60" cy="60" r="54"/><circle class="rfg" id="wmRingFg" cx="60" cy="60" r="54" stroke-dasharray="' + C + '" stroke-dashoffset="0"/></svg><b class="num" id="wmRestTime">' + wmTime(wm.rest.end - Date.now() + 999) + '</b></div>' +
+    '<div class="row" style="justify-content:center"><button type="button" class="wm-btn" id="wmRestAdd" data-a="wm-restadd">+15 s</button><button type="button" class="wm-btn on" id="wmRestSkip" data-a="wm-restskip">Skip</button></div>' +
+    '<div class="wm-nextup" id="wmNextUp"><div class="eyebrow">' + (same ? 'Next' : 'Next lift') + '</div><b>' + esc(EX[p.key].name) + '</b><span class="muted">' + (same ? 'Set ' + (s.next + 1) + ' of ' + s.n : sp.sets + ' × ' + sp.lo + '–' + sp.hi) + (EX[p.key].bw ? '' : ' · ' + (same && s.w !== '' ? s.w : sg.w) + ' lb') + '</span></div></div>';
+}
+function wmRestTick() {
+  const left = wm.rest.end - Date.now(), fg = $('#wmRingFg');
+  wmPatch('wmRestTime', wmTime(left + 999)); if (fg) fg.setAttribute('stroke-dashoffset', (339.3 * clamp(1 - left / (wm.rest.total * 1000), 0, 1)).toFixed(1));
+  if (left <= 0 && !wm.rest.over) { wm.rest.over = true; try { if (navigator.vibrate) navigator.vibrate([180, 90, 180]); } catch (e) { /* not supported */ } wmRestEnd(); }
+}
+function wmRestEnd() { if (!wm || wm.view !== 'rest') return; wm.i = wm.rest.to; wm.view = 'main'; wm.rest = null; wmLoadEx(); wmDraw(); }
+ACT['wm-restadd'] = () => { if (wm.rest) { wm.rest.end = Math.max(wm.rest.end, Date.now()) + 15000; wm.rest.total += 15; wmRestTick(); } };
+ACT['wm-restskip'] = () => wmRestEnd();
+// the finish: a checkered flag, what was done, then the same save as the Save button
+function wmLiftSummary() {
+  const r = parseDraft(wm.date, wmM()), doc = r.doc, ex = doc.ex || {}, keys = Object.keys(ex); let sets = 0, lb = 0; const ups = [];
+  keys.forEach(k => { const reps = ex[k].reps.filter(x => x != null), last = lastLog(k, wm.date); sets += reps.length;
+    if (!EX[k].bw) { lb += sum(reps) * ex[k].w * (EX[k].per ? 2 : 1); if (last && last.w != null && (EX[k].inc < 0 ? ex[k].w < last.w : ex[k].w > last.w)) ups.push(EX[k].name + ' ' + last.w + ' → ' + ex[k].w + ' lb'); } });
+  return { r, sets, lb: Math.round(lb), ups, lifts: keys.length, minutes: r.errors.length ? 0 : normalize(doc).progMin, warm: doc.treadmill ? doc.treadmill.minutes : 0, counts: r.kind === 'strength' && !!doc.qualifies, kind: r.kind, day: doc.day };
+}
+function wmPointsHTML() {
+  const pid = wm.pid, o = otherPid(pid), b = wm.before, a = wm.after, lead = b[pid] <= b[o] && a[pid] > a[o], gain = a[pid] - b[pid];
+  return '<div class="wm-sum" id="wmPoints"><div><span class="muted">This week\'s points</span><b class="num">' + b[pid] + ' → ' + a[pid] + (gain > 0 ? ' <span class="chip good">+' + gain + '</span>' : '') + '</b></div>' +
+    (lead ? '<div id="wmLead"><span>🏁 You took the lead</span><b class="num">' + a[pid] + '–' + a[o] + '</b></div>' : '<div><span class="muted">' + esc(P(o).name) + '</span><b class="num">' + a[o] + '</b></div>') + '</div>';
+}
+const wmHeatAsk = () => atHealthplex(wm.pid) && wm.date === todayIso() && !heatDone(wm.pid, wm.date) ? '<button type="button" class="chipbtn" id="wmHeat" data-a="wm-heat">🔥 Sauna, steam or whirlpool after?</button>' : '';
+function wmLiftFinishHTML() {
+  const s = wm.sum || wmLiftSummary(), slots = wmSlots().length || 1;
+  let h = wmTopHTML(slots + 1, slots, 1) + '<div class="wm-body wm-center">' + wmFlag('chk', true) + '<h2 id="wmFinishTitle">' + (wm.saved ? 'Saved' : 'Finish line') + '</h2>' +
+    '<div class="wm-sum" id="wmSummary"><div><span class="muted">Sets</span><b class="num">' + s.sets + '</b></div><div><span class="muted">Total lifted</span><b class="num">' + commas(s.lb) + ' lb</b></div>' +
+    '<div><span class="muted">Minutes</span><b class="num">' + s.minutes + '</b></div><div><span class="muted">' + (s.kind === 'strength' ? (s.counts ? 'Counts as a lift day' : 'Not a lift day yet') : s.kind === 'cardio' ? 'Warm-up only' : 'Nothing logged') + '</span><b>' + (s.kind === 'strength' ? esc(DAYS[s.day].name) : '') + '</b></div></div>' +
+    (s.ups.length ? '<p class="wm-ups" id="wmUps"><b>Up from last time:</b> ' + s.ups.map(esc).join(' · ') + '</p>' : '');
+  if (wm.err) h += '<p class="banner bad" id="wmErr">' + esc(wm.err) + '</p>';
+  if (wm.saved) h += wmPointsHTML() + wmHeatAsk() + '<button type="button" class="primary wm-log" id="wmDoneBtn" data-a="wm-done">Done</button>';
+  else h += '<button type="button" class="primary wm-log" id="wmSave" data-a="wm-save">Save workout</button><button type="button" class="wm-btn" data-a="wm-unfinish">Back to the lifts</button>';
+  return h + '</div>';
+}
+ACT['wm-finish'] = () => { wm.view = 'finish'; wm.err = ''; wm.sum = null; wmDraw(); if (!reducedMotion()) burst({ kind: 'flags', count: 40, y: 0.4 }); };
+ACT['wm-unfinish'] = () => { wm.view = 'main'; wm.err = ''; wmDraw(); };
+ACT['wm-save'] = async () => { // the same save as the Save button: same rules, same celebration, same lift-day credit
+  const s = wmLiftSummary(); if (s.r.errors.length) { wm.err = s.r.errors[0]; wmDraw(); return; }
+  if (state.selDate !== wm.date) state.selDate = wm.date;
+  const d = state.drafts[wm.date]; if (d) delete d.wm; // the record is the lifting log's own; "in progress" ends here
+  const ok = await save();
+  if (!wm) return;
+  if (!ok) { wm.err = 'Not saved. Your sets are kept on this phone: try again.'; const d2 = state.drafts[wm.date]; if (d2) { d2.wm = { at: Date.now(), ms: wmElapsed(), title: wm.plan.title }; persistDrafts(); } wm.view = 'finish'; wmDraw(); return; }
+  wm.sum = s; wm.saved = true; wm.after = scoreSnapshot(); wm.view = 'finish'; wm.err = ''; wmDraw();
+};
+ACT['wm-done'] = () => wmClose();
+ACT['wm-heat'] = () => { wmClose(); ACT['heat-open'](); };
+
+/* --- timed sessions: cardio, guided, recovery --- */
+function wmStagesInit(resume) {
+  const s = resume ? lsGet(WM_KEY, null) : null;
+  if (s && Array.isArray(s.st)) { wm.plan = s.plan; wm.st = s.st; wm.si = clamp(s.si || 0, 0, s.plan.stages.length - 1); wm.ms = s.ms || 0; }
+  else { wm.st = wm.plan.stages.map(x => ({ ms: 0, on: false, at: 0, laps: 0, sets: {}, iv: false, min: x.min, room: HEAT_KEYS.includes(x.act) ? x.act : 'hpsauna', done: false })); wm.si = 0; }
+}
+const wmStore = () => { if (wm && wm.plan.kind !== 'lift') lsSet(WM_KEY, { pid: wm.pid, date: wm.date, plan: wm.plan, st: wm.st, si: wm.si, ms: wmElapsed() }); };
+const wmStageMs = i => { const s = wm.st[i]; return s.ms + (s.on ? Date.now() - s.at : 0); };
+const wmStageAny = () => wm.st.some((s, i) => wmStageMs(i) >= 1000 || s.laps > 0 || Object.keys(s.sets).length);
+const stretchPlan = stage => { const out = []; for (let r = 0; r < (stage.rounds || 1); r++) STRETCHES.forEach(x => out.push(x)); return out; };
+function stretchAt(stage, ms) { // which stretch the clock is in, and how long is left of it
+  const list = stretchPlan(stage); let t = 0;
+  for (let i = 0; i < list.length; i++) { const len = list[i].sec * 1000; if (ms < t + len) return { i, n: list.length, x: list[i], left: t + len - ms, start: t, len }; t += len; }
+  return { i: list.length, n: list.length, x: null, left: 0, start: t, len: 0 };
+}
+function wmStageHTML() {
+  const st = wm.plan.stages, i = wm.si, g = st[i], s = wm.st[i], ms = wmStageMs(i), a = ACTS[g.act], n = st.length;
+  let h = wmTopHTML(n, i, (i + clamp(ms / (g.min * 60000), 0, 1)) / n) + '<div class="wm-body wm-center"><div class="eyebrow">' + (n > 1 ? 'Part ' + (i + 1) + ' of ' + n + ' · ' : '') + esc(wm.plan.title) + '</div><h2 id="wmName">' + esc(g.name) + '</h2>';
+  const big = '<div class="wm-bigtime num" id="wmStageTime">' + wmTime(ms) + '</div>', toggle = '<button type="button" class="wm-btn' + (s.on ? '' : ' on') + '" id="wmToggle" data-a="wm-toggle">' + (s.on ? 'Pause' : ms > 0 ? 'Resume' : 'Start timer') + '</button>';
+  if (g.type === 'laps') {
+    const run = g.act === 'hprun';
+    h += '<p class="wm-target">8 laps = 1 mile' + (run ? ' · run 1 lap, walk 1 lap' : '') + '</p>' + big +
+      '<div class="wm-stat" id="wmLapStats"><div><b class="num" id="wmLaps">' + s.laps + '</b><span>laps</span></div><div><b class="num" id="wmMiles">' + (s.laps / TRACK_LAPS).toFixed(s.laps % 4 === 0 ? 1 : 2) + '</b><span>miles</span></div><div><b class="num" id="wmPace">' + wmPace(s.laps, ms) + '</b><span>min / mile</span></div></div>' +
+      '<button type="button" class="primary wm-tap" id="wmLap" data-a="wm-lap">' + (run ? (s.laps % 2 === 0 ? 'Run' : 'Walk') + ' lap done' : 'Lap done') + '</button>' +
+      '<div class="row" style="justify-content:center">' + toggle + '<button type="button" class="wm-btn" id="wmLapUndo" data-a="wm-lapundo"' + (s.laps ? '' : ' disabled') + '>−1 lap</button></div>';
+  } else if (g.type === 'lengths') {
+    h += '<p class="wm-target">One length is ' + POOL_YARDS + ' yards. Rest at the wall whenever you like.</p>' + big +
+      '<div class="wm-stat"><div><b class="num" id="wmLaps">' + s.laps + '</b><span>lengths</span></div><div><b class="num" id="wmMiles">' + s.laps * POOL_YARDS + '</b><span>yards</span></div></div>' +
+      '<button type="button" class="primary wm-tap" id="wmLap" data-a="wm-lap">Length done</button><div class="row" style="justify-content:center">' + toggle + '<button type="button" class="wm-btn" id="wmLapUndo" data-a="wm-lapundo"' + (s.laps ? '' : ' disabled') + '>−1 length</button></div>';
+  } else if (g.type === 'circuit') {
+    h += '<p class="wm-target">One or two easy sets of 10 to 12 on each machine. Tap a machine after each set.</p>' + big + '<div class="wm-stations" id="wmStations">' +
+      CIRCUIT.map((name, k) => '<button type="button" class="wm-btn" data-a="wm-station" data-k="' + k + '"><span>' + name + '</span><b class="num">' + (s.sets[k] || 0) + ' set' + ((s.sets[k] || 0) === 1 ? '' : 's') + '</b></button>').join('') + '</div><div class="row" style="justify-content:center">' + toggle + '</div>';
+  } else if (g.type === 'stretch') {
+    const at = stretchAt(g, ms);
+    h += at.x ? '<p class="wm-target" id="wmStretchN">Stretch ' + (at.i + 1) + ' of ' + at.n + '</p><div class="wm-bigtime num" id="wmStageTime">' + wmTime(at.left + 999) + '</div><h3 id="wmStretchName">' + esc(at.x.name) + '</h3><p class="wm-cue" id="wmStretchCue">' + esc(at.x.cue) + '</p>' +
+      '<div class="row" style="justify-content:center">' + toggle + '<button type="button" class="wm-btn" id="wmStretchNext" data-a="wm-stretchnext">Next stretch ›</button></div>'
+      : '<p class="wm-done" id="wmStretchDone">Stretching done. Nice and loose.</p>';
+  } else if (g.type === 'heat') {
+    const left = s.min * 60000 - ms, over = left <= 0 && ms > 0;
+    h += '<div class="seg" id="wmRooms" aria-label="Which room">' + HEAT_KEYS.map(k => '<button type="button" data-a="wm-room" data-k="' + k + '" class="' + (s.room === k ? 'on' : '') + '" aria-pressed="' + (s.room === k) + '">' + ACTS[k].name + '</button>').join('') + '</div>' +
+      '<div class="wm-bigtime num" id="wmStageTime">' + wmTime(Math.max(0, left) + (over ? 0 : 999)) + '</div>' +
+      (over ? '<p class="wm-done" id="wmHeatOver">Time. Step out, cool down and drink water.</p><button type="button" class="primary wm-tap" id="wmWater" data-a="wm-water"' + (s.water ? ' disabled' : '') + '>' + (s.water ? 'Water logged' : '+' + BOTTLE_OZ + ' oz water') + '</button>'
+        : '<div class="row" style="justify-content:center"><button type="button" class="wm-btn" data-a="wm-heatmin" data-d="-5"' + (s.min <= 5 ? ' disabled' : '') + '>−5 min</button>' + toggle + '<button type="button" class="wm-btn" data-a="wm-heatmin" data-d="5"' + (s.min >= 20 ? ' disabled' : '') + '>+5 min</button></div>') +
+      '<p class="tiny muted" id="wmHeatNote">' + HEAT_NOTE + '</p>';
+  } else {
+    h += '<p class="wm-target">' + (a ? esc(a.desc) : 'Pick a Fitness+ workout and keep the pace easy.') + '</p>' + big + '<p class="wm-cue" id="wmSeg">' + wmSegText(s, ms, g) + '</p>' +
+      '<div class="row" style="justify-content:center">' + toggle + '<button type="button" class="wm-btn' + (s.iv ? ' on' : '') + '" id="wmIv" data-a="wm-iv" aria-pressed="' + !!s.iv + '">Intervals: 1 min hard, 2 easy</button></div>';
+  }
+  if (a && a.cls) h += '<p class="tiny muted" id="wmClsTag">' + classTag(a) + '</p>';
+  h += '</div><div class="wm-nav">' + (i > 0 ? '<button type="button" class="wm-btn" data-a="wm-sprev">‹ Back</button>' : '') +
+    (i < n - 1 ? '<button type="button" class="wm-btn on" id="wmNext" data-a="wm-snext">Next: ' + esc(st[i + 1].name) + ' ›</button>' : '') + '<button type="button" class="wm-btn' + (i === n - 1 ? ' on' : '') + '" id="wmFinish" data-a="wm-sfinish">Finish</button></div>';
+  return h;
+}
+const wmPace = (laps, ms) => laps > 0 && ms >= 1000 ? wmTime(ms / (laps / TRACK_LAPS)) : '–';
+const wmSegText = (s, ms, g) => s.iv ? (ms % 180000 < 60000 ? 'Hard · ' + wmTime(60000 - ms % 180000 + 999) + ' left' : 'Easy · ' + wmTime(180000 - ms % 180000 + 999) + ' left') : 'Target ' + g.min + ' min · any pace you can talk through';
+function wmStageTick() {
+  const i = wm.si, g = wm.plan.stages[i], s = wm.st[i], ms = wmStageMs(i); if (!s.on) return;
+  const strip = $('#wmStrip'); if (strip) strip.style.setProperty('--p', ((i + clamp(ms / (g.min * 60000), 0, 1)) / wm.plan.stages.length * 100).toFixed(1) + '%');
+  if (g.type === 'stretch') { const at = stretchAt(g, ms); if (!at.x || String(at.i + 1) !== ((($('#wmStretchN') || {}).textContent || '').split(' ')[1] || '')) { if (!at.x) { s.ms = ms; s.on = false; wmStore(); } wmDraw(); return; } wmPatch('wmStageTime', wmTime(at.left + 999)); return; }
+  if (g.type === 'heat') { const left = s.min * 60000 - ms; if (left <= 0) { s.ms = s.min * 60000; s.on = false; try { if (navigator.vibrate) navigator.vibrate([200, 100, 200]); } catch (e) { /* not supported */ } wmStore(); wmDraw(); return; } wmPatch('wmStageTime', wmTime(left + 999)); return; }
+  wmPatch('wmStageTime', wmTime(ms));
+  if (g.type === 'laps') wmPatch('wmPace', wmPace(s.laps, ms)); else if (g.type === 'timer') wmPatch('wmSeg', wmSegText(s, ms, g));
+}
+function wmRun(on) { const s = wm.st[wm.si]; if (on === s.on) return; if (on) { s.on = true; s.at = Date.now(); } else { s.ms = wmStageMs(wm.si); s.on = false; } }
+ACT['wm-toggle'] = () => { const s = wm.st[wm.si]; wmRun(!s.on); wmStore(); wmDraw(); };
+ACT['wm-lap'] = () => { const s = wm.st[wm.si]; s.laps++; wmRun(true); wmStore(); state.wmLogs = (state.wmLogs || 0) + 1; wmDraw(); }; // the first lap starts the clock
+ACT['wm-lapundo'] = () => { const s = wm.st[wm.si]; if (s.laps > 0) { s.laps--; wmStore(); wmDraw(); } };
+ACT['wm-station'] = el => { const s = wm.st[wm.si], k = el.dataset.k; s.sets[k] = (s.sets[k] || 0) + 1; wmRun(true); wmStore(); wmDraw(); };
+ACT['wm-iv'] = () => { const s = wm.st[wm.si]; s.iv = !s.iv; wmStore(); wmDraw(); };
+ACT['wm-stretchnext'] = () => { const g = wm.plan.stages[wm.si], s = wm.st[wm.si], at = stretchAt(g, wmStageMs(wm.si)); if (!at.x) return; s.ms = at.start + at.len; if (s.on) s.at = Date.now(); wmStore(); wmDraw(); };
+ACT['wm-room'] = el => { wm.st[wm.si].room = el.dataset.k; wmStore(); wmDraw(); };
+ACT['wm-heatmin'] = el => { const s = wm.st[wm.si]; s.min = clamp(s.min + Number(el.dataset.d), 5, 20); wmStore(); wmDraw(); };
+ACT['wm-water'] = async () => { const s = wm.st[wm.si]; if (s.water) return; state.waterDate = wm.date; s.water = true; wmStore(); await ACT['water-bottle'](); };
+ACT['wm-sprev'] = () => { if (wm.si > 0) { wmRun(false); wm.si--; wmStore(); wmDraw(); } };
+ACT['wm-snext'] = () => { if (wm.si < wm.plan.stages.length - 1) { wmRun(false); wm.si++; wmStore(); wmDraw(); } };
+// What the session logs: every moving part as ONE activity (minutes, with laps, miles or station sets in its note),
+// and a recovery room, if it was used, as its own recovery entry that does not count toward active minutes.
+function wmStageOutcome() {
+  const parts = [], notes = []; let min = 0, heat = null, first = null;
+  wm.plan.stages.forEach((g, i) => { const s = wm.st[i], ms = wmStageMs(i), m = Math.max(ms >= 20000 || s.laps > 0 || Object.keys(s.sets).length ? 1 : 0, Math.round(ms / 60000));
+    if (g.type === 'heat') { if (m > 0) heat = { k: s.room, min: Math.min(20, m) }; return; }
+    if (!m) return; first = first || g; min += m; parts.push(g.name);
+    notes.push(g.name + ' ' + m + ' min' + (g.type === 'laps' && s.laps ? ', ' + s.laps + ' lap' + (s.laps === 1 ? '' : 's') + ' (' + milesText(s.laps) + ')' : g.type === 'lengths' && s.laps ? ', ' + s.laps + ' length' + (s.laps === 1 ? '' : 's') + ' (' + s.laps * POOL_YARDS + ' yd)' : '') +
+      (g.type === 'circuit' && Object.keys(s.sets).length ? ': ' + CIRCUIT.map((nm, k) => s.sets[k] ? nm.toLowerCase() + ' ' + s.sets[k] : '').filter(Boolean).join(', ') : '') + (s.iv ? ', intervals' : '')); });
+  return { min, heat, first, name: parts.join(' + '), note: notes.length === 1 && parts.length === 1 ? notes[0].replace(parts[0] + ' ', '').replace(/^\d+ min,? ?/, '') : notes.join(' · ') };
+}
+function wmStagesFinishHTML() {
+  const o = wm.out || wmStageOutcome(), n = wm.plan.stages.length;
+  let h = wmTopHTML(n, n - 1, 1) + '<div class="wm-body wm-center">' + wmFlag('chk', true) + '<h2 id="wmFinishTitle">' + (wm.saved ? 'Logged' : 'Finish line') + '</h2><div class="wm-sum" id="wmSummary">' +
+    '<div><span class="muted">' + esc(o.name || 'Movement') + '</span><b class="num">' + o.min + ' min</b></div>' + (o.note ? '<div class="wide"><span class="muted">' + esc(o.note) + '</span></div>' : '') +
+    (o.heat ? '<div><span class="muted">' + ACTS[o.heat.k].name + ' · recovery</span><b class="num">' + o.heat.min + ' min</b></div>' : '') + '</div>';
+  if (wm.err) h += '<p class="banner bad" id="wmErr">' + esc(wm.err) + '</p>';
+  if (wm.saved) h += wmPointsHTML() + (o.heat ? '' : wmHeatAsk()) + '<button type="button" class="primary wm-log" id="wmDoneBtn" data-a="wm-done">Done</button>';
+  else h += (o.min || o.heat ? '<button type="button" class="primary wm-log" id="wmSave" data-a="wm-stagelog">Log ' + (o.min ? o.min + ' min' : ACTS[o.heat.k].name.toLowerCase()) + '</button>' : '<p class="muted">Nothing to log yet.</p>') + '<button type="button" class="wm-btn" data-a="wm-unfinish">Back</button>';
+  return h + '</div>';
+}
+ACT['wm-sfinish'] = () => { wmRun(false); wmStore(); wm.view = 'finish'; wm.err = ''; wm.out = null; wmDraw(); if (!reducedMotion()) burst({ kind: 'flags', count: 40, y: 0.4 }); };
+ACT['wm-stagelog'] = async () => { // the same logging as the activity menu, or the lifting log's treadmill entry
+  wm.st.forEach((s, i) => { if (s.on) { s.ms = wmStageMs(i); s.on = false; } });
+  const o = wmStageOutcome(), felt = wm.plan.felt || null, now = new Date().toISOString(); if (!o.min && !o.heat) { wm.err = 'Nothing to log yet.'; wm.view = 'finish'; wmDraw(); return; }
+  let ok = true;
+  if (o.min && o.first.act === 'treadmill') { // the lifting log's own treadmill day
+    if (state.selDate !== wm.date) state.selDate = wm.date;
+    const d = draft(wm.date); d.kindSel = 'cardio'; d.tm.minutes = String(o.min); if (felt) d.checkin = felt; d.recovered = false; persistDrafts(); ok = await save();
+  } else if (o.min) {
+    const a = ACTS[o.first.act] || ACTS.other, before = scoreSnapshot();
+    ok = await logActivity(wm.date, { id: uid(), a: ACTS[o.first.act] ? o.first.act : 'other', name: o.name, min: o.min, feel: null, hurt: false, note: o.note.slice(0, 200), mv: a.mv !== false, at: now }, felt);
+    if (ok) celebrate(o.min + ' min logged.', { before, force: dayInfo(wm.pid, wm.date).active });
+  }
+  if (ok && o.heat) ok = await logActivity(wm.date, { id: uid(), a: o.heat.k, name: ACTS[o.heat.k].name, min: o.heat.min, feel: null, hurt: false, note: '', mv: false, at: now }, felt);
+  if (!wm) return;
+  if (!ok) { wm.err = 'Not logged. Try again.'; wm.view = 'finish'; wmDraw(); return; }
+  lsSet(WM_KEY, null); wm.out = o; wm.saved = true; wm.after = scoreSnapshot(); wm.view = 'finish'; wm.err = ''; wmDraw();
+};
 
 /* ---- 70-ui-fuel.js ---- */
 /* ---------- Fuel: calories, water, food log ---------- */
@@ -3703,6 +4778,7 @@ function renderMe() {
     '<p class="tiny muted">Your look applies whenever your profile is active, on any phone.</p></section>';
 
   h += '<section class="card stack" id="gymCard"><h3>Gym</h3><div class="row" style="flex-wrap:nowrap;align-items:flex-end"><label class="f grow">Where you train<input type="text" data-form="gym" data-k="place" maxlength="40" value="' + esc('place' in (state.forms.gym || {}) ? state.forms.gym.place : (p.place || '')) + '" placeholder="Name of your gym"></label><button type="button" class="small" data-a="gym-save" style="min-height:44px">Save</button></div>' +
+    (atHealthplex(pid) ? '' : '<div class="row"><button type="button" class="small" id="gymHp" data-a="gym-hp">' + HEALTHPLEX + '</button><span class="tiny muted">one tap, if that is your gym</span></div>') +
     '<p class="tiny muted">Shown next to the date at the top and in the morning plan. Leave it empty to show no gym.</p></section>';
 
   h += '<section class="card stack" id="bodyCard"><div class="row between"><h3>Daily targets</h3>' + (g.ready ? '<span class="chip good">' + (g.kcalSrc === 'doctor' ? 'doctor' : 'estimate') + '</span>' : '<span class="chip warn">placeholder</span>') + '</div>' +
@@ -3739,7 +4815,7 @@ function renderMe() {
     '<details class="plain" data-dk="remsteps"><summary>Set up the three reminders, once per iPhone</summary><div style="margin-top:8px" id="remSteps">' + reminderStepsHTML(pid) + '</div></details></section>';
   h += backupCardHTML();
   h += '<section class="card stack"><h3>Workout style</h3>' + seg('plan-set', 'plan', p.plan, { program: 'Lifting program', choice: 'Pick-your-own' }) +
-    '<p class="tiny muted">' + (p.plan === 'program' ? 'Push, Pull, Legs rotation with weight suggestions. Weekly goal: ' + live.goal + ' activity days, ' + LIFT_GOAL + ' of them lifts. Walks and other activities can be added on any day.' : 'Choose from a gentle menu each day. Weekly goal: ' + live.goal + ' active days of ' + live.minMin + ' minutes or more. Adjust it under Train, Plan.') + ' Switching keeps everything already logged.</p>' +
+    '<p class="tiny muted">' + (p.plan === 'program' ? (splitOf(pid) === 'full' ? 'Full Body A and B, alternating,' : 'Push, Pull, Legs rotation') + ' with weight suggestions. Weekly goal: ' + live.goal + ' activity days, ' + live.liftGoal + ' of them lifts. Walks and other activities can be added on any day.' : 'Choose from a gentle menu each day. Weekly goal: ' + live.goal + ' active days of ' + live.minMin + ' minutes or more. Adjust it under Train, Plan.') + ' Switching keeps everything already logged.</p>' +
     (live.plan !== wk.plan ? '<p class="tiny locknote" id="planLock"><span class="chip accent">' + mon + '</span> for scoring. Your Train tab switches now, but this week is still scored as ' + (wk.plan === 'program' ? 'the lifting program' : 'pick-your-own') + ', so the race already running does not change.</p>' : '') + '</section>';
 
   const sync = state.storage === 'db' ? (state.cantWrite ? 'This account can read the shared log but not save to it.' : 'Saving to the shared log on your Claude account.') : state.storage === 'local' ? 'Saving in this browser only.' : state.storage === 'nodb' ? 'The shared log cannot be reached right now.' : 'Connecting…';
@@ -3779,10 +4855,15 @@ ACT['rem-save'] = async () => {
   const ok = await saveProfile(me(), { reminders: { morning, water } }); if (!ok) return; // a refused save keeps what was picked
   delete state.forms.rem; render(); toast('Steps updated: ' + fmtClock(morning) + ' on weekdays, water check at ' + fmtClock(water) + '.', 3400);
 };
+ACT['gym-hp'] = async () => { // one tap: this profile trains at the Healthplex
+  typing = false; const ok = await saveProfile(me(), { place: HEALTHPLEX, placeSince: todayIso() }); if (!ok) return;
+  delete state.forms.gym; render(); toast('Gym set to ' + HEALTHPLEX + '. Train now has a daily check-in and a Healthplex menu.', 4200);
+};
 ACT['gym-save'] = async () => {
   const place = String((state.forms.gym || {}).place == null ? (P(me()).place || '') : state.forms.gym.place).trim().slice(0, 40);
   typing = false;
-  const ok = await saveProfile(me(), { place }); if (!ok) return; // a refused save keeps what was typed
+  const moved = place.toLowerCase() !== String(P(me()).place || '').toLowerCase(); // the day a gym changes is kept, for the first-week note
+  const ok = await saveProfile(me(), Object.assign({ place }, moved ? { placeSince: todayIso() } : null)); if (!ok) return; // a refused save keeps what was typed
   delete state.forms.gym; render(); toast(place ? 'Gym set to ' + place + '.' : 'Gym cleared.');
 };
 ACT['form-set'] = el => { const f = el.dataset.form; (state.forms[f] = state.forms[f] || {})[el.dataset.k] = el.dataset.v; render(); };
@@ -3978,6 +5059,7 @@ const detKey = d => d.dataset.dk || (d.dataset.hdate ? 'h:' + d.dataset.hdate : 
 let drawnTab = null;
 function newDay() { if (state.ready) openWeek(false); } // a new day can start a new week, bring last week's result, and close an older week
 function render(focusSel) {
+  if (wm) { wm.stale = true; return; } // workout mode covers the page: nothing behind it is redrawn until it closes
   if (typing) { pendingRender = true; return; }
   pendingRender = false;
   document.documentElement.classList.toggle('nopid', !state.pid); // nothing is drawn for a profile nobody has chosen yet
@@ -4066,7 +5148,7 @@ main.addEventListener('focusout', e => {
 // one click handler for every data-a action, in the page and in overlays
 // Actions that save one thing per tap. A second tap while the first is still saving is dropped, so a slow
 // connection cannot log the same food or activity twice. Water is left out on purpose: tapping it twice means two glasses.
-const ONE_AT_A_TIME = ['act-log', 'act-del', 'rest', 'food-save', 'food-again', 'food-del', 'quick-save', 'custom-save', 'custom-del', 'hk-import', 'hk-off', 'body-save', 'weigh-save', 'name-save', 'gym-save', 'stakes-save', 'cd-save', 'cd-clear', 'meal-copy', 'meal-save', 'meal-add', 'meal-rename', 'meal-del', 'iou-toggle', 'undo', 'scan-digits', 'scan-link-pick', 'describe-go', 'describe-log', 'backup-all', 'backup-workouts', 'backup-food', 'backup-copy', 'rem-save', 'nudge-yes', 'nudge-no', 'stall-reset', 'stall-swap', 'deload-take'];
+const ONE_AT_A_TIME = ['act-log', 'act-del', 'rest', 'food-save', 'food-again', 'food-del', 'quick-save', 'custom-save', 'custom-del', 'hk-import', 'hk-off', 'body-save', 'weigh-save', 'name-save', 'gym-save', 'stakes-save', 'cd-save', 'cd-clear', 'meal-copy', 'meal-save', 'meal-add', 'meal-rename', 'meal-del', 'iou-toggle', 'undo', 'scan-digits', 'scan-link-pick', 'describe-go', 'describe-log', 'backup-all', 'backup-workouts', 'backup-food', 'backup-copy', 'wm-save', 'wm-stagelog', 'wm-water', 'wm-notgym', 'water-bottle', 'ci-rest', 'gym-hp', 'split-set', 'lift-goal', 'rem-save', 'nudge-yes', 'nudge-no', 'stall-reset', 'stall-swap', 'deload-take'];
 const busy = {};
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-a]'); if (!el || el.disabled) return;
@@ -4093,6 +5175,7 @@ function onOvInput(e) {
   if (o.type === 'food' && key === 'q') { if (typed) { clearTimeout(foodT); foodT = setTimeout(fillFoodResults, 90); } }
   else if (o.type === 'health') { if (typed) refreshHealthPreview(); }
   else if (o.type === 'fooditem') refreshFoodItem(); // patches the label and button text in place
+  else if (o.type === 'act' && key === 'laps') { const l = $('#lapMiles'); if (l) l.textContent = lapLine(el.value); }
   else if (o.type === 'act' && key === 'min') { const b = $('#actLog'), min = Math.round(Number(el.value)); if (b) { b.disabled = !(min > 0); b.textContent = (o.id ? 'Update ' : 'Log ') + (min > 0 ? min + ' min' : ''); } }
 }
 ovRoot.addEventListener('input', onOvInput);
@@ -4120,6 +5203,7 @@ function menuAction(act, b) {
   if (act === 'swap') { state.menu = { key, view: 'swap' }; render('.menu [role="menuitem"]'); return; }
   if (act === 'back') { state.menu = { key, view: 'main' }; render('.menu [role="menuitem"]'); return; }
   if (act === 'swapto') { const d = draft(date); d.swaps[b.dataset.base] = b.dataset.to; d.recovered = false; state.menu = null; persistDrafts(); render('[data-menu="' + b.dataset.to + '"]'); return; }
+  if (act === 'notgym') { state.menu = null; notAtMyGym(b.dataset.base); return; }
   if (act === 'hold') { const mx = Object.assign({}, state.settings.maxed || {}); if (mx[key]) delete mx[key]; else mx[key] = true; state.menu = null; saveSettings({ maxed: mx }); const btn = document.querySelector('[data-menu="' + key + '"]'); if (btn) btn.focus({ preventScroll: true }); return; }
   if (act === 'addset') { const d = draft(date); const cur = document.querySelectorAll('[data-field="rep"][data-ex="' + key + '"]').length; d.extra[key] = Math.min(MAX_SETS, cur + 1); state.menu = null; persistDrafts(); render(); const inp = document.getElementById('r-' + key + '-' + (d.extra[key] - 1)); if (inp) inp.focus({ preventScroll: true }); return; }
   if (act === 'details') { state.details[key] = !state.details[key]; state.menu = null; render('[data-menu="' + key + '"]'); return; }
@@ -4164,16 +5248,18 @@ function save() {
   }
   delete state.formError[date]; state.menu = null; typing = false;
   const note = saveNote(date, m), before = scoreSnapshot();
-  saveRecord(date, r.doc).then(ok => {
-    if (ok === false) return; // nothing was attempted: the log is not loaded yet
+  const done = saveRecord(date, r.doc).then(ok => {
+    if (ok === false) return false; // nothing was attempted: the log is not loaded yet
     const st = state.status[date];
-    if (st && st.s === 'failed') { toast('Save failed. Your inputs are kept; tap Retry.', 3200); return; }
+    if (st && st.s === 'failed') { toast('Save failed. Your inputs are kept; tap Retry.', 3200); return false; }
     const msg = r.kind === 'cardio' && r.fromLift ? r.doc.treadmill.minutes + ' treadmill minutes saved. No lifting sets recorded; ' + DAYS[nextDayKey(date)].name + ' remains next.'
-      : r.kind === 'strength' ? (note ? note.text : DAYS[r.doc.day].name + ' day saved · counts as lift day · next: ' + DAYS[ROTATION[(ROTATION.indexOf(r.doc.day) + 1) % 3]].name)
+      : r.kind === 'strength' ? (note ? note.text : DAYS[r.doc.day].name + ' day saved · counts as lift day · next: ' + DAYS[nextAfter(r.doc.day)].name)
       : r.kind === 'rest' ? 'Rest day saved.' : 'Treadmill saved.';
     celebrate(msg + (st && st.s === 'synced' ? ' Synced.' : st && st.s === 'local' ? ' Saved in this browser.' : ''), { ms: 3800, before });
+    return true;
   });
   if (state.ready && !state.settings.startDate) saveSettings({ startDate: date < todayIso() ? date : todayIso() });
+  return done; // resolves true once the day is saved (workout mode waits on it)
 }
 
 /* ---------- Routing and boot ---------- */
@@ -4188,6 +5274,7 @@ function route() {
 window.MorningLaps = { state, P, weekScore, coach, goalsFor, badgesFor, searchFoods, loadFoods, dayTotals, compWeeks, parseHealthPaste, foodCount: () => foodDb.list ? foodDb.list.length : 0,
   EX, DAYS, normalize, dayInfo, weekFacts, scoreFacts, weekGoals, liveGoals, fuelParts, plannedFor, planSlots, swapOptions, defaultSwapOption, alts, teamStats, stakesFor, phaseFor, restT,
   caps, normBarcode, backupDocs, workoutsCsv, foodCsv, canon,
+  ACTS, specFor, splitOf, rotation, nextDayKey, deloadWeeks, checkinSuggest, ciPreview, atHealthplex, lapMiles, wmState: () => wm, wmResumable, MOVE_OF, HOWTO, STRETCHES, demoSVG,
   suggest, stallFor, deloadOn, deloadState, completedWeeks, easier, weekRecap, lastWeek, ious, goalNudge, painNotes, painFlag, actList, surpriseActivity, savedMeals, mealItems };
 (function boot() {
   const saved = lsGet('ml.me', null);
@@ -4197,7 +5284,7 @@ window.MorningLaps = { state, P, weekScore, coach, goalsFor, badgesFor, searchFo
   // a phone left open overnight: when it comes back to the front on a new day, move "today" forward
   const wake = () => { if (document.visibilityState === 'hidden') { flushAccount(); return; } if (!rollDay()) return; render(); newDay(); };
   document.addEventListener('visibilitychange', wake);
-  window.addEventListener('pagehide', flushAccount);
+  window.addEventListener('pagehide', () => { wmKeep(); flushAccount(); }); // a workout in progress is remembered before the page goes
   window.addEventListener('pageshow', wake);
   window.addEventListener('focus', wake);
   route();

@@ -34,6 +34,7 @@ const detKey = d => d.dataset.dk || (d.dataset.hdate ? 'h:' + d.dataset.hdate : 
 let drawnTab = null;
 function newDay() { if (state.ready) openWeek(false); } // a new day can start a new week, bring last week's result, and close an older week
 function render(focusSel) {
+  if (wm) { wm.stale = true; return; } // workout mode covers the page: nothing behind it is redrawn until it closes
   if (typing) { pendingRender = true; return; }
   pendingRender = false;
   document.documentElement.classList.toggle('nopid', !state.pid); // nothing is drawn for a profile nobody has chosen yet
@@ -122,7 +123,7 @@ main.addEventListener('focusout', e => {
 // one click handler for every data-a action, in the page and in overlays
 // Actions that save one thing per tap. A second tap while the first is still saving is dropped, so a slow
 // connection cannot log the same food or activity twice. Water is left out on purpose: tapping it twice means two glasses.
-const ONE_AT_A_TIME = ['act-log', 'act-del', 'rest', 'food-save', 'food-again', 'food-del', 'quick-save', 'custom-save', 'custom-del', 'hk-import', 'hk-off', 'body-save', 'weigh-save', 'name-save', 'gym-save', 'stakes-save', 'cd-save', 'cd-clear', 'meal-copy', 'meal-save', 'meal-add', 'meal-rename', 'meal-del', 'iou-toggle', 'undo', 'scan-digits', 'scan-link-pick', 'describe-go', 'describe-log', 'backup-all', 'backup-workouts', 'backup-food', 'backup-copy', 'rem-save', 'nudge-yes', 'nudge-no', 'stall-reset', 'stall-swap', 'deload-take'];
+const ONE_AT_A_TIME = ['act-log', 'act-del', 'rest', 'food-save', 'food-again', 'food-del', 'quick-save', 'custom-save', 'custom-del', 'hk-import', 'hk-off', 'body-save', 'weigh-save', 'name-save', 'gym-save', 'stakes-save', 'cd-save', 'cd-clear', 'meal-copy', 'meal-save', 'meal-add', 'meal-rename', 'meal-del', 'iou-toggle', 'undo', 'scan-digits', 'scan-link-pick', 'describe-go', 'describe-log', 'backup-all', 'backup-workouts', 'backup-food', 'backup-copy', 'wm-save', 'wm-stagelog', 'wm-water', 'wm-notgym', 'water-bottle', 'ci-rest', 'gym-hp', 'split-set', 'lift-goal', 'rem-save', 'nudge-yes', 'nudge-no', 'stall-reset', 'stall-swap', 'deload-take'];
 const busy = {};
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-a]'); if (!el || el.disabled) return;
@@ -149,6 +150,7 @@ function onOvInput(e) {
   if (o.type === 'food' && key === 'q') { if (typed) { clearTimeout(foodT); foodT = setTimeout(fillFoodResults, 90); } }
   else if (o.type === 'health') { if (typed) refreshHealthPreview(); }
   else if (o.type === 'fooditem') refreshFoodItem(); // patches the label and button text in place
+  else if (o.type === 'act' && key === 'laps') { const l = $('#lapMiles'); if (l) l.textContent = lapLine(el.value); }
   else if (o.type === 'act' && key === 'min') { const b = $('#actLog'), min = Math.round(Number(el.value)); if (b) { b.disabled = !(min > 0); b.textContent = (o.id ? 'Update ' : 'Log ') + (min > 0 ? min + ' min' : ''); } }
 }
 ovRoot.addEventListener('input', onOvInput);
@@ -176,6 +178,7 @@ function menuAction(act, b) {
   if (act === 'swap') { state.menu = { key, view: 'swap' }; render('.menu [role="menuitem"]'); return; }
   if (act === 'back') { state.menu = { key, view: 'main' }; render('.menu [role="menuitem"]'); return; }
   if (act === 'swapto') { const d = draft(date); d.swaps[b.dataset.base] = b.dataset.to; d.recovered = false; state.menu = null; persistDrafts(); render('[data-menu="' + b.dataset.to + '"]'); return; }
+  if (act === 'notgym') { state.menu = null; notAtMyGym(b.dataset.base); return; }
   if (act === 'hold') { const mx = Object.assign({}, state.settings.maxed || {}); if (mx[key]) delete mx[key]; else mx[key] = true; state.menu = null; saveSettings({ maxed: mx }); const btn = document.querySelector('[data-menu="' + key + '"]'); if (btn) btn.focus({ preventScroll: true }); return; }
   if (act === 'addset') { const d = draft(date); const cur = document.querySelectorAll('[data-field="rep"][data-ex="' + key + '"]').length; d.extra[key] = Math.min(MAX_SETS, cur + 1); state.menu = null; persistDrafts(); render(); const inp = document.getElementById('r-' + key + '-' + (d.extra[key] - 1)); if (inp) inp.focus({ preventScroll: true }); return; }
   if (act === 'details') { state.details[key] = !state.details[key]; state.menu = null; render('[data-menu="' + key + '"]'); return; }
@@ -220,16 +223,18 @@ function save() {
   }
   delete state.formError[date]; state.menu = null; typing = false;
   const note = saveNote(date, m), before = scoreSnapshot();
-  saveRecord(date, r.doc).then(ok => {
-    if (ok === false) return; // nothing was attempted: the log is not loaded yet
+  const done = saveRecord(date, r.doc).then(ok => {
+    if (ok === false) return false; // nothing was attempted: the log is not loaded yet
     const st = state.status[date];
-    if (st && st.s === 'failed') { toast('Save failed. Your inputs are kept; tap Retry.', 3200); return; }
+    if (st && st.s === 'failed') { toast('Save failed. Your inputs are kept; tap Retry.', 3200); return false; }
     const msg = r.kind === 'cardio' && r.fromLift ? r.doc.treadmill.minutes + ' treadmill minutes saved. No lifting sets recorded; ' + DAYS[nextDayKey(date)].name + ' remains next.'
-      : r.kind === 'strength' ? (note ? note.text : DAYS[r.doc.day].name + ' day saved · counts as lift day · next: ' + DAYS[ROTATION[(ROTATION.indexOf(r.doc.day) + 1) % 3]].name)
+      : r.kind === 'strength' ? (note ? note.text : DAYS[r.doc.day].name + ' day saved · counts as lift day · next: ' + DAYS[nextAfter(r.doc.day)].name)
       : r.kind === 'rest' ? 'Rest day saved.' : 'Treadmill saved.';
     celebrate(msg + (st && st.s === 'synced' ? ' Synced.' : st && st.s === 'local' ? ' Saved in this browser.' : ''), { ms: 3800, before });
+    return true;
   });
   if (state.ready && !state.settings.startDate) saveSettings({ startDate: date < todayIso() ? date : todayIso() });
+  return done; // resolves true once the day is saved (workout mode waits on it)
 }
 
 /* ---------- Routing and boot ---------- */
@@ -244,6 +249,7 @@ function route() {
 window.MorningLaps = { state, P, weekScore, coach, goalsFor, badgesFor, searchFoods, loadFoods, dayTotals, compWeeks, parseHealthPaste, foodCount: () => foodDb.list ? foodDb.list.length : 0,
   EX, DAYS, normalize, dayInfo, weekFacts, scoreFacts, weekGoals, liveGoals, fuelParts, plannedFor, planSlots, swapOptions, defaultSwapOption, alts, teamStats, stakesFor, phaseFor, restT,
   caps, normBarcode, backupDocs, workoutsCsv, foodCsv, canon,
+  ACTS, specFor, splitOf, rotation, nextDayKey, deloadWeeks, checkinSuggest, ciPreview, atHealthplex, lapMiles, wmState: () => wm, wmResumable, MOVE_OF, HOWTO, STRETCHES, demoSVG,
   suggest, stallFor, deloadOn, deloadState, completedWeeks, easier, weekRecap, lastWeek, ious, goalNudge, painNotes, painFlag, actList, surpriseActivity, savedMeals, mealItems };
 (function boot() {
   const saved = lsGet('ml.me', null);
@@ -253,7 +259,7 @@ window.MorningLaps = { state, P, weekScore, coach, goalsFor, badgesFor, searchFo
   // a phone left open overnight: when it comes back to the front on a new day, move "today" forward
   const wake = () => { if (document.visibilityState === 'hidden') { flushAccount(); return; } if (!rollDay()) return; render(); newDay(); };
   document.addEventListener('visibilitychange', wake);
-  window.addEventListener('pagehide', flushAccount);
+  window.addEventListener('pagehide', () => { wmKeep(); flushAccount(); }); // a workout in progress is remembered before the page goes
   window.addEventListener('pageshow', wake);
   window.addEventListener('focus', wake);
   route();

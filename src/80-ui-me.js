@@ -44,6 +44,7 @@ function renderMe() {
     '<p class="tiny muted">Your look applies whenever your profile is active, on any phone.</p></section>';
 
   h += '<section class="card stack" id="gymCard"><h3>Gym</h3><div class="row" style="flex-wrap:nowrap;align-items:flex-end"><label class="f grow">Where you train<input type="text" data-form="gym" data-k="place" maxlength="40" value="' + esc('place' in (state.forms.gym || {}) ? state.forms.gym.place : (p.place || '')) + '" placeholder="Name of your gym"></label><button type="button" class="small" data-a="gym-save" style="min-height:44px">Save</button></div>' +
+    (atHealthplex(pid) ? '' : '<div class="row"><button type="button" class="small" id="gymHp" data-a="gym-hp">' + HEALTHPLEX + '</button><span class="tiny muted">one tap, if that is your gym</span></div>') +
     '<p class="tiny muted">Shown next to the date at the top and in the morning plan. Leave it empty to show no gym.</p></section>';
 
   h += '<section class="card stack" id="bodyCard"><div class="row between"><h3>Daily targets</h3>' + (g.ready ? '<span class="chip good">' + (g.kcalSrc === 'doctor' ? 'doctor' : 'estimate') + '</span>' : '<span class="chip warn">placeholder</span>') + '</div>' +
@@ -80,7 +81,7 @@ function renderMe() {
     '<details class="plain" data-dk="remsteps"><summary>Set up the three reminders, once per iPhone</summary><div style="margin-top:8px" id="remSteps">' + reminderStepsHTML(pid) + '</div></details></section>';
   h += backupCardHTML();
   h += '<section class="card stack"><h3>Workout style</h3>' + seg('plan-set', 'plan', p.plan, { program: 'Lifting program', choice: 'Pick-your-own' }) +
-    '<p class="tiny muted">' + (p.plan === 'program' ? 'Push, Pull, Legs rotation with weight suggestions. Weekly goal: ' + live.goal + ' activity days, ' + LIFT_GOAL + ' of them lifts. Walks and other activities can be added on any day.' : 'Choose from a gentle menu each day. Weekly goal: ' + live.goal + ' active days of ' + live.minMin + ' minutes or more. Adjust it under Train, Plan.') + ' Switching keeps everything already logged.</p>' +
+    '<p class="tiny muted">' + (p.plan === 'program' ? (splitOf(pid) === 'full' ? 'Full Body A and B, alternating,' : 'Push, Pull, Legs rotation') + ' with weight suggestions. Weekly goal: ' + live.goal + ' activity days, ' + live.liftGoal + ' of them lifts. Walks and other activities can be added on any day.' : 'Choose from a gentle menu each day. Weekly goal: ' + live.goal + ' active days of ' + live.minMin + ' minutes or more. Adjust it under Train, Plan.') + ' Switching keeps everything already logged.</p>' +
     (live.plan !== wk.plan ? '<p class="tiny locknote" id="planLock"><span class="chip accent">' + mon + '</span> for scoring. Your Train tab switches now, but this week is still scored as ' + (wk.plan === 'program' ? 'the lifting program' : 'pick-your-own') + ', so the race already running does not change.</p>' : '') + '</section>';
 
   const sync = state.storage === 'db' ? (state.cantWrite ? 'This account can read the shared log but not save to it.' : 'Saving to the shared log on your Claude account.') : state.storage === 'local' ? 'Saving in this browser only.' : state.storage === 'nodb' ? 'The shared log cannot be reached right now.' : 'Connecting…';
@@ -120,10 +121,15 @@ ACT['rem-save'] = async () => {
   const ok = await saveProfile(me(), { reminders: { morning, water } }); if (!ok) return; // a refused save keeps what was picked
   delete state.forms.rem; render(); toast('Steps updated: ' + fmtClock(morning) + ' on weekdays, water check at ' + fmtClock(water) + '.', 3400);
 };
+ACT['gym-hp'] = async () => { // one tap: this profile trains at the Healthplex
+  typing = false; const ok = await saveProfile(me(), { place: HEALTHPLEX, placeSince: todayIso() }); if (!ok) return;
+  delete state.forms.gym; render(); toast('Gym set to ' + HEALTHPLEX + '. Train now has a daily check-in and a Healthplex menu.', 4200);
+};
 ACT['gym-save'] = async () => {
   const place = String((state.forms.gym || {}).place == null ? (P(me()).place || '') : state.forms.gym.place).trim().slice(0, 40);
   typing = false;
-  const ok = await saveProfile(me(), { place }); if (!ok) return; // a refused save keeps what was typed
+  const moved = place.toLowerCase() !== String(P(me()).place || '').toLowerCase(); // the day a gym changes is kept, for the first-week note
+  const ok = await saveProfile(me(), Object.assign({ place }, moved ? { placeSince: todayIso() } : null)); if (!ok) return; // a refused save keeps what was typed
   delete state.forms.gym; render(); toast(place ? 'Gym set to ' + place + '.' : 'Gym cleared.');
 };
 ACT['form-set'] = el => { const f = el.dataset.form; (state.forms[f] = state.forms[f] || {})[el.dataset.k] = el.dataset.v; render(); };

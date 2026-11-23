@@ -20,6 +20,9 @@ A phone-first fitness tracker for two people, Tyson and Jacquie: workouts, nutri
 | `src/50-fx.js` | Overlays, confetti, celebrations |
 | `src/55-rest.js` | Rest timer: its own bar outside the page, never part of the render loop |
 | `src/60…80-ui-*.js` | Screens: Train, Fuel, Compete, Me |
+| `src/57-moves.js` | Workout-mode content: one line-figure demo per movement pattern, form cues for every exercise, the stretch sequence |
+| `src/62-ui-checkin.js` | Daily check-in, Healthplex cards and gym info, split and lift-goal settings, "Not at my gym" |
+| `src/65-workout.js` | Workout mode: the full-screen guided session (`#wm`, outside `#main`) |
 | `src/74-ui-scan.js` | Scan a barcode, read a Nutrition Facts label, describe a restaurant meal |
 | `src/82-backup.js` | Backup: one JSON of every document, plus workouts and food as CSV |
 | `src/90-main.js` | Render loop, events, routing, boot |
@@ -140,6 +143,47 @@ Removing a food, an activity, a rest day, a lift day, a saved meal or a custom f
 
 "Download a backup" saves three files named with today's date: `morning-laps-backup-<date>.json` (every shared document for both people, keyed by path: sessions, food, health, profiles, weekly goal snapshots, saved meals, shared foods, results, IOUs, competition settings), `morning-laps-workouts-<date>.csv` (one row per set, plus one per treadmill entry, activity and rest day) and `morning-laps-food-<date>.csv` (one row per item). Text cells that a spreadsheet would run as a formula get a leading apostrophe. Where files cannot be saved, "Copy backup" writes the same JSON to the clipboard inside the tap and says how big it is; if the clipboard refuses, the text is shown to copy by hand. The private per-account notes under `data/users/` are not part of the backup.
 
+## Version 16: check-in, Full Body A/B, the Healthplex, workout mode
+
+Scoring rules are unchanged. Goal changes still lock next Monday through the weekly snapshot.
+
+### Split and goals (`src/10-program.js`)
+
+- `settings.split`: `'full'` (Full Body A/B) or absent / `'ppl'` (Push / Pull / Legs). A profile that never chose keeps Push / Pull / Legs. Switching never rewrites a record: old days keep their `day`. `nextDayKey` follows `rotation()`; a day from the other split leads to the first day of the current one, so after switching the next lift is A.
+- `DAYS.fba` and `DAYS.fbb` use the existing exercise keys, so weight history, swaps, stall checks and deloads carry over. Each slot has its own set count and rep range (`slots`); `specFor(key, date)` applies them, and the weight rule, the stall check and the set count read it. A 2-set slot moves up when both sets hit the top. Slots marked `optional` ("if there's time") are planned but not needed for `complete`.
+- Phases do not apply to full-body days: the label is hidden, `phase` is still stored, earned phase badges stay.
+- `deloadWeeks()` counts weeks that met the lift goal locked for that week (`weekGoals(pid, ws).liftGoal`). `completedWeeks()`, which drives phases, still uses 3.
+- `settings.liftGoal`: 2 or 3, read by `liveGoals` and locked per week with the other targets.
+- Full-body days open with a warm-up of 5 to 10 minutes, stored where treadmill minutes are (`treadmill.minutes`).
+- "Not at my gym" (`notAtMyGym`) makes an exercise's free stand-in the default swap. `settleSwaps` means no slot is ever dropped.
+
+### Daily check-in (`src/62-ui-checkin.js`)
+
+Shown on Train for today: always on the lifting program, and for a pick-your-own profile once its gym is the Healthplex. Picking a choice only sets `state.ci`; nothing is written until a session is saved, and the saved day carries the answer as `checkin` (History shows "Felt: ..."). `checkinSuggest(pid, date)` applies the rules in order:
+
+| Order | Lifting program | Suggests |
+|---|---|---|
+| 1 | The last saved day was sore (`checkin: 'sore'`, or an activity marked "Something hurt"), and the one before it was not | Recovery |
+| 2 | Lifted yesterday | Cardio |
+| 3 | Lifts still needed this week no longer fit with a day between them: `daysLeft <= 2 * need - 1` | Express lift |
+| 4 | 3 or more days since the last lift | Full lift |
+| 5 | Otherwise | Full lift on a weekday, cardio on a weekend |
+
+Pick-your-own: sore last time, then active yesterday (low energy), otherwise feeling good. A choice whose activity loads a "Go easy on" area or has 2 or more recent pain notes is never suggested: a safe stand-in inside the choice is used, or the next gentlest choice, with the reason. An express session plans the first 3 lifts (`EXPRESS_LIFTS`). Classes and court games sit behind a smaller link and are never suggested.
+
+### The Healthplex (`src/20-activities.js`)
+
+Activities with `cat: 'healthplex'` show only when `atHealthplex(pid)` (the gym name contains "Healthplex"). `cls` marks group classes: tagged, never suggested, skipped by Surprise me, needed by no goal or badge. `heat` marks the sauna, steam room and whirlpool: `mv: false` recovery entries, default 10 minutes, capped at 20, with one safety line and a "+16.9 oz water" offer after logging. `TRACK_LAPS = 8` laps make a mile. The gym facts on the Program tab are from the Healthplex website, November 2026; no Healthplex artwork is used anywhere.
+
+### Workout mode (`src/65-workout.js`)
+
+`#wm` is a fixed, full-view element outside `#main`. While `wm` is set, `render()` returns at once, so the page behind is not redrawn; closing redraws it. It adds no data shape:
+
+- **Lifts** write into the same draft as the lifting log (`draft.ex`, `draft.tm`), plus `draft.wm` to mark a session in progress, and finish through the same `save()`.
+- **Cardio, guided and recovery sessions** are stages (`laps`, `lengths`, `timer`, `circuit`, `stretch`, `heat`). Progress is kept on the phone in `ml.wm`. Finishing logs every moving stage as one activity through `logActivity()`, with laps, miles or station sets in the note, and a recovery room as its own recovery entry. The treadmill finishes as the lifting log's own treadmill day.
+- Start tries the Fullscreen API and a screen wake lock and ignores a refusal.
+- `prefers-reduced-motion` skips the start sequence, shows the demos as a still frame and turns off bursts and pick animations.
+
 ## Apple Health and Apple Watch
 
 A web page cannot read Apple Health. A Shortcut on the iPhone copies the day's Exercise Minutes, steps, active calories, water and weight as text, and the user pastes it into the app. The steps to build the Shortcut are in `docs/apple-health-shortcut.md` and inside the app under Me. Imports are idempotent: Exercise Minutes become one entry holding only the minutes not already logged by hand.
@@ -184,5 +228,6 @@ node tests/review.test.js # review regressions: writes before the log loads, old
 node tests/account.test.js # account memory: profile choice, weekly result and badges shown once, unsaved drafts, on a phone that empties its storage (29 checks)
 node tests/v12.test.js     # version 12: swaps, weekly locks, provisional/final results, Watch top-up, combined days, gym, stakes, custom foods, team, set shortcuts, rest timer, protein scoring, smoke of every tab (135 checks)
 node tests/v13.test.js     # version 13: saved meals, stalled lifts, deload weeks, reminders, weekly recap, IOUs, goal nudge, pain notes, smoke of every tab (98 checks)
+node tests/v16.test.js     # version 16: check-in rules, Full Body A/B, Healthplex activities, lift goal, gym info, Not at my gym, Jacquie's check-in, workout mode, animations, smoke of every tab and workout-mode screen
 ML_ZXING=/path/to/zxing/umd/index.min.js node tests/v15.test.js   # version 15: Health paste box, reset plus deload, stuck-lift lines, barcode scanning, meal estimates, undo, backup, smoke of every tab
 ```

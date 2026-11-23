@@ -45,16 +45,18 @@ function renderTrain() {
   const kind = kindFor(date, m); const isLift = !!DAYS[kind];
   const phase = phaseOf(date);
   const last = lastLift(date); const nextK = nextDayKey(date);
-  let why = last ? 'After ' + DAYS[last.n.day].name + ' on ' + nice(last.date) + ', ' + DAYS[nextK].name + ' is next.' : 'First lift of the program: Push.';
-  if (n && n.qualifies && n.day) why = 'Counted ' + DAYS[n.day].name + ' day. Next: ' + DAYS[ROTATION[(ROTATION.indexOf(n.day) + 1) % 3]].name + '.';
+  let why = last ? 'After ' + DAYS[last.n.day].name + ' on ' + nice(last.date) + ', ' + DAYS[nextK].name + ' is next.' : (splitOf() === 'full' ? 'Next lift: ' + DAYS[nextK].name + '.' : 'First lift of the program: Push.');
+  if (n && n.qualifies && n.day) why = 'Counted ' + DAYS[n.day].name + ' day. Next: ' + DAYS[nextAfter(n.day)].name + '.';
   else if (n && n.kind === 'strength') why = 'Partial lift, not counted. ' + DAYS[nextK].name + ' is still next.';
   else if (isLift && kind !== nextK) why += ' You picked ' + DAYS[kind].name + '.';
 
-  let h = trainTopHTML() + '<section class="card sess">' + dateHead('Logging for') +
-    '<div class="seg" id="kindSeg" aria-label="Workout type">' + ROTATION.map(k => '<button type="button" data-kind="' + k + '" class="' + (kind === k ? 'on' : '') + '" aria-pressed="' + (kind === k) + '">' + DAYS[k].name + '</button>').join('') +
+  const rot = rotation(), segDays = !DAYS[kind] || rot.includes(kind) ? rot : rot.concat([kind]), full = !!(DAYS[kind] ? DAYS[kind].full : splitOf() === 'full'); // an old day from the other split keeps its own button
+  let h = trainTopHTML() + checkinHTML() + '<section class="card sess">' + dateHead('Logging for') +
+    '<div class="seg" id="kindSeg" aria-label="Workout type">' + segDays.map(k => '<button type="button" data-kind="' + k + '" class="' + (kind === k ? 'on' : '') + '" aria-pressed="' + (kind === k) + '">' + DAYS[k].name + '</button>').join('') +
     '<button type="button" data-kind="cardio" class="' + (kind === 'cardio' ? 'on' : '') + '" aria-pressed="' + (kind === 'cardio') + '">Treadmill</button><button type="button" data-kind="rest" class="' + (kind === 'rest' ? 'on' : '') + '" aria-pressed="' + (kind === 'rest') + '">Rest</button></div>' +
-    '<div class="status"><span id="statusLine">' + esc(statusText(date)) + '</span><span>·</span><span>Phase ' + phase + '</span>' + healthButton() + '</div>' +
-    '<p class="tiny muted" id="whyLine" style="margin-top:-4px">' + esc(why) + '</p>' + hkLineHTML(date);
+    '<div class="status"><span id="statusLine">' + esc(statusText(date)) + '</span>' + (full ? '' : '<span>·</span><span>Phase ' + phase + '</span>') + healthButton() + '</div>' +
+    '<p class="tiny muted" id="whyLine" style="margin-top:-4px">' + esc(why) + '</p>' + hkLineHTML(date) +
+    (isLift && date <= todayIso() ? '<div class="row"><button type="button" class="small" id="wmStart" data-a="wm-lift">' + (wmDraftOn(date) ? 'Resume workout' : 'Start guided workout') + '</button><span class="tiny muted">full screen, one lift at a time</span></div>' : '');
   if (d && d.recovered && draftHasContent(d)) h += '<div class="banner"><span>Unsaved draft from ' + tzTime.format(new Date(d.updatedAt)) + ' restored. Not saved until you tap Save.</span><div class="row"><button type="button" class="small" id="discardDraft">Discard draft</button></div></div>';
   if (n && n.ambiguous) h += '<div class="banner">Saved as a ' + (DAYS[rec.day] ? DAYS[rec.day].name : 'lift') + ' day by the earlier version but has no lifting sets. It counts as ' + (n.kind === 'cardio' ? 'treadmill only' : 'no activity') + '. Add sets or re-save to confirm.</div>';
   h += '</section>';
@@ -68,7 +70,7 @@ function renderTrain() {
     return h;
   }
 
-  h += '<form id="logForm" autocomplete="off" class="sheet"><div class="blk"><div class="bhead"><h3>Treadmill · Apple Fitness+</h3><span class="tiny muted">target ' + TREAD_MIN[phase] + ' min</span></div>' +
+  h += '<form id="logForm" autocomplete="off" class="sheet"><div class="blk"><div class="bhead"><h3>' + (full && isLift ? 'Warm-up (track, treadmill or bike)' : 'Treadmill · Apple Fitness+') + '</h3><span class="tiny muted">target ' + (full && isLift ? '5–10' : TREAD_MIN[phase]) + ' min</span></div>' +
     '<div class="logrow" style="grid-template-columns:minmax(80px,1fr) 2fr"><label class="f">Minutes<input type="number" id="tmMin" data-field="tmMin" min="0" step="1" inputmode="numeric" pattern="[0-9]*" value="' + esc(m.tm.minutes) + '" placeholder="–"></label>' +
     '<label class="f">Workout (optional)<input type="text" id="tmTitle" data-field="tmTitle" value="' + esc(m.tm.title) + '" placeholder="Fitness+ workout name"></label></div></div>';
 
@@ -86,7 +88,7 @@ function renderTrain() {
       '<p class="tiny muted" style="margin-top:6px">A counted lift day advances the rotation and earns lift credit. Full rules on the Program tab.</p></details>';
   }
   h += '</form>';
-  h += extrasHTML(date) + renderSaveBar(date, m, saved);
+  h += extrasHTML(date) + heatChipHTML(date) + renderSaveBar(date, m, saved);
   h += renderMorning(phase, kind);
   return h;
 }
@@ -107,14 +109,14 @@ function extrasHTML(date) {
 function trainTopHTML() {
   const st = deloadState(), sb = state.settings.swapBack || {}, sw = state.settings.swaps || {}, t = todayIso(); let h = '';
   if (st === 'on') h += '<div class="banner good" id="deloadBanner"><span><b>Deload week is on.</b> 2 sets per lift at about 90% weight. Recovery week, same points.</span><div class="row"><button type="button" class="small" data-a="deload-off">End the deload early</button></div></div>';
-  else if (st === 'offer') h += '<div class="banner accent" id="deloadBanner"><span><b>Deload week:</b> 2 sets per lift at about 90% weight. Recovery week, same points.</span><span class="tiny muted">You have finished ' + completedWeeks(t) + ' full lift weeks. A lighter week now lets the next five go heavier. Lift days still count as lift days.</span><div class="row"><button type="button" class="small" data-a="deload-take">Take it</button><button type="button" class="small" data-a="deload-skip">Skip</button></div></div>';
+  else if (st === 'offer') h += '<div class="banner accent" id="deloadBanner"><span><b>Deload week:</b> 2 sets per lift at about 90% weight. Recovery week, same points.</span><span class="tiny muted">You have finished ' + deloadWeeks(t) + ' full lift weeks. A lighter week now lets the next five go heavier. Lift days still count as lift days.</span><div class="row"><button type="button" class="small" data-a="deload-take">Take it</button><button type="button" class="small" data-a="deload-skip">Skip</button></div></div>';
   Object.keys(sb).forEach(base => { const x = sb[base]; if (!x || !EX[base] || !EX[x.to] || !EX[x.from] || !validIso(x.until) || t < x.until || (sw[base] || base) !== x.to) return;
     h += '<div class="banner" data-swapback="' + base + '"><span><b>Four weeks on ' + esc(EX[x.to].name) + '.</b> Switch back to ' + esc(EX[x.from].name) + '?</span><div class="row"><button type="button" class="small" data-a="swapback-yes" data-base="' + base + '">Switch back</button><button type="button" class="small" data-a="swapback-no" data-base="' + base + '">Keep ' + esc(EX[x.to].name) + '</button></div></div>'; });
   return h + nudgeHTML(me());
 }
 function nudgeHTML(pid) {
   const n = goalNudge(pid); if (!n) return '';
-  return '<section class="card stack" id="nudgeCard"><p><b>Three full weeks in a row.</b> Raise your goal to ' + n.to + ' days starting Monday?</p><div class="row"><button type="button" class="small" data-a="nudge-yes">Raise it</button><button type="button" class="quiet" data-a="nudge-no">Not now</button></div>' +
+  return '<section class="card stack" id="nudgeCard"><p>' + (n.kind === 'lift' ? '<b>Three weeks with 3 lifts.</b> Raise your lift goal to 3 lift days starting Monday?' : '<b>Three full weeks in a row.</b> Raise your goal to ' + n.to + ' days starting Monday?') + '</p><div class="row"><button type="button" class="small" data-a="nudge-yes">Raise it</button><button type="button" class="quiet" data-a="nudge-no">Not now</button></div>' +
     '<p class="tiny muted">This week stays at ' + n.from + '. A raised goal locks in next Monday, like any goal change.</p></section>';
 }
 // where a stalled slot can go for four weeks: another alternate that is free in every phase, else back to its planned exercise
@@ -131,8 +133,8 @@ function stallHTML(p, date) {
     '<span class="tiny muted">Reset makes the next suggestion ' + st.to + unit + '.' + (to ? ' Swap uses ' + esc(EX[to].name) + ' for 4 weeks, then asks about switching back.' : ' Its alternates are already in that day\'s workout, so there is nothing to swap to.') + '</span></div>';
 }
 ACT['stall-open'] = el => { const k = el.dataset.key; state.stallOpen[k] = !state.stallOpen[k]; render('[data-a="stall-open"][data-key="' + k + '"]'); };
-ACT['deload-take'] = () => { const t = todayIso(), cw = completedWeeks(t); return saveSettings({ deload: { ws: weekStart(t), cw }, deloadAsked: cw }); };
-ACT['deload-skip'] = () => saveSettings({ deloadAsked: completedWeeks(todayIso()) });
+ACT['deload-take'] = () => { const t = todayIso(), cw = deloadWeeks(t); return saveSettings({ deload: { ws: weekStart(t), cw }, deloadAsked: cw }); };
+ACT['deload-skip'] = () => saveSettings({ deloadAsked: deloadWeeks(todayIso()) });
 ACT['deload-off'] = () => saveSettings({ deload: null });
 ACT['stall-x'] = el => { const key = el.dataset.key, st = stallFor(key, state.selDate); if (!st) return; return saveSettings({ stallSeen: Object.assign({}, state.settings.stallSeen, { [key]: st.last }) }); };
 ACT['stall-reset'] = async el => {
@@ -158,6 +160,7 @@ ACT['swapback-yes'] = el => {
 ACT['swapback-no'] = el => { const back = Object.assign({}, state.settings.swapBack); delete back[el.dataset.base]; return saveSettings({ swapBack: back }); };
 ACT['nudge-yes'] = async () => {
   const pid = me(), n = goalNudge(pid); if (!n) return;
+  if (n.kind === 'lift') { await saveSettings({ liftGoal: 3 }); settle(); render(); toast('Lift goal raised to 3 lift days. ' + startsNote() + '; this week stays at 2.', 4200); return; }
   if (n.plan === 'program') await saveSettings({ goal: n.to }); else if (!(await saveProfile(pid, { move: { goalDays: n.to } }))) return;
   settle(); render(); toast('Goal raised to ' + n.to + ' days. ' + startsNote() + '; this week stays at ' + n.from + '.', 4200);
 };
@@ -169,12 +172,12 @@ function exSummary(key, e, nSets) {
   return { loggedN, line, done: loggedN >= nSets && (ex.bw || e.w !== '') };
 }
 function renderExercise(p, m, date) {
-  const key = p.key; const ex = EX[key]; const sg = suggest(key, date);
+  const key = p.key; const ex = specFor(key, date); const sg = suggest(key, date); // on a full-body day: the slot's own sets and rep range
   const e = m.ex[key] || { w: '', reps: [] }; const maxed = !!(state.settings.maxed || {})[key];
   const nSets = setCount(key, m, date); const sm = exSummary(key, e, nSets);
   const closed = !!m.closed[key]; const menu = state.menu && state.menu.key === key ? state.menu : null;
   let h = '<section class="blk ex" data-ex="' + key + '" aria-label="' + esc(ex.name) + '">';
-  h += '<div class="bhead"><h3>' + esc(ex.name) + (key !== p.base ? ' <span class="chip">swapped</span>' : '') + '</h3>' +
+  h += '<div class="bhead"><h3>' + esc(ex.name) + (key !== p.base ? ' <span class="chip">swapped</span>' : '') + (ex.optional ? ' <span class="chip" data-optional="' + key + '">if there\'s time</span>' : '') + '</h3>' +
     '<button type="button" class="menubtn" data-menu="' + key + '" aria-label="Options for ' + esc(ex.name) + '" aria-haspopup="menu" aria-expanded="' + (menu ? 'true' : 'false') + '">···</button>' + renderMenu(key, p, m, date, menu) + '</div>';
   h += stallHTML(p, date);
   if (closed) {
@@ -226,6 +229,8 @@ function renderMenu(key, p, m, date, menu) {
   } else {
     h += '<button type="button" role="menuitem" data-act="swap" data-key="' + key + '"' + (opts.length ? '' : ' disabled') + '>Swap exercise<span class="sub">' + (opts.length ? 'this workout only' : alts(p.base).length ? 'unavailable: its alternates are already in today\'s workout' : 'no alternate for this one') + '</span></button>';
     if (!ex.bw) h += '<button type="button" role="menuitem" data-act="hold" data-key="' + key + '">' + (maxed ? 'Allow weight increases' : 'Can\'t go higher') + '<span class="sub">' + (maxed ? 'resume weight suggestions' : 'hold weight, progress by reps') + '</span></button>';
+    const stand = key === p.base ? defaultSwapOption(p.base) : null; // "Not at my gym": the free stand-in becomes the default for every future workout
+    h += '<button type="button" role="menuitem" data-act="notgym" data-key="' + key + '" data-base="' + p.base + '"' + (stand ? '' : ' disabled') + '>Not at my gym<span class="sub">' + (stand ? 'use ' + esc(EX[stand].name) + ' in every future workout' : key !== p.base ? 'already swapped' : 'no stand-in for this one') + '</span></button>';
     h += '<button type="button" role="menuitem" data-act="addset" data-key="' + key + '"' + (nSets >= MAX_SETS ? ' disabled' : '') + '>Add a set<span class="sub">' + (nSets >= MAX_SETS ? 'at the maximum of ' + MAX_SETS : nSets + ' of ' + MAX_SETS + ' shown') + '</span></button>';
     h += '<button type="button" role="menuitem" data-act="details" data-key="' + key + '">' + (state.details[key] ? 'Hide exercise details' : 'Exercise details') + '<span class="sub">equipment, why this weight</span></button>';
     h += '<button type="button" role="menuitem" data-act="' + (m.closed[key] ? 'expand' : 'collapse') + '" data-key="' + key + '">' + (m.closed[key] ? 'Expand' : 'Collapse') + '</button>';
@@ -258,6 +263,7 @@ function renderSaveBar(date, m, rec) {
   return h;
 }
 function renderMorning(phase, kind) {
+  if (atHealthplex(me())) return hpMorningHTML(kind); // the Healthplex has its own hours and its own plan
   return '<details class="card plain" data-dk="morning"><summary>Morning plan · at IMS by 9</summary><div class="sched" style="margin-top:8px">' +
     '<span class="t num">10:30</span><span>Lights out. Bag packed, Fitness+ workout picked.</span>' +
     '<span class="t num">6:00</span><span>Up. Water, small bite, drive to ' + esc(P(me()).place || 'the gym') + '.</span>' +
@@ -270,10 +276,11 @@ function renderMorning(phase, kind) {
 function actGridHTML(pid) { // the activity menu: filters and the grid, shared by the Train screen and the picker sheet
   const f = state.filter, list = actList(pid, f);
   const chip = (on, a, extra, label) => '<button type="button" data-a="' + a + '" ' + extra + ' class="' + (on ? 'on' : '') + '" aria-pressed="' + on + '">' + label + '</button>';
-  return '<div class="chips" aria-label="Filter activities">' + chip(f.cat === 'all', 'filter', 'data-cat="all"', 'All') + ACT_CATS.map(c => chip(f.cat === c[0], 'filter', 'data-cat="' + c[0] + '"', c[1])).join('') + '</div>' +
+  return '<div class="chips" aria-label="Filter activities">' + chip(f.cat === 'all', 'filter', 'data-cat="all"', 'All') + ACT_CATS.filter(c => c[0] !== 'healthplex' || atHealthplex(pid)).map(c => chip(f.cat === c[0], 'filter', 'data-cat="' + c[0] + '"', c[1])).join('') + '</div>' +
     '<div class="chips">' + chip(f.quick, 'filter-quick', '', '10 min or less') + chip(f.fav, 'filter-fav', '', 'Favorites') + '</div>' +
     '<div class="acts">' + list.map(k => {
       const a = ACTS[k], caution = actCaution(pid, k), fav = P(pid).favorites.includes(k);
+      if (a.cat === 'healthplex') return hpCardHTML(pid, k); // a Healthplex card flips to show its details
       return '<button type="button" class="act' + (fav ? ' fav' : '') + '" data-a="act" data-k="' + k + '"><span class="ai" aria-hidden="true">' + a.icon + '</span><span class="an">' + esc(a.name) + '</span><span class="am">' + a.min + ' min · ' + (a.mv === false ? 'recovery' : IMPACT[a.impact]) + '</span>' + (caution.length ? '<span class="aw">Go easy: ' + caution.map(x => AREAS[x].toLowerCase()).join(', ') + '</span>' : '') + (painFlag(pid, k) ? '<span class="aw" data-pain="' + k + '">Pain noted ' + painCount(pid, k) + '× recently</span>' : '') + '</button>';
     }).join('') + '</div>' + (list.length ? '' : '<p class="muted tiny">Nothing matches those filters.</p>');
 }
@@ -285,7 +292,7 @@ function renderMove() {
   if (rest) status = 'Rest day logged';
   else if (program) status = progText + (acts.length ? ' + ' + n.actMin + ' min of activities' : '') + ' · counts as an active day';
   else if (acts.length) status = n.allMin + ' min logged · ' + (di.active ? 'counts as an active day' : (mm - di.minutes) + ' more min of movement to count');
-  let h = nudgeHTML(pid) + '<section class="card sess">' + dateHead('Logging for') + '<div class="status"><span id="statusLine">' + esc(status) + '</span>' + healthButton() + '</div>' + hkLineHTML(date) + '</section>';
+  let h = nudgeHTML(pid) + checkinHTML() + '<section class="card sess">' + dateHead('Logging for') + '<div class="status"><span id="statusLine">' + esc(status) + '</span>' + healthButton() + '</div>' + hkLineHTML(date) + '</section>' + heatChipHTML(date);
   if (acts.length || rest || program) {
     h += '<section class="card"><div class="row between"><h3>Logged ' + (rel(date) === nice(date) ? nice(date) : rel(date).toLowerCase()) + '</h3>' + (rest ? '<span class="chip">rest</span>' : di.active ? '<span class="chip good">active day</span>' : '<span class="chip warn">' + di.minutes + ' of ' + mm + ' min</span>') + '</div><div class="done-list" style="margin-top:4px">';
     if (rest) h += '<button type="button" data-a="rest-undo"><span>🛌 Rest day</span><span class="muted">tap to remove</span></button>';
@@ -315,15 +322,17 @@ OV.actpick = { // the same menu, from the lifting log
 ACT['act-pick'] = () => openOv({ type: 'actpick', date: state.selDate });
 ACT['go-history'] = () => { location.hash = 'history'; };
 const redrawPicker = () => { render(); if (state.ov && state.ov.type === 'actpick') renderOv(); };
+const lapLine = laps => { const n = Math.round(Number(laps)); return n > 0 ? n + ' lap' + (n === 1 ? '' : 's') + ' = ' + milesText(n) : 'Each lap is 1/8 mile.'; };
 OV.act = {
   html: o => {
     const a = ACTS[o.k], pid = me(), caution = actCaution(pid, o.k), fav = P(pid).favorites.includes(o.k), min = Number(o.min) || 0;
     let h = '<div class="ov" role="dialog" aria-modal="true" aria-label="Log ' + esc(a.name) + '">' + ovHead(a.icon + ' ' + esc(a.name), rel(o.date) + ' · ' + (a.mv === false ? 'recovery, does not count toward active minutes' : IMPACT[a.impact])) +
-      '<p class="muted">' + esc(a.desc) + '</p>';
+      '<p class="muted">' + esc(a.desc) + '</p>' + (classTag(a) ? '<p class="banner" id="clsTag">' + classTag(a) + '</p>' : '') + (a.heat ? '<p class="banner" id="heatNote">' + HEAT_NOTE + '</p>' : '');
+    if (a.wm === 'laps') h += '<label class="f">Laps (8 = 1 mile)<input type="number" id="actLaps" data-ovf="laps" inputmode="numeric" pattern="[0-9]*" min="0" max="400" value="' + esc(o.laps || '') + '" placeholder="–"></label><p class="tiny muted num" id="lapMiles">' + lapLine(o.laps) + '</p>';
     if (painFlag(pid, o.k)) h += '<div class="banner">You noted pain on this ' + painCount(pid, o.k) + ' times in the last ' + PAIN_DAYS + ' days. Rest it, shorten it or pick something else, and talk to your doctor or physical therapist if it keeps happening.</div>';
     if (caution.length) h += '<div class="banner">Loads an area you are protecting: ' + caution.map(x => AREAS[x].toLowerCase()).join(', ') + '. Keep it short and easy, or pick something else.</div>';
     if (o.k === 'other') h += '<label class="f">What did you do?<input type="text" data-ovf="name" value="' + esc(o.name || '') + '" placeholder="Name the activity" maxlength="40"></label>';
-    h += '<div><div class="eyebrow">Minutes</div><div class="stepper" style="margin-top:4px"><button type="button" data-a="act-min" data-d="-5" aria-label="5 fewer minutes">−</button><input type="number" id="actMin" data-ovf="min" inputmode="numeric" pattern="[0-9]*" min="1" max="300" value="' + esc(o.min) + '" aria-label="Minutes"><button type="button" data-a="act-min" data-d="5" aria-label="5 more minutes">+</button></div></div>' +
+    h += '<div><div class="eyebrow">Minutes</div><div class="stepper" style="margin-top:4px"><button type="button" data-a="act-min" data-d="-5" aria-label="5 fewer minutes">−</button><input type="number" id="actMin" data-ovf="min" inputmode="numeric" pattern="[0-9]*" min="1" max="' + (a.max || 300) + '" value="' + esc(o.min) + '" aria-label="Minutes"><button type="button" data-a="act-min" data-d="5" aria-label="5 more minutes">+</button></div></div>' +
       '<div><div class="eyebrow">How did it feel?</div><div class="seg" style="margin-top:4px">' + Object.keys(FEELS).map(k => '<button type="button" data-a="act-feel" data-v="' + k + '" class="' + (o.feel === k ? 'on' : '') + '" aria-pressed="' + (o.feel === k) + '">' + FEELS[k] + '</button>').join('') + '</div></div>' +
       '<div class="row"><button type="button" class="small ' + (o.hurt ? 'on' : '') + '" data-a="act-hurt" aria-pressed="' + !!o.hurt + '">Something hurt</button><button type="button" class="small ' + (fav ? 'on' : '') + '" data-a="act-fav" aria-pressed="' + fav + '">' + (fav ? '★ Favorite' : '☆ Favorite') + '</button></div>';
     if (o.hurt) h += '<div class="banner">Stop if the pain is sharp or new. Rest today. If it lingers, tell your doctor or physical therapist before doing this one again.</div>';
@@ -337,7 +346,7 @@ ACT['act-edit'] = el => {
   const rec = state.sessions[state.selDate], a = rec && (rec.acts || []).find(x => x.id === el.dataset.id); if (!a) return;
   openOv({ type: 'act', id: a.id, k: ACTS[a.a] ? a.a : 'other', date: state.selDate, min: String(a.min), feel: a.feel || null, hurt: !!a.hurt, note: a.note || '', name: a.a === 'other' ? a.name : '', at: a.at });
 };
-ACT['act-min'] = el => { const o = state.ov; o.min = String(clamp((Number(o.min) || 0) + Number(el.dataset.d), 1, 300)); renderOv(); };
+ACT['act-min'] = el => { const o = state.ov; o.min = String(clamp((Number(o.min) || 0) + Number(el.dataset.d), 1, (ACTS[o.k] && ACTS[o.k].max) || 300)); renderOv(); };
 ACT['act-feel'] = el => { const o = state.ov; o.feel = o.feel === el.dataset.v ? null : el.dataset.v; renderOv(); };
 ACT['act-hurt'] = () => { state.ov.hurt = !state.ov.hurt; renderOv(); };
 ACT['act-fav'] = async () => {
@@ -346,12 +355,14 @@ ACT['act-fav'] = async () => {
 };
 ACT['act-log'] = async () => {
   const o = state.ov, a = ACTS[o.k], min = Math.round(Number(o.min));
-  if (!(min > 0) || min > 300) { toast('Enter minutes between 1 and 300.'); return; }
+  const cap = a.max || 300, laps = a.wm === 'laps' ? Math.round(Number(o.laps)) : 0;
+  if (!(min > 0) || min > cap) { toast('Enter minutes between 1 and ' + cap + '.'); return; }
   const name = o.k === 'other' ? (String(o.name || '').trim() || 'Activity') : a.name;
-  const entry = { id: o.id || uid(), a: o.k, name, min, feel: o.feel || null, hurt: !!o.hurt, note: String(o.note || '').trim(), mv: a.mv !== false, at: o.at || new Date().toISOString() };
+  const entry = { id: o.id || uid(), a: o.k, name, min, feel: o.feel || null, hurt: !!o.hurt, note: [laps > 0 && !/\blaps?\b/.test(String(o.note || '')) ? laps + ' lap' + (laps === 1 ? '' : 's') + ' (' + milesText(laps) + ')' : '', String(o.note || '').trim()].filter(Boolean).join(' · '), mv: a.mv !== false, at: o.at || new Date().toISOString() };
   const before = scoreSnapshot();
-  const ok = await logActivity(o.date, entry); if (!ok) return;
+  const ok = await logActivity(o.date, entry, o.felt); if (!ok) return;
   closeOv(); render();
+  if (a.heat) { celebrate('', { before }); state.waterDate = o.date; toastAction(min + ' min of ' + name.toLowerCase() + ' logged', '+' + BOTTLE_OZ + ' oz water', 'water-bottle', 8000); return; }
   const di = dayInfo(me(), o.date);
   celebrate(min + ' min of ' + name.toLowerCase() + ' logged. ' + (a.mv === false ? 'Recovery counts for you, not for points.' : di.active ? 'That is an active day.' : (weekGoals(me(), weekStart(o.date)).minMin - di.minutes) + ' more min makes it count.'), { force: di.active, before });
 };
@@ -366,31 +377,36 @@ ACT['rest-undo'] = async () => { const path = PATH.session(me(), state.selDate),
 /* ---------- Program tab ---------- */
 function renderProgram() {
   const t = todayIso(); const phase = phaseFor(t); const cw = completedWeeks(t); const ws = weekStats(t);
-  let h = '<section class="card"><div class="eyebrow">How the rotation works</div><h2>Push → Pull → Legs, repeat</h2>' +
-    '<p style="margin-top:8px">Days aren\'t tied to weekdays. The next lift is the one after your last <b>counted</b> lift day. Skip a morning and nothing goes out of sync. Every session opens with a Fitness+ treadmill workout. Aim for ' + ws.goal + ' activity days a week: ' + LIFT_GOAL + ' lifts, the rest treadmill-only or any ' + minMin(me()) + '-minute activity.</p></section>';
+  const fullSplit = splitOf() === 'full', rot = rotation(), lg = liveGoals(me()).liftGoal;
+  let h = gymBannerHTML() + '<section class="card stack" id="splitCard"><div class="row between"><h3>Split</h3><span class="tiny muted">changes the next lift, never your history</span></div>' +
+    '<div class="seg" aria-label="Split"><button type="button" data-a="split-set" data-v="full" class="' + (fullSplit ? 'on' : '') + '" aria-pressed="' + fullSplit + '">Full body A/B</button><button type="button" data-a="split-set" data-v="ppl" class="' + (fullSplit ? '' : 'on') + '" aria-pressed="' + !fullSplit + '">Push / Pull / Legs</button></div>' +
+    '<p class="tiny muted">' + (fullSplit ? 'Two sessions train everything, so a week with only two lifts still covers the whole body. A and B alternate after each counted lift day.' : 'Three sessions train everything. Each day repeats once the other two are done.') + '</p></section>' + gymCardHTML() +
+    '<section class="card"><div class="eyebrow">How the rotation works</div><h2>' + (fullSplit ? 'Full Body A → B, repeat' : 'Push → Pull → Legs, repeat') + '</h2>' +
+    '<p style="margin-top:8px">Days aren\'t tied to weekdays. The next lift is the one after your last <b>counted</b> lift day. Skip a morning and nothing goes out of sync. ' + (fullSplit ? 'Every session opens with a 5 to 10 minute warm-up on the track, treadmill or bike.' : 'Every session opens with a Fitness+ treadmill workout.') + ' Aim for ' + ws.goal + ' activity days a week: ' + ws.liftGoal + ' lifts, the rest treadmill-only or any ' + minMin(me()) + '-minute activity.</p></section>';
   const upcoming = nextDayKey(addDays(t, 1)); const lastL = lastLift(addDays(t, 1));
-  h += '<section class="card"><div class="row between"><div><div class="eyebrow">Progress</div><h3 style="font-family:var(--display);font-size:1.25rem">Week ' + (cw + 1) + ' · Phase ' + phase + (phase === 3 ? ' (full)' : '') + '</h3></div><span class="chip ' + (ws.lifts >= LIFT_GOAL ? 'good' : '') + '">' + ws.lifts + '/' + LIFT_GOAL + ' lift days this week</span></div>' +
+  h += '<section class="card"><div class="row between"><div><div class="eyebrow">Progress</div><h3 style="font-family:var(--display);font-size:1.25rem">Week ' + (cw + 1) + (fullSplit ? '' : ' · Phase ' + phase + (phase === 3 ? ' (full)' : '')) + '</h3></div><span class="chip ' + (ws.lifts >= ws.liftGoal ? 'good' : '') + '">' + ws.lifts + '/' + ws.liftGoal + ' lift days this week</span></div>' +
     '<p style="margin-top:8px" id="nextLift"><b>Next lift day: ' + DAYS[upcoming].name + '</b>' + (lastL ? ' <span class="muted tiny">after ' + DAYS[lastL.n.day].name + ' on ' + nice(lastL.date) + '</span>' : ' <span class="muted tiny">first lift of the program</span>') + '</p>' +
     '<ul class="rules" style="margin-top:8px">' +
     '<li><b>Activity day:</b> a saved entry with treadmill minutes or any logged set, or ' + minMin(me()) + ' minutes of any other activity (a walk, a hike) on a day with no lift. Rest entries don\'t count.</li>' +
     '<li><b>Lift day:</b> a saved entry where at least ' + QUALIFY_MIN + ' lifts (core moves don\'t count) have a logged set. Only lift days advance the rotation and earn lift credit. Session options under the notes field can override this either way.</li>' +
     '<li><b>Finished vs partial:</b> finished means every planned exercise has a logged set. Partial sessions still save and can still count.</li>' +
-    '<li><b>Week complete:</b> ' + LIFT_GOAL + ' lift days Mon–Sun. Each completed week unlocks the next phase: Phase 2 adds exercises, Phase 3 swaps in squats, lunges and flys. Phase 3 is the full program.</li>' +
+    (fullSplit ? '<li><b>Finished on a full-body day:</b> every lift except the two marked "if there\'s time". An express session plans the first ' + EXPRESS_LIFTS + ' lifts and still counts as a lift day.</li><li><b>Week complete:</b> your weekly lift goal met, Mon–Sun. Phases do not apply to the full-body split.</li>'
+      : '<li><b>Week complete:</b> ' + LIFT_GOAL + ' lift days Mon–Sun. Each completed week unlocks the next phase: Phase 2 adds exercises, Phase 3 swaps in squats, lunges and flys. Phase 3 is the full program.</li>') +
     '<li>Credit is computed from saved entries, so re-saving or editing never double-counts, and removing an entry removes its credit.</li></ul></section>';
-  ROTATION.forEach(k => {
+  rot.forEach(k => {
     const d = DAYS[k];
     h += '<section class="card"><div class="row between"><h3>' + d.name + ' day</h3><span class="muted tiny">' + d.sub + '</span></div><div class="plan"><ul>';
-    h += '<li><span>Treadmill (Apple Fitness+)</span><span class="muted num">' + TREAD_MIN[phase] + ' min</span></li>';
+    h += d.full ? '<li><span>Warm-up (track, treadmill or bike)</span><span class="muted num">5–10 min</span></li>' : '<li><span>Treadmill (Apple Fitness+)</span><span class="muted num">' + TREAD_MIN[phase] + ' min</span></li>';
     planSlots(k, phase, state.settings.swaps).forEach(sl => {
-      const bk = sl.base, key = sl.key, ex = EX[key];
-      h += '<li><span>' + esc(ex.name) + (key !== bk ? ' <span class="chip">default swap</span>' : '') + '<br><span class="tiny muted">' + esc(ex.equip) + (ex.per ? ' · weight per hand' : '') + '</span></span><span class="muted num">' + ex.sets + ' × ' + ex.lo + '–' + ex.hi + '</span></li>';
+      const bk = sl.base, key = sl.key, so = slotOf(k, bk), ex = so ? Object.assign({}, EX[key], { sets: so.sets }, key === bk ? { lo: so.lo, hi: so.hi } : null) : EX[key];
+      h += '<li><span>' + esc(ex.name) + (key !== bk ? ' <span class="chip">default swap</span>' : '') + (so && so.optional ? ' <span class="chip">if there\'s time</span>' : '') + '<br><span class="tiny muted">' + esc(ex.equip) + (ex.per ? ' · weight per hand' : '') + '</span></span><span class="muted num">' + ex.sets + ' × ' + ex.lo + '–' + ex.hi + '</span></li>';
     });
     h += '</ul></div>';
-    if (phase < 3) { const next = d.phases[phase + 1].filter(x => !d.phases[phase].includes(x)); if (next.length) h += '<p class="tiny muted" style="margin-top:8px">Unlocks in Phase ' + (phase + 1) + ': ' + next.map(x => EX[x].name).join(', ') + '.</p>'; }
+    if (phase < 3 && !d.full) { const next = d.phases[phase + 1].filter(x => !d.phases[phase].includes(x)); if (next.length) h += '<p class="tiny muted" style="margin-top:8px">Unlocks in Phase ' + (phase + 1) + ': ' + next.map(x => EX[x].name).join(', ') + '.</p>'; }
     h += '</section>';
   });
   h += '<section class="card"><h3>Default swaps</h3><p class="tiny muted" style="margin-top:4px">Swap here to change every future workout. Swap from an exercise\'s ··· menu on the Log screen to change one workout only. Saved workouts keep whatever you did.</p><div class="plan" style="margin-top:8px"><ul>';
-  Object.keys(EX).filter(k => alts(k).length && !EX[k].bw && ROTATION.some(r => Object.values(DAYS[r].phases).some(p => p.includes(k)))).forEach(k => {
+  Object.keys(EX).filter(k => alts(k).length && !EX[k].bw && rot.some(r => Object.values(DAYS[r].phases).some(p => p.includes(k)))).forEach(k => {
     const cur = (state.settings.swaps || {})[k] && EX[state.settings.swaps[k]] ? state.settings.swaps[k] : k, opt = defaultSwapOption(k), clash = cur !== k && defaultSwapTaken(k)[cur];
     h += '<li data-swaprow="' + k + '"><span>' + esc(EX[k].name) + (cur !== k ? ' → <b>' + esc(EX[cur].name) + '</b>' : '') +
       (clash ? '<br><span class="tiny" style="color:var(--warn)">' + esc(EX[cur].name) + ' is already in that day\'s workout in some phases. There, ' + esc(EX[k].name) + ' stays.</span>' : cur === k && !opt ? '<br><span class="tiny muted">No swap: its alternates are already in that day\'s workout.</span>' : '') + '</span>' +
@@ -406,7 +422,9 @@ function renderProgram() {
     '<li><b>Can\'t go higher</b> (in an exercise\'s ··· menu) holds that exercise\'s weight: suggestions ask for one more rep per set, then a 4th set once every set is 3 past the top. It changes suggestions only, never saved entries.</li>' +
     '<li>Assisted pull-up is the one inverted machine: the weight is assistance, so "up" means less of it.</li></ul>' +
     '<div class="row" style="margin-top:10px"><label class="f" style="flex:1">Weekly activity goal<input type="number" id="goalIn" inputmode="numeric" min="3" max="7" value="' + (state.settings.goal || GOAL) + '"></label></div>' +
-    lockNote(me(), 'goal', v => v + ' activity days') + '</section>';
+    lockNote(me(), 'goal', v => v + ' activity days') +
+    '<div class="stack" id="liftGoalRow" style="margin-top:10px"><div class="eyebrow">Weekly lift goal</div><div class="seg">' + [2, 3].map(v => '<button type="button" data-a="lift-goal" data-v="' + v + '" class="' + (lg === v ? 'on' : '') + '" aria-pressed="' + (lg === v) + '">' + v + ' lift days</button>').join('') + '</div>' +
+    '<p class="tiny muted">Lift days that fill the lift share of your Move score.</p>' + lockNote(me(), 'liftGoal', v => v + ' lift days') + '</div></section>';
   const rs = restSeconds();
   h += '<section class="card stack" id="restCard"><h3>Rest timer</h3><p class="tiny muted">Logging a set for today starts a countdown: this long for main lifts, 60 seconds for core and bodyweight moves. It shows above the Save button with +15 s and a dismiss button, and never makes a sound.</p>' +
     '<div class="seg">' + [60, 90, 120].map(v => '<button type="button" data-a="rest-len" data-v="' + v + '" class="' + (rs === v ? 'on' : '') + '" aria-pressed="' + (rs === v) + '">' + v + ' s</button>').join('') + '</div></section>';
@@ -489,10 +507,12 @@ function renderHistory() {
     if (n.program && n.acts.length) { const names = n.acts.map(actName); what += ' + ' + names[0] + (names.length > 1 ? ' +' + (names.length - 1) : ''); }
     const line = [];
     if (n.kind === 'activity') line.push(n.allMin + ' min');
-    if (n.tm) line.push(n.tm.minutes > 0 ? n.tm.minutes + ' min treadmill' : 'treadmill, minutes not entered');
+    const fb = !!(n.day && DAYS[n.day].full); // full-body days: a warm-up, and no phase
+    if (n.tm) line.push(n.tm.minutes > 0 ? n.tm.minutes + (fb ? ' min warm-up' : ' min treadmill') : fb ? 'warm-up, minutes not entered' : 'treadmill, minutes not entered');
     if (n.keys.length) line.push(n.keys.length + ' exercise' + (n.keys.length === 1 ? '' : 's'));
     if (n.program && n.acts.length) line.push(n.actMin + ' min of activities');
-    if (n.phase) line.push('Phase ' + n.phase);
+    if (n.phase && !fb) line.push('Phase ' + n.phase);
+    if (CHECKIN_WORDS[r.rec.checkin]) line.push('Felt: ' + CHECKIN_WORDS[r.rec.checkin]);
     if (r.rec.deload && n.kind === 'strength') line.push('deload');
     h += '<details class="hi" data-hdate="' + r.date + '"><summary><div class="hdate num">' + nice(r.date).replace(/^(\w+) /, '$1<br>') + '</div><div><b>' + esc(what) + '</b><div class="tiny muted">' + esc(line.join(' · ') || '—') + '</div></div>' + chip + '</summary><div class="hbody">';
     if (n.ambiguous) h += '<p class="tiny" style="color:var(--warn)">Saved as a lift day by the earlier version, but it has no lifting sets. Treated as ' + (n.kind === 'cardio' ? 'treadmill only' : 'no activity') + ' until you edit it.</p>';

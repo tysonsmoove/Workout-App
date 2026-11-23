@@ -30,7 +30,7 @@ const EX = {
   legext:      { name: 'Leg extension machine', equip: 'Machine', sets: 3, lo: 10, hi: 15, inc: 5, start: 70, alt: ['splitsquat'] },
   splitsquat:  { name: 'Dumbbell split squat', equip: 'Dumbbells', sets: 3, lo: 10, hi: 12, inc: 5, start: 20, per: 'each hand', alt: ['legext'] },
   legcurl:     { name: 'Leg curl machine', equip: 'Machine (seated or lying)', sets: 3, lo: 10, hi: 15, inc: 5, start: 60, alt: ['dbrdl', 'hipthrust'] },
-  dbrdl:       { name: 'Dumbbell Romanian deadlift', equip: 'Dumbbells', sets: 3, lo: 10, hi: 12, inc: 5, start: 30, per: 'each hand', alt: ['legcurl', 'bbrdl', 'hipthrust'] },
+  dbrdl:       { name: 'Dumbbell Romanian deadlift', equip: 'Dumbbells', sets: 3, lo: 10, hi: 12, inc: 5, start: 30, per: 'each hand', alt: ['bbrdl', 'legcurl', 'hipthrust'] },
   calf:        { name: 'Standing calf raise', equip: 'Calf machine or step + dumbbell', sets: 3, lo: 12, hi: 15, inc: 10, start: 90, alt: ['goblet'] },
   squat:       { name: 'Barbell back squat', equip: 'Squat rack', sets: 3, lo: 6, hi: 10, inc: 10, start: 95, alt: ['legpress', 'goblet'] },
   lunge:       { name: 'Walking lunges', equip: 'Dumbbells', sets: 3, lo: 10, hi: 12, inc: 5, start: 15, per: 'each hand', alt: ['splitsquat', 'legext'] },
@@ -50,6 +50,20 @@ const DAYS = {
     phases: { 1: ['legpress', 'legext', 'legcurl'].concat(CORE), 2: ['legpress', 'dbrdl', 'legext', 'legcurl', 'calf'].concat(CORE), 3: ['squat', 'dbrdl', 'lunge', 'legcurl', 'calf'].concat(CORE) } }
 };
 const ROTATION = ['push', 'pull', 'legs'];
+// Full Body A/B: everything is trained in two sessions, for weeks that are not regular. Each slot has its own set
+// count and rep range (`slots`); `optional` slots are there if time allows and are not needed for a finished session.
+// Phases do not apply: every phase is the same list, so the code that reads `phases` works unchanged.
+const fullDay = (name, sub, slots) => { const order = Object.keys(slots); return { name, sub, full: true, slots, phases: { 1: order, 2: order, 3: order } }; };
+const fbSlot = (sets, lo, hi, optional) => optional ? { sets, lo, hi, optional: true } : { sets, lo, hi };
+DAYS.fba = fullDay('Full Body A', 'Squat, press, pull, core', { squat: fbSlot(3, 6, 10), dbbench: fbSlot(3, 8, 12), latpull: fbSlot(3, 8, 12), dbshoulder: fbSlot(2, 8, 12), legcurl: fbSlot(2, 10, 15), legraise: fbSlot(2, 10, 15) });
+DAYS.fbb = fullDay('Full Body B', 'Hinge, press, row, shoulders', { dbrdl: fbSlot(3, 8, 12), inclinedb: fbSlot(3, 8, 12), seatedrow: fbSlot(3, 8, 12), lunge: fbSlot(2, 10, 12), latraise: fbSlot(2, 12, 15), facepull: fbSlot(2, 12, 15), dbcurl: fbSlot(2, 10, 12, true), pushdown: fbSlot(2, 10, 15, true) });
+const FULL_ROTATION = ['fba', 'fbb'];
+const EXPRESS_LIFTS = 3; // "short on time": the first three lifts of the day
+// The split is a setting. A profile that never chose one keeps Push / Pull / Legs; old days stay whatever they were.
+const splitOf = pid => state.data[pid || me()].settings.split === 'full' ? 'full' : 'ppl';
+const rotation = pid => splitOf(pid) === 'full' ? FULL_ROTATION : ROTATION;
+const nextAfter = (day, pid) => { const rot = rotation(pid); return rot[(rot.indexOf(day) + 1) % rot.length]; }; // a day from the other split leads to the first day of this one
+const slotOf = (kind, base) => (DAYS[kind] && DAYS[kind].slots && DAYS[kind].slots[base]) || null;
 const alts = k => { const a = EX[k] && EX[k].alt; return (Array.isArray(a) ? a : a ? [a] : []).filter(x => EX[x]); };
 // Two slots never land on the same exercise. An old saved swap can point at one that is also planned that day; then
 // the slot whose own planned exercise it is keeps it, and otherwise the earlier slot does, while the other slot goes
@@ -75,7 +89,7 @@ function swapOptions(planned, p) {
 // A default swap applies to every future workout, so "the day's plan" is every phase the exercise appears in.
 function defaultSwapTaken(k) {
   const sw = state.settings.swaps || {}, taken = {};
-  ROTATION.forEach(r => Object.keys(DAYS[r].phases).forEach(ph => { const list = DAYS[r].phases[ph]; if (!list.includes(k)) return; list.forEach(b => { if (b === k) return; taken[b] = 1; if (sw[b] && EX[sw[b]]) taken[sw[b]] = 1; }); }));
+  Object.keys(DAYS).forEach(r => Object.keys(DAYS[r].phases).forEach(ph => { const list = DAYS[r].phases[ph]; if (!list.includes(k)) return; list.forEach(b => { if (b === k) return; taken[b] = 1; if (sw[b] && EX[sw[b]]) taken[sw[b]] = 1; }); }));
   return taken;
 }
 const defaultSwapOption = k => { const taken = defaultSwapTaken(k); return alts(k).find(a => !taken[a]) || null; };
@@ -144,7 +158,16 @@ function completedWeeks(asOf, pid) {
 }
 const phaseFor = (asOf, pid) => Math.min(3, 1 + completedWeeks(asOf, pid));
 function lastLift(beforeDate, pid) { const l = recordsOf(pid || me()).filter(r => r.date < beforeDate && r.n.qualifies && r.n.day); return l.length ? l[l.length - 1] : null; }
-function nextDayKey(beforeDate, pid) { const p = lastLift(beforeDate, pid); return p ? ROTATION[(ROTATION.indexOf(p.n.day) + 1) % ROTATION.length] : ROTATION[0]; }
+function nextDayKey(beforeDate, pid) { const p = lastLift(beforeDate, pid); return p ? nextAfter(p.n.day, pid) : rotation(pid)[0]; }
+// For deload offers a completed lift week is one that met the lift goal locked for that week (2 or 3), not a fixed 3.
+function deloadWeeks(asOf, pid) {
+  pid = pid || me();
+  return cached('dw:' + pid + ':' + asOf, () => {
+    let n = 0; let ws = weekStart(startDate(pid)); const thisWs = weekStart(asOf); let guard = 0;
+    while (ws < thisWs && guard++ < 520) { if (liftDays(ws, addDays(ws, 6), pid) >= weekGoals(pid, ws).liftGoal) n++; ws = addDays(ws, 7); }
+    return n;
+  });
+}
 function weekStats(asOf, pid) { // the top strip: the same days and the same goals the score uses
   pid = pid || me(); const ws = weekStart(asOf), sc = weekScore(pid, ws), g = weekGoals(pid, ws);
   return { activity: sc.active, lifts: sc.lifts, minutes: sc.minutes, goal: g.goal, liftGoal: g.liftGoal, plan: g.plan };
@@ -171,7 +194,7 @@ function deloadOn(date) {
 // A deload week is offered after every 5 completed lift weeks (counted the same way as phases).
 // Returns 'on' while this week is one, 'offer' when it should be suggested, or ''.
 function deloadState() {
-  const t = todayIso(), d = state.settings.deload, cw = completedWeeks(t);
+  const t = todayIso(), d = state.settings.deload, cw = deloadWeeks(t);
   if (d && d.ws === weekStart(t)) return 'on';
   return cw > 0 && cw % 5 === 0 && state.settings.deloadAsked !== cw ? 'offer' : '';
 }
@@ -179,7 +202,7 @@ function deloadState() {
 // Not for bodyweight moves or lifts marked "Can't go higher". Hidden while a reset is waiting, and after a dismissal
 // until three later sessions stall again.
 function stallFor(key, date) {
-  const ex = EX[key]; if (!ex || ex.bw || (state.settings.maxed || {})[key]) return null;
+  const ex = specFor(key, date); if (!ex || ex.bw || (state.settings.maxed || {})[key]) return null;
   const ss = liftLog(key, date).slice(-3); if (ss.length < 3) return null;
   const w = ss[0].n.ex[key].w; if (w == null) return null;
   const earned = e => { const l = e.reps.filter(r => r != null); return l.length >= ex.sets && l.every(r => r >= ex.hi); };
@@ -195,8 +218,16 @@ const stepUp = (ex, w) => Math.max(0, w + ex.inc);
 
 // Weight rule, as shown on the Program tab. Only logged sets count; blanks are not failures.
 // On top of the rule: a chosen reset replaces the next suggestion once, and a deload session is 2 sets at about 90%.
+// On a full-body day each slot has its own set count and rep range. The set count goes with the slot whatever is
+// swapped into it; the rep range is the slot's only for its own planned exercise. Anywhere else: the exercise's own.
+function specFor(key, date) {
+  const ex = EX[key]; if (!ex || !date) return ex;
+  const m = model(date), kind = kindFor(date, m); if (!DAYS[kind] || !DAYS[kind].slots) return ex;
+  const p = plannedFor(date, kind, m).find(x => x.key === key), s = p && slotOf(kind, p.base); if (!s) return ex;
+  return Object.assign({}, ex, { sets: s.sets }, p.key === p.base ? { lo: s.lo, hi: s.hi } : null, s.optional ? { optional: true } : null);
+}
 function suggest(key, date) {
-  const ex = EX[key], unit = ex.per ? ' lb each hand' : ' lb', base = suggestRule(key, date); let s = base;
+  const ex = specFor(key, date), unit = ex.per ? ' lb each hand' : ' lb', base = suggestRule(key, date); let s = base;
   const rs = (state.settings.resets || {})[key];
   // a reset waits until a normal session is logged on or after the day it was chosen (deload sessions do not use it up)
   const waiting = !ex.bw && !!rs && isNum(rs.w) && validIso(rs.at) && (!base.last || base.last.date < rs.at);
@@ -211,7 +242,7 @@ function suggest(key, date) {
   return s;
 }
 function suggestRule(key, date) {
-  const ex = EX[key]; const last = lastLog(key, date); const maxed = !!(state.settings.maxed || {})[key];
+  const ex = specFor(key, date); const last = lastLog(key, date); const maxed = !!(state.settings.maxed || {})[key];
   const logged = last ? last.reps.filter(r => r != null) : [];
   if (ex.bw) {
     if (!last) return { reps: ex.lo, sets: ex.sets, last: null, text: ex.sets + ' × ' + ex.lo, why: 'First time. Work toward ' + ex.hi + ' per set.' };
@@ -234,6 +265,9 @@ function suggestRule(key, date) {
   return { w: last.w, sets: ex.sets, last, text: last.w + unit, why: 'In range but not every set at ' + ex.hi + '. Same weight, chase ' + ex.hi + '.' };
 }
 
+// The daily check-in: how the day's "How are you feeling?" was answered. Saved as `checkin` on the day's record.
+const CHECKIN_WORDS = { strong: 'feeling strong', short: 'short on time', tired: 'tired, just want to move', sore: 'sore or run down', rest: 'not going today', good: 'feeling good', low: 'low energy', extra: 'class or game' };
+
 /* ---------- Drafts (this device, localStorage) ---------- */
 const emptyDraft = () => ({ kindSel: null, tm: { minutes: '', title: '' }, notes: '', ex: {}, swaps: {}, extra: {}, countAs: null, closed: {}, created: Date.now(), updatedAt: Date.now(), recovered: false, fromRecord: false });
 function seedFromRecord(rec) {
@@ -241,7 +275,7 @@ function seedFromRecord(rec) {
   d.fromRecord = true;
   d.kindSel = n.kind === 'strength' ? (n.day || null) : (n.kind === 'cardio' || n.kind === 'rest') ? n.kind : null;
   d.tm = { minutes: n.tm ? String(n.tm.minutes) : '', title: n.tm && n.tm.title ? n.tm.title : '' };
-  d.notes = n.notes; d.swaps = Object.assign({}, n.swaps); d.countAs = n.qualifyOverride;
+  d.notes = n.notes; d.swaps = Object.assign({}, n.swaps); d.countAs = n.qualifyOverride; if (rec.checkin) d.checkin = rec.checkin;
   Object.keys(n.ex).forEach(k => { d.ex[k] = { w: n.ex[k].w == null ? '' : String(n.ex[k].w), reps: n.ex[k].reps.map(r => r == null ? '' : String(r)) }; });
   return d;
 }
@@ -274,6 +308,7 @@ function plannedFor(date, kind, m) {
   if (n && n.kind === 'strength' && n.day === kind && n.plannedBase) bases = n.plannedBase.filter(k => EX[k]);
   else if (n && n.kind === 'strength' && n.day === kind && n.legacy) bases = Array.from(new Set((DAYS[kind].phases[phaseOf(date)] || []).concat(n.keys)));
   else bases = DAYS[kind].phases[phaseOf(date)];
+  if (m.checkin === 'short' && !(n && n.kind === 'strength' && n.day === kind && n.plannedBase)) bases = bases.slice(0, EXPRESS_LIFTS); // an express session plans the first three lifts
   // a saved lift day keeps the exercises it was saved with: today's default swaps apply to new workouts only
   const own = n && n.kind === 'strength' && n.day === kind;
   const dflt = own ? (n.swaps || {}) : (state.settings.swaps || {});
@@ -286,7 +321,7 @@ function plannedFor(date, kind, m) {
 function setCount(key, m, date) {
   const sg = suggest(key, date);
   const have = m.ex[key] ? m.ex[key].reps.length : 0;
-  return Math.min(MAX_SETS, Math.max(sg.deload ? 2 : EX[key].sets, sg.sets || 0, have, m.extra[key] || 0)); // a deload session shows 2 sets
+  return Math.min(MAX_SETS, Math.max(sg.deload ? 2 : specFor(key, date).sets, sg.sets || 0, have, m.extra[key] || 0)); // a deload session shows 2 sets
 }
 function parseDraft(date, m) {
   // Turns the draft into a record. Returns { doc, errors, kind }.
@@ -296,6 +331,7 @@ function parseDraft(date, m) {
   const existing = state.sessions[date];
   const now = new Date().toISOString();
   const doc = { v: SCHEMA, date, phase, savedAt: existing && existing.savedAt || now, updatedAt: now, progAt: now };
+  const felt = m.checkin || (existing && existing.checkin); if (felt && CHECKIN_WORDS[felt]) doc.checkin = felt; // how the day's check-in was answered, kept with the day
   // activities already logged on the day stay with it. The Watch top-up does not: next to a lift or treadmill entry the Watch minutes are shown, not added.
   const kept = existing && Array.isArray(existing.acts) ? existing.acts.filter(a => a && !isHk(a)) : [];
   if (kind === 'rest') {
@@ -332,7 +368,7 @@ function parseDraft(date, m) {
     doc.swaps = {}; plannedPairs.forEach(p => { if (p.key !== p.base) doc.swaps[p.base] = p.key; });
     doc.qualifyOverride = m.countAs; doc.qualifies = m.countAs == null ? auto : !!m.countAs;
     if (deloadOn(date)) doc.deload = true; // a recovery session: it counts as a lift day, and the weight rule reads past it
-    doc.complete = doc.planned.every(k => ex[k]);
+    doc.complete = plannedPairs.filter(p => !(slotOf(kind, p.base) || {}).optional).every(p => ex[p.key]); // "if there's time" lifts are not needed for a finished session
     return { doc, errors, kind: 'strength', mainLogged, auto };
   }
   if (doc.treadmill && doc.treadmill.minutes > 0) { doc.kind = 'cardio'; return { doc, errors, kind: 'cardio', fromLift: !!DAYS[kind], liftKind: kind }; }

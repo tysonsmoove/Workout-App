@@ -282,7 +282,7 @@ const SAT = T('2026-11-21T17:00:00Z'), SUN = T('2026-11-22T17:00:00Z'), MON = T(
     await go(page, 'me'); await fill(page, '[data-form="gym"][data-k="place"]', 'Indianapolis Healthplex'); await page.click('[data-a="gym-save"]'); await toastWith(page, 'Gym set');
     check('B7 the header updates', (await txt(page, '#todayLine')).includes('Indianapolis Healthplex') && (await kv(page, 'profiles/tyson')).place === 'Indianapolis Healthplex');
     await go(page, 'train');
-    check('B7 the morning plan updates', (await txt(page, 'details[data-dk="morning"]')).includes('drive to Indianapolis Healthplex'));
+    check('B7 the morning plan updates', (await txt(page, 'details[data-dk="morning"]')).includes('At the Healthplex')); // version 16: the Healthplex has its own morning plan
     const where = [];
     for (const who of ['tyson', 'jacquie']) { if (who === 'jacquie') await switchTo(page, 'jacquie');
       for (const tab of ['train', 'program', 'history', 'fuel', 'compete', 'me']) { await go(page, tab); if (/Anytime Fitness|Avon/.test(await page.evaluate(() => document.body.innerText + ' ' + document.getElementById('main').textContent))) where.push(who + ':' + tab); } }

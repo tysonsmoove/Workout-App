@@ -10,7 +10,7 @@ const planOf = pid => P(pid).plan === 'program' ? 'program' : 'choice';
 function liveGoals(pid) { // what the settings say right now: the numbers next week will lock
   return cached('lg:' + pid, () => {
     const p = P(pid), g = goalsFor(pid), plan = planOf(pid);
-    return { plan, goal: plan === 'program' ? clamp(state.data[pid].settings.goal || GOAL, 3, 7) : clamp(p.move.goalDays || 3, 1, 7), liftGoal: LIFT_GOAL,
+    return { plan, goal: plan === 'program' ? clamp(state.data[pid].settings.goal || GOAL, 3, 7) : clamp(p.move.goalDays || 3, 1, 7), liftGoal: plan === 'program' && state.data[pid].settings.liftGoal === 2 ? 2 : LIFT_GOAL, // lift days that fill the lift share: 2 or 3 on the lifting program
       minMin: plan === 'program' ? 10 : clamp(p.move.minMinutes || 10, 5, 60), kcal: g.kcal, lo: g.lo, hi: g.hi, waterOz: g.waterOz, protein: g.protein, placeholder: !g.ready };
   });
 }
@@ -315,9 +315,11 @@ function ious() {
 function goalNudge(pid) {
   return cached('nudge:' + pid, () => {
     const live = liveGoals(pid), wk = thisWeek(pid), cap = live.plan === 'program' ? 6 : 7, t = todayIso(), cur = weekStart(t), sn = P(pid).goalNudge;
-    if (live.goal >= cap || live.goal !== wk.goal || live.plan !== wk.plan) return null;
-    if (sn && validIso(sn.until) && t < sn.until) return null;
-    for (let i = 1; i <= 3; i++) { const ws = addDays(cur, -7 * i), g = weekGoals(pid, ws); if (g.plan !== live.plan || g.goal < live.goal || !weekScore(pid, ws).moveFull) return null; }
-    return { from: live.goal, to: live.goal + 1, plan: live.plan };
+    if (live.plan !== wk.plan || (sn && validIso(sn.until) && t < sn.until)) return null;
+    const three = ok => [1, 2, 3].every(i => { const ws = addDays(cur, -7 * i), g = weekGoals(pid, ws); return g.plan === live.plan && ok(g, weekScore(pid, ws)); });
+    if (live.goal < cap && live.goal === wk.goal && three((g, s) => g.goal >= live.goal && s.moveFull)) return { from: live.goal, to: live.goal + 1, plan: live.plan };
+    // the lift goal can be raised the same way: three weeks in a row with a lift more than the goal of 2 asked for
+    if (live.plan === 'program' && live.liftGoal === 2 && wk.liftGoal === 2 && three((g, s) => g.liftGoal === 2 && s.lifts >= 3)) return { kind: 'lift', from: 2, to: 3, plan: live.plan };
+    return null;
   });
 }
