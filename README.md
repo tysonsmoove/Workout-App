@@ -184,6 +184,32 @@ Activities with `cat: 'healthplex'` show only when `atHealthplex(pid)` (the gym 
 - Start tries the Fullscreen API and a screen wake lock and ignores a refusal.
 - `prefers-reduced-motion` skips the start sequence, shows the demos as a still frame and turns off bursts and pick animations.
 
+## Version 17: log it or go live, calmer animations, a tidier Train
+
+Scoring, the season, `results/` and `iou/` are untouched. Two fields are new, both on the profile and both optional: `trainMode` (`'log'` or `'live'`) and `motion` (`'subtle'`, `'full'` or `'off'`).
+
+### Log it or go live (`src/62-ui-checkin.js`)
+
+- **The switch.** `#modeSwitch` sits at the top of Train for both profiles. `modeOf(pid)` reads `profile.trainMode` and defaults to `'log'`. It only decides which of the two preview buttons is the primary one.
+- **The preview** has two equal buttons, `#ciLog` and `#ciStart`. Rest keeps its single `#ciRest` button.
+- **Log it, lifts.** The choice goes on the draft (`kindSel`, `checkin`), the check-in collapses to one line, the page scrolls to `#logHead` and the first weight field takes focus. Saving is the ordinary Save button. "Short on time" shows the first `EXPRESS_LIFTS` lifts; the rest sit in `#moreLifts` and save with the others when filled (`plannedFor` in `src/10-program.js`).
+- **Log it, everything else.** `OV.cilog` is one sheet built from the same parts as the live session (`ciStages`): an activity picker, minutes, laps for the track or lengths for the pool, and for recovery an optional sauna, steam or whirlpool. It logs one activity through `logActivity()` with laps and miles in the note, plus a recovery entry (`mv: false`) for the room. The treadmill saves as the lifting log's own treadmill day.
+- **One line once answered.** With a record for today, or a choice on the draft, the check-in is `#ciDone` plus `#ciChange`. Past days show no check-in and no switch.
+- **Live finish screens.** `wm.fin` holds the minutes, laps and lengths shown on a timed session's finish screen. Typing there changes what `wmStageOutcome()` logs.
+
+### Animations (`motionOf` in `src/00-core.js`, `src/50-fx.js`)
+
+`motionOf(pid)` is `'off'` when the phone asks for reduced motion, otherwise the profile's `motion`, default `'subtle'`. It is mirrored to `<html data-motion>` for the stylesheet.
+
+- **Full** is version 16's behavior: bursts, start lights, the flag, flips and bounces. The celebration style applies only here.
+- **Subtle** never calls `burst()`. `milestone()` runs one 600 ms sweep of the accent color across the top with a check mark, at most once per 1.5 s, and only for a weight increase, a badge, a lead change, a week win or a team week. Live mode opens with a 200 ms fade and slide, a logged set fills its pip in 150 ms, and the finish screen has a thin checkered stripe and numbers that count up once.
+- **Off** stops every animation and transition.
+- `state.fxn` counts bursts and milestone effects for the tests.
+
+### The top of Train (`src/60-ui-train.js`)
+
+The check-in comes first. The deload offer, a swap-back offer and the goal nudge are one-line rows in a single `#coach` card (`coachHTML`), each a `<details>` that opens to the same text and buttons as before. Then `#logHead`, "Log your workout".
+
 ## Apple Health and Apple Watch
 
 A web page cannot read Apple Health. A Shortcut on the iPhone copies the day's Exercise Minutes, steps, active calories, water and weight as text, and the user pastes it into the app. The steps to build the Shortcut are in `docs/apple-health-shortcut.md` and inside the app under Me. Imports are idempotent: Exercise Minutes become one entry holding only the minutes not already logged by hand.
@@ -229,5 +255,6 @@ node tests/account.test.js # account memory: profile choice, weekly result and b
 node tests/v12.test.js     # version 12: swaps, weekly locks, provisional/final results, Watch top-up, combined days, gym, stakes, custom foods, team, set shortcuts, rest timer, protein scoring, smoke of every tab (135 checks)
 node tests/v13.test.js     # version 13: saved meals, stalled lifts, deload weeks, reminders, weekly recap, IOUs, goal nudge, pain notes, smoke of every tab (98 checks)
 node tests/v16.test.js     # version 16: check-in rules, Full Body A/B, Healthplex activities, lift goal, gym info, Not at my gym, Jacquie's check-in, workout mode, animations, smoke of every tab and workout-mode screen
+node tests/v17.test.js     # version 17: the top of Train at 390 x 844, the Log it / Go live switch, logging every kind of session without live mode, live finish edits, Subtle / Full / Off animations, smoke of every tab, live screen and Log it sheet
 ML_ZXING=/path/to/zxing/umd/index.min.js node tests/v15.test.js   # version 15: Health paste box, reset plus deload, stuck-lift lines, barcode scanning, meal estimates, undo, backup, smoke of every tab
 ```

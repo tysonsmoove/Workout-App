@@ -523,6 +523,52 @@ textarea.plaintext { font-family: var(--body); min-height: 88px; }
 /* while workout mode is open, messages sit under its top strip, clear of the big buttons at the bottom */
 .wm:not([hidden]) ~ .toast { bottom: auto; top: calc(64px + env(safe-area-inset-top, 0px)); }
 
+/* ---------- Version 17: Log it or go live, the Coach card, calmer animations ---------- */
+.modesw { background: var(--card); }
+.modesw button { min-height: 40px; font-weight: 600; }
+.ci.line { padding: 8px 14px; }
+.ci.line #ciDone { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.card.stack.ci { gap: 6px; padding-block: 10px; }
+.ci .cic { min-height: 48px; padding: 5px 12px; }
+.cip .row.two { flex-wrap: nowrap; }
+.cip .row.two > button { flex: 1 1 0; min-width: 0; min-height: 52px; }
+button.second { font-family: var(--display); font-size: 1.125rem; font-weight: 700; text-transform: var(--caps); letter-spacing: .05em; background: var(--card); border-color: var(--fg); }
+.loghead { font-size: 1.25rem; margin-top: 4px; }
+.coach { display: grid; padding: 8px 14px; }
+.coach .coachrow { border-top: 1px solid var(--line); }
+.coach .eyebrow + .coachrow { border-top: 0; }
+.coach .coachrow > summary { min-height: 36px; color: var(--fg); }
+.coachbody { display: grid; gap: 8px; padding: 2px 0 10px; font-size: .875rem; }
+.morelifts > summary { min-height: 44px; }
+.sweep { position: fixed; inset: 0 0 auto 0; height: calc(6px + env(safe-area-inset-top, 0px)); z-index: 46; pointer-events: none; }
+.sweep[hidden] { display: none; }
+.sweep i { position: absolute; inset: 0; overflow: hidden; }
+.sweep i::before { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, var(--accent) 35%, var(--accent) 65%, transparent); transform: translateX(-100%); }
+.sweep b { position: absolute; top: calc(26px + env(safe-area-inset-top, 0px)); left: 50%; margin-left: -14px; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: var(--accent-ink); font-size: .9375rem; opacity: 0; }
+.sweep.run i::before { animation: sweepGo .6s ease-out both; }
+.sweep.run b { animation: sweepTick .8s ease both; }
+@keyframes sweepGo { to { transform: translateX(100%); } }
+@keyframes sweepTick { 0% { opacity: 0; } 25%, 75% { opacity: 1; } 100% { opacity: 0; } }
+.wm-stripe { height: 8px; flex: none; background: conic-gradient(var(--fg) 25%, var(--card) 0 50%, var(--fg) 0 75%, var(--card) 0) 0 0 / 8px 8px; }
+.wm-fin { display: grid; gap: 8px; width: 100%; text-align: left; }
+.wm-finrow { display: grid; grid-template-columns: minmax(0, 1fr) 84px 84px; gap: 8px; align-items: end; }
+span.wm-pip { display: inline-grid; place-items: center; height: 48px; }
+@keyframes mlFade { from { opacity: 0; } }
+@keyframes mlRise { from { opacity: 0; transform: translateY(10px); } }
+@keyframes pipFill { from { background: var(--soft); color: var(--muted); } }
+/* Subtle (the default): fades and short slides of 150 to 250 ms, no overshoot, nothing that bounces, flips, zooms or spins. */
+:root[data-motion="subtle"] .pop { animation: mlFade .2s ease both; }
+:root[data-motion="subtle"] .bump, :root[data-motion="subtle"] .restbar.done, :root[data-motion="subtle"] .ci .cic.lift { animation: none; }
+:root[data-motion="subtle"] .lane .car, :root[data-motion="subtle"] .lane .fill { animation-duration: .25s; animation-timing-function: ease-out; }
+:root[data-motion="subtle"] .ci .cic.sel { transform: none; box-shadow: none; }
+:root[data-motion="subtle"] .cip.grow { animation: mlRise .2s ease-out both; }
+:root[data-motion="subtle"] .ci[data-anim] .cic.fade { animation: ciFade .2s ease both; }
+:root[data-motion="subtle"] .act.hp.back.flipin { animation: mlFade .2s ease both; }
+:root[data-motion="subtle"] .wm.zoom { animation: mlRise .2s ease-out both; }
+:root[data-motion="subtle"] .wm-pip.new { animation: pipFill .15s ease-out both; }
+/* Off: the same as the phone's reduce-motion setting. */
+:root[data-motion="off"] *, :root[data-motion="off"] *::before, :root[data-motion="off"] *::after { animation: none !important; transition: none !important; }
+
 </style>
 
 <div class="wrap">
@@ -545,6 +591,7 @@ textarea.plaintext { font-family: var(--body); min-height: 88px; }
 <div id="ov" class="ov-root" hidden></div>
 <canvas id="fx" class="fx" aria-hidden="true"></canvas>
 <div id="rest" class="restbar" role="timer" aria-label="Rest timer" hidden><i id="restFill"></i><b class="num" id="restTime">1:30</b><span id="restLabel">Rest</span><button type="button" class="small" data-a="timer-add" aria-label="Add 15 seconds">+15 s</button><button type="button" class="small" data-a="timer-x" aria-label="Dismiss rest timer">×</button></div>
+<div id="sweep" class="sweep" aria-hidden="true" hidden><i></i><b>✓</b></div>
 <div id="wm" class="wm" role="dialog" aria-modal="true" aria-label="Workout" hidden></div>
 <div id="toast" class="toast" role="status" hidden></div>
 
@@ -580,7 +627,13 @@ const commas = n => Math.round(n).toLocaleString('en-US');
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 const lsGet = (k, dflt) => { try { const v = localStorage.getItem(k); return v == null ? dflt : JSON.parse(v); } catch (e) { return dflt; } };
 const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* storage unavailable */ } };
-const reducedMotion = () => { try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } };
+const osReducedMotion = () => { try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } };
+// Animations, chosen per person on Me. Subtle is the default: no particle bursts, one small effect for real milestones.
+// Full is everything (bursts, start lights, flips). Off is the same as the phone's own reduce-motion setting, which always wins.
+const MOTIONS = { subtle: 'Subtle', full: 'Full', off: 'Off' };
+const motionPref = pid => { const m = (state.data[pid || me()].profile || {}).motion; return MOTIONS[m] ? m : 'subtle'; };
+const motionOf = pid => osReducedMotion() ? 'off' : motionPref(pid);
+const reducedMotion = () => motionOf() === 'off';
 let toastT;
 function toast(msg, ms) { const t = $('#toast'); t.textContent = msg; t.classList.remove('act'); t.hidden = false; state.undo = null; clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, ms || 2200); }
 
@@ -633,6 +686,7 @@ const state = {
   have: {},           // path -> the stored document, for the one-per-person documents (settings, profile, shared settings); null when there is none
   undo: null,         // the last removal, while its "Undo" is still on offer
   backupNote: '',     // what the last backup did, shown on the Backup card
+  fxn: { burst: 0, milestone: 0 }, // how many particle bursts and milestone effects have actually played (this visit)
   stallOpen: {},      // exercise key -> its stuck-lift choices are open (this visit)
   iou: {},            // week start -> { paid }: whether what was on the line has been settled. Kept apart from results, which never change
   draftsBy: { tyson: {}, jacquie: {} },   // date -> unsaved lifting form draft (this device, mirrored to the account)
@@ -727,6 +781,7 @@ function applySkin() {
   root.dataset.font = FONTS[p.skin.font] ? p.skin.font : 'sporty';
   root.dataset.shape = SHAPES[p.skin.shape] ? p.skin.shape : 'soft';
   root.dataset.backdrop = BACKDROPS[p.skin.backdrop] ? p.skin.backdrop : 'plain';
+  root.dataset.motion = motionOf(me()); // the stylesheet keys every animation off this
   loadFont(p.skin.font);
 }
 function avStyle(pid) { const v = skinVars(P(pid).skin); return '--ph:' + v.ah + ';--ps:' + v.as + '%;--pl:' + v.al + '%;--pld:' + v.ald + '%' + (v.ink ? ';--pink:' + v.ink : ''); }
@@ -1211,7 +1266,7 @@ const stepUp = (ex, w) => Math.max(0, w + ex.inc);
 function specFor(key, date) {
   const ex = EX[key]; if (!ex || !date) return ex;
   const m = model(date), kind = kindFor(date, m); if (!DAYS[kind] || !DAYS[kind].slots) return ex;
-  const p = plannedFor(date, kind, m).find(x => x.key === key), s = p && slotOf(kind, p.base); if (!s) return ex;
+  const p = plannedFor(date, kind, m, true).find(x => x.key === key), s = p && slotOf(kind, p.base); if (!s) return ex;
   return Object.assign({}, ex, { sets: s.sets }, p.key === p.base ? { lo: s.lo, hi: s.hi } : null, s.optional ? { optional: true } : null);
 }
 function suggest(key, date) {
@@ -1289,22 +1344,26 @@ function kindFor(date, m) {
   return nextDayKey(date);
 }
 function phaseOf(date) { const rec = state.sessions[date], ph = rec ? Number(rec.phase) : 0; return ph >= 1 && ph <= 3 ? Math.floor(ph) : phaseFor(date); }
-function plannedFor(date, kind, m) {
+function plannedFor(date, kind, m, all) { // all: every slot of the day, also on an express session
   // Returns [{base, key}] in order. An existing record keeps its own planned list; swaps in the draft apply on top.
   const rec = state.sessions[date]; const n = rec ? normalize(rec) : null;
   let bases;
   if (n && n.kind === 'strength' && n.day === kind && n.plannedBase) bases = n.plannedBase.filter(k => EX[k]);
   else if (n && n.kind === 'strength' && n.day === kind && n.legacy) bases = Array.from(new Set((DAYS[kind].phases[phaseOf(date)] || []).concat(n.keys)));
   else bases = DAYS[kind].phases[phaseOf(date)];
-  if (m.checkin === 'short' && !(n && n.kind === 'strength' && n.day === kind && n.plannedBase)) bases = bases.slice(0, EXPRESS_LIFTS); // an express session plans the first three lifts
   // a saved lift day keeps the exercises it was saved with: today's default swaps apply to new workouts only
   const own = n && n.kind === 'strength' && n.day === kind;
   const dflt = own ? (n.swaps || {}) : (state.settings.swaps || {});
-  return settleSwaps(bases.map(b => {
+  const slots = settleSwaps(bases.map(b => {
     let key = m.swaps[b] != null ? m.swaps[b] : (dflt[b] || b);
     if (!EX[key]) key = b;
     return { base: b, key };
   }));
+  // An express session ("short on time") plans the first three lifts. Any later lift with a set logged joins the
+  // plan, so nothing typed under "More lifts" is ever left out of the save.
+  if (all || m.checkin !== 'short' || own && n.plannedBase) return slots;
+  const logged = k => !!(m.ex[k] && m.ex[k].reps.some(r => r !== '' && r != null));
+  return slots.filter((p, i) => i < EXPRESS_LIFTS || logged(p.key));
 }
 function setCount(key, m, date) {
   const sg = suggest(key, date);
@@ -2309,8 +2368,9 @@ ACT['ov-close'] = () => closeOv();
 const fx = { parts: [], raf: 0 };
 function burst(opts) {
   opts = opts || {};
-  if (reducedMotion()) return;
+  if (motionOf() !== 'full') return; // particle bursts belong to Full animations only
   const cv = $('#fx'); if (!cv || !cv.getContext) return;
+  state.fxn.burst++;
   const W = cv.clientWidth, H = cv.clientHeight, dpr = Math.min(2, window.devicePixelRatio || 1);
   if (cv.width !== Math.round(W * dpr) || cv.height !== Math.round(H * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
   const p = P(opts.pid || me()), v = skinVars(p.skin), kind = opts.kind || p.skin.fx || 'confetti';
@@ -2386,22 +2446,36 @@ function checkBadges(pid, quiet) { // returns badges earned since this device la
 }
 // opts.before: the scores taken just before the change was made. Comparing against that moment, rather than against
 // the last thing this phone celebrated, keeps the other phone's activity in between from faking or hiding a lead change.
+// Subtle animations celebrate real milestones only: a weight increase, a badge, a lead change, a week win or a team
+// week. One short sweep of the person's accent color across the top of the screen, with a check mark. Never two at once.
+let sweepT = 0, sweepAt = 0;
+function milestone() {
+  if (motionOf() !== 'subtle') return; // Full has its own bursts; Off shows nothing
+  const now = Date.now(); if (now - sweepAt < 1500) return;
+  sweepAt = now; state.fxn.milestone++;
+  const el = $('#sweep'); if (!el) return;
+  el.hidden = false; el.classList.remove('run'); void el.offsetWidth; el.classList.add('run');
+  clearTimeout(sweepT); sweepT = setTimeout(() => { el.hidden = true; el.classList.remove('run'); }, 900);
+}
 function celebrate(msg, opts) {
   opts = opts || {};
   const pid = me(), other = otherPid(pid), now = scoreSnapshot(), prev = opts.before || now;
   const gained = now[pid] - prev[pid];
   if (gained > 0 || opts.force) burst({ count: gained >= 10 ? 120 : 70 });
   if (msg) toast(msg + (gained > 0 ? '  +' + gained + ' pts' : ''), opts.ms || 3000);
-  if (prev[pid] <= prev[other] && now[pid] > now[other] && now[other] > 0) queueOv({ type: 'lead', pid });
-  checkBadges(pid).slice(0, 3).forEach(b => queueOv({ type: 'badge', pid, badge: b }));
+  const lead = prev[pid] <= prev[other] && now[pid] > now[other] && now[other] > 0, earned = checkBadges(pid).slice(0, 3);
+  if (lead || earned.length) milestone();
+  if (lead) queueOv({ type: 'lead', pid });
+  earned.forEach(b => queueOv({ type: 'badge', pid, badge: b }));
   return gained;
 }
 // On opening the app: badges, then last week's result. A finished week stays open for late entries through Tuesday,
 // so until its result is stored it only gets a quiet "provisional" line. The winner is announced, once per phone,
 // when the final result exists (ml.seenFinalWeek: the newest final week this phone has shown).
 function announce() {
-  const pid = me();
-  checkBadges(pid).slice(0, 3).forEach(b => queueOv({ type: 'badge', pid, badge: b }));
+  const pid = me(), earned = checkBadges(pid).slice(0, 3);
+  if (earned.length) milestone();
+  earned.forEach(b => queueOv({ type: 'badge', pid, badge: b }));
   const weeks = compWeeks(), finals = weeks.filter(w => w.final && w.played), last = weeks[weeks.length - 1];
   let seen = prefGet('ml.seenFinalWeek', null);
   if (seen == null) { // first run with final-result tracking on this phone
@@ -2413,7 +2487,7 @@ function announce() {
     prefSet('ml.seenFinalWeek', seen);
   }
   const fresh = finals.filter(w => w.ws > seen).slice(-2);
-  if (fresh.length) { prefSet('ml.seenFinalWeek', fresh[fresh.length - 1].ws); fresh.forEach(w => queueOv({ type: 'weekwin', week: w })); }
+  if (fresh.length) { prefSet('ml.seenFinalWeek', fresh[fresh.length - 1].ws); fresh.forEach(w => queueOv({ type: 'weekwin', week: w })); milestone(); } // a week win or a team week
   // only while late entries still count: from Wednesday the week is about to be closed and announced for real
   if (last && !last.final && last.played && todayIso() < addDays(last.ws, 7 + GRACE_DAYS) && String(prefGet('ml.seenWeek', '')) < last.ws) { prefSet('ml.seenWeek', last.ws); toast(provisionalText(last), 5200); }
 }
@@ -2847,12 +2921,12 @@ function renderTrain() {
   else if (isLift && kind !== nextK) why += ' You picked ' + DAYS[kind].name + '.';
 
   const rot = rotation(), segDays = !DAYS[kind] || rot.includes(kind) ? rot : rot.concat([kind]), full = !!(DAYS[kind] ? DAYS[kind].full : splitOf() === 'full'); // an old day from the other split keeps its own button
-  let h = trainTopHTML() + checkinHTML() + '<section class="card sess">' + dateHead('Logging for') +
+  let h = checkinHTML() + coachHTML() + '<h2 class="loghead" id="logHead">Log your workout</h2><section class="card sess">' + dateHead('Logging for') +
     '<div class="seg" id="kindSeg" aria-label="Workout type">' + segDays.map(k => '<button type="button" data-kind="' + k + '" class="' + (kind === k ? 'on' : '') + '" aria-pressed="' + (kind === k) + '">' + DAYS[k].name + '</button>').join('') +
     '<button type="button" data-kind="cardio" class="' + (kind === 'cardio' ? 'on' : '') + '" aria-pressed="' + (kind === 'cardio') + '">Treadmill</button><button type="button" data-kind="rest" class="' + (kind === 'rest' ? 'on' : '') + '" aria-pressed="' + (kind === 'rest') + '">Rest</button></div>' +
     '<div class="status"><span id="statusLine">' + esc(statusText(date)) + '</span>' + (full ? '' : '<span>·</span><span>Phase ' + phase + '</span>') + healthButton() + '</div>' +
     '<p class="tiny muted" id="whyLine" style="margin-top:-4px">' + esc(why) + '</p>' + hkLineHTML(date) +
-    (isLift && date <= todayIso() ? '<div class="row"><button type="button" class="small" id="wmStart" data-a="wm-lift">' + (wmDraftOn(date) ? 'Resume workout' : 'Start guided workout') + '</button><span class="tiny muted">full screen, one lift at a time</span></div>' : '');
+    (isLift && date <= todayIso() ? '<div class="row"><button type="button" class="small" id="wmStart" data-a="wm-lift">' + (wmDraftOn(date) ? 'Resume workout' : 'Go live') + '</button></div>' : '');
   if (d && d.recovered && draftHasContent(d)) h += '<div class="banner"><span>Unsaved draft from ' + tzTime.format(new Date(d.updatedAt)) + ' restored. Not saved until you tap Save.</span><div class="row"><button type="button" class="small" id="discardDraft">Discard draft</button></div></div>';
   if (n && n.ambiguous) h += '<div class="banner">Saved as a ' + (DAYS[rec.day] ? DAYS[rec.day].name : 'lift') + ' day by the earlier version but has no lifting sets. It counts as ' + (n.kind === 'cardio' ? 'treadmill only' : 'no activity') + '. Add sets or re-save to confirm.</div>';
   h += '</section>';
@@ -2874,6 +2948,9 @@ function renderTrain() {
     const day = DAYS[kind]; const planned = plannedFor(date, kind, m);
     h += '<div class="blk" style="gap:2px"><div class="bhead"><h3>' + day.name + ' day</h3><span class="tiny muted">' + day.sub + '</span></div></div>';
     planned.forEach(p => { h += renderExercise(p, m, date); });
+    // an express session shows its three lifts; the rest of the day waits under "More lifts", and a set typed there is saved like any other
+    const more = m.checkin === 'short' ? plannedFor(date, kind, m, true).filter(p => !planned.some(q => q.base === p.base)) : [];
+    if (more.length) h += '<details class="blk plain morelifts" id="moreLifts" data-dk="morelifts"><summary>More lifts (' + more.length + ')</summary>' + more.map(p => renderExercise(p, m, date)).join('') + '</details>';
   }
   h += '<div class="blk"><label class="f">Notes<input type="text" id="notes" data-field="notes" value="' + esc(m.notes) + '" placeholder="Optional"></label></div>';
   if (isLift) {
@@ -2902,18 +2979,23 @@ function extrasHTML(date) {
 /* ---------- Progression after Phase 3: deload weeks, stalled lifts, the goal nudge ---------- */
 // What sits above the lifting log: the deload offer (or the reminder that one is on), a swap whose four weeks are up,
 // and the goal nudge. Each is a choice saved to settings or the profile by its button, never by drawing it.
-function trainTopHTML() {
-  const st = deloadState(), sb = state.settings.swapBack || {}, sw = state.settings.swaps || {}, t = todayIso(); let h = '';
-  if (st === 'on') h += '<div class="banner good" id="deloadBanner"><span><b>Deload week is on.</b> 2 sets per lift at about 90% weight. Recovery week, same points.</span><div class="row"><button type="button" class="small" data-a="deload-off">End the deload early</button></div></div>';
-  else if (st === 'offer') h += '<div class="banner accent" id="deloadBanner"><span><b>Deload week:</b> 2 sets per lift at about 90% weight. Recovery week, same points.</span><span class="tiny muted">You have finished ' + deloadWeeks(t) + ' full lift weeks. A lighter week now lets the next five go heavier. Lift days still count as lift days.</span><div class="row"><button type="button" class="small" data-a="deload-take">Take it</button><button type="button" class="small" data-a="deload-skip">Skip</button></div></div>';
-  Object.keys(sb).forEach(base => { const x = sb[base]; if (!x || !EX[base] || !EX[x.to] || !EX[x.from] || !validIso(x.until) || t < x.until || (sw[base] || base) !== x.to) return;
-    h += '<div class="banner" data-swapback="' + base + '"><span><b>Four weeks on ' + esc(EX[x.to].name) + '.</b> Switch back to ' + esc(EX[x.from].name) + '?</span><div class="row"><button type="button" class="small" data-a="swapback-yes" data-base="' + base + '">Switch back</button><button type="button" class="small" data-a="swapback-no" data-base="' + base + '">Keep ' + esc(EX[x.to].name) + '</button></div></div>'; });
-  return h + nudgeHTML(me());
-}
-function nudgeHTML(pid) {
-  const n = goalNudge(pid); if (!n) return '';
-  return '<section class="card stack" id="nudgeCard"><p>' + (n.kind === 'lift' ? '<b>Three weeks with 3 lifts.</b> Raise your lift goal to 3 lift days starting Monday?' : '<b>Three full weeks in a row.</b> Raise your goal to ' + n.to + ' days starting Monday?') + '</p><div class="row"><button type="button" class="small" data-a="nudge-yes">Raise it</button><button type="button" class="quiet" data-a="nudge-no">Not now</button></div>' +
-    '<p class="tiny muted">This week stays at ' + n.from + '. A raised goal locks in next Monday, like any goal change.</p></section>';
+// Coach: the deload offer, a swap that is due for review and the goal nudge, one line each in one card under the
+// check-in. A tap opens a line. Each is a choice saved by its own button, never by drawing it.
+const coachRow = (attrs, line, body) => '<details class="plain coachrow" ' + attrs + '><summary>' + line + '</summary><div class="coachbody">' + body + '</div></details>';
+function coachHTML() {
+  const pid = me(), rows = [], t = todayIso();
+  if (P(pid).plan === 'program') {
+    const st = deloadState(), sb = state.settings.swapBack || {}, sw = state.settings.swaps || {};
+    if (st === 'on') rows.push(coachRow('id="deloadBanner" data-dk="coach-deload"', 'Deload week is on · 2 sets at about 90%', '<span><b>Deload week is on.</b> 2 sets per lift at about 90% weight. Recovery week, same points.</span><div class="row"><button type="button" class="small" data-a="deload-off">End the deload early</button></div>'));
+    else if (st === 'offer') rows.push(coachRow('id="deloadBanner" data-dk="coach-deload"', 'Deload week on offer · a lighter week', '<span><b>Deload week:</b> 2 sets per lift at about 90% weight. Recovery week, same points.</span><span class="tiny muted">You have finished ' + deloadWeeks(t) + ' full lift weeks. A lighter week now lets the next five go heavier. Lift days still count as lift days.</span><div class="row"><button type="button" class="small" data-a="deload-take">Take it</button><button type="button" class="small" data-a="deload-skip">Skip</button></div>'));
+    Object.keys(sb).forEach(base => { const x = sb[base]; if (!x || !EX[base] || !EX[x.to] || !EX[x.from] || !validIso(x.until) || t < x.until || (sw[base] || base) !== x.to) return;
+      rows.push(coachRow('data-swapback="' + base + '" data-dk="coach-swap-' + base + '"', 'Four weeks on ' + esc(EX[x.to].name) + ' · switch back?', '<span><b>Four weeks on ' + esc(EX[x.to].name) + '.</b> Switch back to ' + esc(EX[x.from].name) + '?</span><div class="row"><button type="button" class="small" data-a="swapback-yes" data-base="' + base + '">Switch back</button><button type="button" class="small" data-a="swapback-no" data-base="' + base + '">Keep ' + esc(EX[x.to].name) + '</button></div>')); });
+  }
+  const n = goalNudge(pid);
+  if (n) rows.push(coachRow('id="nudgeCard" data-dk="coach-nudge-' + pid + '"', n.kind === 'lift' ? 'Three weeks with 3 lifts · raise your lift goal?' : 'Three full weeks in a row · raise your goal?',
+    '<p>' + (n.kind === 'lift' ? '<b>Three weeks with 3 lifts.</b> Raise your lift goal to 3 lift days starting Monday?' : '<b>Three full weeks in a row.</b> Raise your goal to ' + n.to + ' days starting Monday?') + '</p><div class="row"><button type="button" class="small" data-a="nudge-yes">Raise it</button><button type="button" class="quiet" data-a="nudge-no">Not now</button></div>' +
+    '<p class="tiny muted">This week stays at ' + n.from + '. A raised goal locks in next Monday, like any goal change.</p>'));
+  return rows.length ? '<section class="card coach" id="coach"><div class="eyebrow">Coach</div>' + rows.join('') + '</section>' : '';
 }
 // where a stalled slot can go for four weeks: another alternate that is free in every phase, else back to its planned exercise
 const stallSwapTarget = p => { const taken = defaultSwapTaken(p.base); return alts(p.base).concat(p.key !== p.base ? [p.base] : []).find(k => k !== p.key && (k === p.base || !taken[k])) || null; };
@@ -3088,7 +3170,7 @@ function renderMove() {
   if (rest) status = 'Rest day logged';
   else if (program) status = progText + (acts.length ? ' + ' + n.actMin + ' min of activities' : '') + ' · counts as an active day';
   else if (acts.length) status = n.allMin + ' min logged · ' + (di.active ? 'counts as an active day' : (mm - di.minutes) + ' more min of movement to count');
-  let h = nudgeHTML(pid) + checkinHTML() + '<section class="card sess">' + dateHead('Logging for') + '<div class="status"><span id="statusLine">' + esc(status) + '</span>' + healthButton() + '</div>' + hkLineHTML(date) + '</section>' + heatChipHTML(date);
+  let h = checkinHTML() + coachHTML() + '<h2 class="loghead" id="logHead">Log your workout</h2><section class="card sess">' + dateHead('Logging for') + '<div class="status"><span id="statusLine">' + esc(status) + '</span>' + healthButton() + '</div>' + hkLineHTML(date) + '</section>' + heatChipHTML(date);
   if (acts.length || rest || program) {
     h += '<section class="card"><div class="row between"><h3>Logged ' + (rel(date) === nice(date) ? nice(date) : rel(date).toLowerCase()) + '</h3>' + (rest ? '<span class="chip">rest</span>' : di.active ? '<span class="chip good">active day</span>' : '<span class="chip warn">' + di.minutes + ' of ' + mm + ' min</span>') + '</div><div class="done-list" style="margin-top:4px">';
     if (rest) h += '<button type="button" data-a="rest-undo"><span>🛌 Rest day</span><span class="muted">tap to remove</span></button>';
@@ -3447,7 +3529,7 @@ function hpCardHTML(pid, k) {
   return '<div class="act hp back' + (anim ? ' flipin' : '') + '" data-hpback="' + k + '"><span class="an">' + a.icon + ' ' + esc(a.name) + '</span><span class="aw" style="color:var(--muted)">' + esc(a.desc) + '</span>' +
     (tag ? '<span class="aw" data-tag="' + k + '">' + tag + '</span>' : '') + (a.heat ? '<span class="aw">' + HEAT_NOTE + '</span>' : '') +
     (caution.length ? '<span class="aw">Loads an area you are protecting: ' + caution.map(x => AREAS[x].toLowerCase()).join(', ') + '.</span>' : '') +
-    '<span class="row" style="grid-column:1/-1;gap:6px"><button type="button" class="small on" data-a="hp-start" data-k="' + k + '">Start</button><button type="button" class="small" data-a="act" data-k="' + k + '">Log it</button><button type="button" class="quiet" data-a="hp-flip" data-k="' + k + '">Close</button></span></div>';
+    '<span class="row" style="grid-column:1/-1;gap:6px"><button type="button" class="small' + (modeOf(pid) === 'log' ? ' on' : '') + '" data-a="act" data-k="' + k + '">Log it</button><button type="button" class="small' + (modeOf(pid) === 'live' ? ' on' : '') + '" data-a="hp-start" data-k="' + k + '">Start live</button><button type="button" class="quiet" data-a="hp-flip" data-k="' + k + '">Close</button></span></div>';
 }
 ACT['hp-flip'] = el => { const k = el.dataset.k; state.hpFlip = state.hpFlip === k ? null : k; state.hpAnim = state.hpFlip; redrawPicker(); };
 ACT['hp-start'] = el => { const k = el.dataset.k, a = ACTS[k]; if (!a) return; if (state.ov) closeOv(); wmOpen(stagePlan(a.name, null, [stageFor(k)]), el); };
@@ -3493,23 +3575,28 @@ function checkinSuggest(pid, date) {
 }
 // Cardio a lifting profile can pick when tired: [activity key or 'treadmill', label].
 const cardioOptions = pid => atHealthplex(pid) ? [['hptrack', 'Track walk'], ['hprun', 'Track run/walk'], ['treadmill', 'Treadmill (Fitness+)'], ['bike', 'Bike'], ['elliptical', 'Elliptical'], ['hpswim', 'Lap swim']] : [['treadmill', 'Treadmill (Fitness+)'], ['bike', 'Bike'], ['elliptical', 'Elliptical'], ['walkbrisk', 'Brisk walk']];
-// A pick-your-own check-in choice as stages. `blocked`: the choice has a part with no safe option. `note`: a safe stand-in was used.
+// A pick-your-own check-in choice as stages (for live mode) and as parts (for the "Log it" sheet).
+// `blocked`: the choice has a part with no safe option. `note`: a safe stand-in was used.
 function ciStages(pid, choice) {
   const first = (keys, min) => { const k = keys.find(x => safeAct(pid, x)); return { k: k || keys[0], min, swapped: !!k && k !== keys[0], none: !k, from: keys[0] }; };
+  const opts = keys => keys.map(k => [k, ACTS[k].name]);
   if (choice === 'good') {
     const a = first(['hptrack', 'hpbike'], 10), c = first(['hpcircuit'], 15);
-    return { stages: [stageFor(a.k, a.min), stageFor(c.k, c.min)], blocked: c.none ? whyNot(pid, 'hpcircuit') : a.none ? whyNot(pid, a.from) : '', note: a.swapped ? ACTS[a.k].name + ' instead: ' + whyNot(pid, a.from) : '' };
+    return { stages: [stageFor(a.k, a.min), stageFor(c.k, c.min)], parts: [{ opts: opts(['hptrack', 'hpbike']), k: a.k, min: 10 }, { opts: opts(['hpcircuit']), k: 'hpcircuit', min: 15 }],
+      blocked: c.none ? whyNot(pid, 'hpcircuit') : a.none ? whyNot(pid, a.from) : '', note: a.swapped ? ACTS[a.k].name + ' instead: ' + whyNot(pid, a.from) : '' };
   }
-  if (choice === 'low') { const a = first(['hppool', 'hpbike'], 15); return { stages: [stageFor(a.k, a.min)], blocked: a.none ? whyNot(pid, a.from) : '', note: a.swapped ? ACTS[a.k].name + ' instead: ' + whyNot(pid, a.from) : '' }; }
-  return { stages: [{ type: 'stretch', act: 'stretchfull', name: 'Gentle stretch', min: 10, rounds: 2 }, { type: 'heat', act: 'hpsauna', name: 'Sauna, steam or whirlpool', min: 10 }], blocked: '', note: '' };
+  if (choice === 'low') { const a = first(['hppool', 'hpbike'], 15); return { stages: [stageFor(a.k, a.min)], parts: [{ opts: opts(['hppool', 'hpbike']), k: a.k, min: 15 }], blocked: a.none ? whyNot(pid, a.from) : '', note: a.swapped ? ACTS[a.k].name + ' instead: ' + whyNot(pid, a.from) : '' }; }
+  return { stages: [{ type: 'stretch', act: 'stretchfull', name: 'Gentle stretch', min: 10, rounds: 2 }, { type: 'heat', act: 'hpsauna', name: 'Sauna, steam or whirlpool', min: 10 }], parts: STRETCH_PART, heat: true, blocked: '', note: '' };
 }
-// What a choice will be: a title, how long, the first moves, and the plan workout mode runs.
+const STRETCH_PART = [{ opts: [['stretchfull', 'Stretch']], k: 'stretchfull', min: 10 }];
+// What a choice will be: a title, how long, the first moves, the plan live mode runs, and the "Log it" sheet.
 function ciPreview(pid, date, choice, opt) {
   const program = P(pid).plan === 'program';
   if (choice === 'rest') return { title: 'Rest day', time: '', moves: ['Doesn\'t count as activity' + (program ? ' and doesn\'t move the rotation.' : '.')], rest: true };
   if (!program) {
     const s = ciStages(pid, choice), mins = sum(s.stages, x => x.min);
-    return { title: choice === 'good' ? 'Easy cardio, then the machines' : choice === 'low' ? 'Easy and short' : 'Stretch, then heat', time: 'about ' + mins + ' min', moves: s.stages.map(x => x.name + ' · ' + x.min + ' min'), warn: s.blocked, note: s.note, plan: stagePlan(choice === 'good' ? 'Feeling good' : choice === 'low' ? 'Low energy' : 'Recovery', choice, s.stages) };
+    return { title: choice === 'good' ? 'Easy cardio, then the machines' : choice === 'low' ? 'Easy and short' : 'Stretch, then heat', time: 'about ' + mins + ' min', moves: s.stages.map(x => x.name + ' · ' + x.min + ' min'), warn: s.blocked, note: s.note,
+      plan: stagePlan(choice === 'good' ? 'Feeling good' : choice === 'low' ? 'Low energy' : 'Recovery', choice, s.stages), sheet: { parts: s.parts, heat: !!s.heat } };
   }
   if (choice === 'strong' || choice === 'short') {
     const kind = liftKindFor(date), m = Object.assign({}, model(date), { kindSel: kind, checkin: choice }), slots = plannedFor(date, kind, m), main = slots.filter(p => !(slotOf(kind, p.base) || {}).optional);
@@ -3518,38 +3605,56 @@ function ciPreview(pid, date, choice, opt) {
   }
   if (choice === 'tired') {
     const opts = cardioOptions(pid), k = opts.some(o => o[0] === opt) ? opt : opts[0][0], st = k === 'treadmill' ? { type: 'timer', act: 'treadmill', name: 'Treadmill (Fitness+)', min: 25 } : stageFor(k, 25);
-    return { title: 'Easy cardio', time: '20 to 30 min', opts, opt: k, moves: [st.name + (st.type === 'laps' ? ' · tap each lap, 8 laps = 1 mile' : st.type === 'lengths' ? ' · tap each 25-yard length' : ' · a timer, with optional intervals')], plan: stagePlan('Cardio', 'tired', [st]) };
+    return { title: 'Easy cardio', time: '20 to 30 min', opts, opt: k, moves: [st.name + (st.type === 'laps' ? ' · tap each lap, 8 laps = 1 mile' : st.type === 'lengths' ? ' · tap each 25-yard length' : ' · a timer, with optional intervals')], plan: stagePlan('Cardio', 'tired', [st]), sheet: { parts: [{ opts, k, min: 25 }], heat: false } };
   }
   // sore: an easy walk, a stretch, then a recovery room where there is one
   const hp = atHealthplex(pid), opts = hp ? [['hptrack', 'Track'], ['hppool', 'Therapy pool']] : [['walkeasy', 'Easy walk']], k = opts.some(o => o[0] === opt) ? opt : opts[0][0];
   const stages = [stageFor(k, 10), { type: 'stretch', act: k, name: 'Stretch', min: 5, rounds: 1 }].concat(hp ? [{ type: 'heat', act: 'hpsauna', name: 'Sauna, steam or whirlpool', min: 10 }] : []);
-  return { title: 'Recovery', time: hp ? 'about 25 min' : 'about 15 min', opts, opt: k, moves: stages.map(x => x.name + ' · ' + x.min + ' min'), plan: stagePlan('Recovery', 'sore', stages) };
+  return { title: 'Recovery', time: hp ? 'about 25 min' : 'about 15 min', opts, opt: k, moves: stages.map(x => x.name + ' · ' + x.min + ' min'), plan: stagePlan('Recovery', 'sore', stages), sheet: { parts: STRETCH_PART, heat: hp } };
 }
+
+/* --- Log it or go live: each person's last pick, kept on their profile --- */
+const modeOf = pid => P(pid).trainMode === 'live' ? 'live' : 'log';
+const modeSwitchHTML = pid => '<div class="seg modesw" id="modeSwitch" role="group" aria-label="Log it, or go live">' + [['log', 'Log it'], ['live', 'Go live']].map(x =>
+  '<button type="button" data-a="mode-set" data-v="' + x[0] + '" class="' + (modeOf(pid) === x[0] ? 'on' : '') + '" aria-pressed="' + (modeOf(pid) === x[0]) + '">' + x[1] + '</button>').join('') + '</div>';
+ACT['mode-set'] = async el => { const v = el.dataset.v === 'live' ? 'live' : 'log'; if (v === modeOf(me())) return; if (await saveProfile(me(), { trainMode: v })) render('[data-a="mode-set"][data-v="' + v + '"]'); };
+const ciList = pid => P(pid).plan === 'program' ? CI_PROGRAM : CI_CHOICE;
+const ciLabel = (pid, c) => { const r = ciList(pid).find(x => x[0] === c) || CI_PROGRAM.concat(CI_CHOICE).find(x => x[0] === c); return r ? r[2] : c === 'extra' ? 'Class or game' : ''; };
+function dayWhat(pid, date) { // one or two words for what a logged day is
+  const r = state.data[pid].sessions[date]; if (!r) return '';
+  const n = normalize(r); return n.kind === 'strength' ? (n.day ? DAYS[n.day].name : 'Lift') : n.kind === 'cardio' ? 'Treadmill' : n.kind === 'rest' ? 'Rest day' : n.acts.length ? actName(n.acts.find(a => a.mv !== false) || n.acts[0]) : 'logged';
+}
+// The check-in sits first on Train, under the Log it / Go live switch, for today only. Once a choice is made or
+// anything is logged today it is one line with "Change", so the log is what the screen is about.
 function checkinHTML() {
-  const pid = me(), date = state.selDate, t = todayIso();
-  if (date !== t || !ciShown(pid)) return '';
-  const going = wmResumable(pid, date), rec = state.data[pid].sessions[date];
-  if (going) return '<section class="card stack ci" id="checkin"><div class="row between"><h3>Workout in progress</h3><span class="tiny muted">' + esc(going.title) + '</span></div><div class="row"><button type="button" class="primary" id="wmResume" data-a="wm-resume">Resume workout</button></div><p class="tiny muted">Everything you logged is kept. Finish or end it from inside.</p></section>';
-  if (rec && !(state.ci && state.ci.date === date && state.ci.pid === pid)) {
-    // a day that is already logged: the answer, if there was one, and a way back to the choices
-    const hp = atHealthplex(pid), felt = CHECKIN_WORDS[rec.checkin]; if (!felt && !hp) return '';
-    return '<section class="card ci" id="checkin"><div class="row between"><span id="ciDone">' + (felt ? 'Checked in: <b>' + felt + '</b>.' : 'Today is logged.') + '</span><button type="button" class="quiet" data-a="ci-again">Do something else too</button></div>' +
-      (hp ? '<div class="row"><button type="button" class="quiet" id="ciExtra" data-a="hp-extra">Class or game (optional)</button></div>' : '') + '</section>';
+  const pid = me(), date = state.selDate;
+  if (date !== todayIso() || !ciShown(pid)) return '';
+  const sw = modeSwitchHTML(pid), going = wmResumable(pid, date), rec = state.data[pid].sessions[date], d = state.draftsBy[pid][date], open = !!(state.ci && state.ci.date === date && state.ci.pid === pid);
+  const line = (text, btn) => sw + '<section class="card ci line" id="checkin"><div class="row between" style="flex-wrap:nowrap"><span id="ciDone">' + text + '</span>' + btn + '</div></section>';
+  if (going) return line('<b>Workout in progress</b> · ' + esc(going.title), '<button type="button" class="small on" id="wmResume" data-a="wm-resume">Resume workout</button>');
+  if (!open) {
+    const felt = (rec && CHECKIN_WORDS[rec.checkin] && rec.checkin) || (d && CHECKIN_WORDS[d.checkin] && d.checkin) || null;
+    if (rec || felt) {
+      const liftPick = !rec && (felt === 'strong' || felt === 'short') && DAYS[kindFor(date, d)], what = rec ? dayWhat(pid, date) : liftPick ? DAYS[kindFor(date, d)].name : '';
+      return line('<b>' + (felt ? ciLabel(pid, felt) : 'Today is logged') + '</b>' + (what ? ' · ' + esc(what) : ''), '<button type="button" class="quiet" id="ciChange" data-a="ci-again">Change</button>');
+    }
   }
-  const program = P(pid).plan === 'program', list = program ? CI_PROGRAM : CI_CHOICE, sg = checkinSuggest(pid, date), sel = state.ci && state.ci.date === date && state.ci.pid === pid ? state.ci.choice : null, anim = sel && state.ciAnim === sel;
+  const list = ciList(pid), sg = checkinSuggest(pid, date), sel = open ? state.ci.choice : null, anim = sel && state.ciAnim === sel, mode = modeOf(pid);
   if (anim) state.ciAnim = null; // the expand plays once, for the tap that caused it
-  let h = '<section class="card stack ci" id="checkin"' + (sel ? ' data-open="' + sel + '"' : '') + (anim ? ' data-anim="1"' : '') + '><div class="row between"><h3>How are you feeling?</h3><span class="tiny muted">' + nice(date) + '</span></div>';
+  let h = sw + '<section class="card stack ci" id="checkin"' + (sel ? ' data-open="' + sel + '"' : '') + (anim ? ' data-anim="1"' : '') + '><div class="row between"><h3>How are you feeling?</h3><span class="tiny muted">' + nice(date) + '</span></div>';
   list.forEach(c => {
     const on = sel === c[0], sug = sg.choice === c[0];
     h += '<button type="button" class="cic' + (on ? ' sel' + (anim ? ' lift' : '') : sel ? ' fade' : '') + (sug ? ' sug' : '') + '" data-a="ci-pick" data-v="' + c[0] + '" aria-expanded="' + on + '"><span class="ci-i" aria-hidden="true">' + c[1] + '</span><span class="ci-t"><b>' + c[2] + '</b>' +
       (sug ? '<span class="tiny" data-ci-why>' + esc(sg.why) + '</span>' : '') + '</span>' + (sug ? '<span class="chip accent" id="ciSuggested">Suggested</span>' : '') + '</button>';
     if (!on) return;
-    const pv = ciPreview(pid, date, c[0], state.ci.opt);
+    const pv = ciPreview(pid, date, c[0], state.ci.opt), btn = (id, a, label, main) => '<button type="button" class="' + (main ? 'primary' : 'second') + '" id="' + id + '" data-a="' + a + '">' + label + '</button>';
     h += '<div class="cip' + (anim ? ' grow' : '') + '" id="ciPreview"><div class="row between"><b id="ciTitle">' + esc(pv.title) + '</b><span class="muted tiny" id="ciTime">' + esc(pv.time) + '</span></div>' +
       (pv.opts ? '<div class="chips wrapc" id="ciOpts">' + pv.opts.map(o => '<button type="button" data-a="ci-opt" data-v="' + o[0] + '" class="' + (pv.opt === o[0] ? 'on' : '') + '" aria-pressed="' + (pv.opt === o[0]) + '">' + o[1] + '</button>').join('') + '</div>' : '') +
       '<ol class="ci-moves" id="ciMoves">' + pv.moves.map(x => '<li>' + esc(x) + '</li>').join('') + '</ol>' + (pv.more ? '<span class="tiny muted">' + pv.more + '</span>' : '') +
       (pv.warn ? '<p class="banner" id="ciWarn">' + esc(pv.warn) + ' You can still do it: keep it short and easy.</p>' : pv.note ? '<p class="tiny muted" id="ciNote">' + esc(pv.note) + '</p>' : '') +
-      '<div class="row"><button type="button" class="primary" id="ciStart" data-a="' + (pv.rest ? 'ci-rest' : 'ci-start') + '">' + (pv.rest ? 'Log rest day' : 'Start') + '</button><button type="button" class="small" data-a="ci-back">Back</button></div></div>';
+      // two equal buttons: type it in, or do it live. The one this person used last leads.
+      (pv.rest ? '<div class="row two">' + btn('ciRest', 'ci-rest', 'Log rest day', true) + '</div>' : '<div class="row two" id="ciGo">' + btn('ciLog', 'ci-log', 'Log it', mode === 'log') + btn('ciStart', 'ci-start', 'Start live', mode === 'live') + '</div>') +
+      '<div class="row"><button type="button" class="quiet" data-a="ci-back">Back</button></div></div>';
   });
   if (atHealthplex(pid)) h += '<div class="row"><button type="button" class="quiet" id="ciExtra" data-a="hp-extra">Class or game (optional)</button></div>';
   return h + '</section>';
@@ -3557,12 +3662,12 @@ function checkinHTML() {
 ACT['ci-pick'] = (el, e) => {
   const v = el.dataset.v, r = el.getBoundingClientRect();
   state.ci = { pid: me(), date: state.selDate, choice: v, opt: null }; state.ciAnim = v; state.ciPicks = (state.ciPicks || 0) + 1;
-  render('#ciStart');
-  burst({ count: 14, x: (r.left + r.width / 2) / window.innerWidth, y: Math.min(0.9, (r.top + r.height / 2) / window.innerHeight) });
+  render('#ciPreview .primary');
+  burst({ count: 14, x: (r.left + r.width / 2) / window.innerWidth, y: Math.min(0.9, (r.top + r.height / 2) / window.innerHeight) }); // Full animations only
 };
 ACT['ci-opt'] = el => { if (state.ci) { state.ci.opt = el.dataset.v; render('[data-a="ci-opt"][data-v="' + el.dataset.v + '"]'); } };
 ACT['ci-back'] = () => { const v = state.ci && state.ci.choice; state.ci = null; render(v ? '[data-a="ci-pick"][data-v="' + v + '"]' : null); };
-ACT['ci-again'] = () => { state.ci = { pid: me(), date: state.selDate, choice: null, opt: null }; render(); };
+ACT['ci-again'] = () => { state.ci = { pid: me(), date: state.selDate, choice: null, opt: null }; render('#checkin .cic'); };
 ACT['ci-start'] = el => {
   const c = state.ci; if (!c) return;
   const pv = ciPreview(c.pid, c.date, c.choice, c.opt);
@@ -3574,6 +3679,80 @@ ACT['ci-rest'] = async () => {
   if (P(c.pid).plan === 'program') { const d = draft(c.date); d.kindSel = 'rest'; d.checkin = c.choice; persistDrafts(); state.ci = null; const ok = await save(); if (!ok) render(); return; }
   const ok = await logRest(c.date, c.choice); if (!ok) return;
   state.ci = null; render(); celebrate('Rest day logged. Rest is part of the plan.', { before });
+};
+
+/* --- "Log it": the same session, typed in instead of done live --- */
+// A lift goes to the lifting log: the day is selected, the check-in is kept on the draft, and the first weight field
+// has the cursor. Everything else gets one short sheet: the activity, minutes, and laps or lengths where they apply.
+ACT['ci-log'] = () => {
+  const c = state.ci; if (!c) return;
+  const pv = ciPreview(c.pid, c.date, c.choice, c.opt);
+  if (pv.lift) {
+    const d = draft(c.date); d.kindSel = pv.lift.kind; d.checkin = c.choice; d.recovered = false; persistDrafts();
+    const first = plannedFor(c.date, pv.lift.kind, d).find(p => !EX[p.key].bw);
+    state.ci = null; state.scrollTo = 'logHead'; state.logJumps = (state.logJumps || 0) + 1;
+    render(first ? '#w-' + first.key : '#tmMin'); return;
+  }
+  if (!pv.sheet) return;
+  const o = { type: 'cilog', date: c.date, felt: c.choice, title: pv.title, parts: pv.sheet.parts, heat: !!pv.sheet.heat, room: 'hpsauna', heatMin: '' };
+  pv.sheet.parts.forEach((p, i) => { o['k' + i] = p.k; o['min' + i] = String(p.min); o['laps' + i] = ''; });
+  openOv(o);
+};
+const partKind = k => ACTS[k] && ACTS[k].wm === 'laps' ? 'laps' : ACTS[k] && ACTS[k].wm === 'lengths' ? 'lengths' : 'timer';
+const partName = k => k === 'treadmill' ? 'Treadmill (Fitness+)' : ACTS[k] ? ACTS[k].name : 'Activity';
+const distText = (kind, n) => kind === 'laps' ? n + ' lap' + (n === 1 ? '' : 's') + ' (' + milesText(n) + ')' : n + ' length' + (n === 1 ? '' : 's') + ' (' + n * POOL_YARDS + ' yd)';
+const distLine = (kind, v) => { const n = Math.round(Number(v)); return n > 0 ? (kind === 'laps' ? n + ' lap' + (n === 1 ? '' : 's') + ' = ' + milesText(n) : n + ' length' + (n === 1 ? '' : 's') + ' = ' + n * POOL_YARDS + ' yards') : kind === 'laps' ? 'Each lap is 1/8 mile.' : 'Each length is ' + POOL_YARDS + ' yards.'; };
+const cilogMin = o => o.parts.reduce((t, p, i) => t + (Math.round(Number(o['min' + i])) > 0 ? Math.round(Number(o['min' + i])) : 0), 0) + (o.heat && Math.round(Number(o.heatMin)) > 0 ? Math.round(Number(o.heatMin)) : 0);
+const cilogLabel = o => { const m = cilogMin(o); return m > 0 ? 'Log ' + m + ' min' : 'Log it'; };
+function refreshCilog() { // typing patches the labels in place, so the keyboard stays up
+  const o = state.ov; if (!o || o.type !== 'cilog') return;
+  o.parts.forEach((p, i) => { const el = document.getElementById('cilogDist' + i), kind = partKind(o['k' + i]); if (el && kind !== 'timer') el.textContent = distLine(kind, o['laps' + i]); });
+  const b = $('#cilogSave'); if (b) b.textContent = cilogLabel(o);
+}
+OV.cilog = {
+  html: o => {
+    const num = (id, key, label, max, ph) => '<label class="f">' + label + '<input type="number" id="' + id + '" data-ovf="' + key + '" inputmode="numeric" pattern="[0-9]*" min="0" max="' + max + '" value="' + esc(o[key]) + '" placeholder="' + (ph || '–') + '"></label>';
+    let h = '<div class="ov" role="dialog" aria-modal="true" aria-label="Log it">' + ovHead(esc(o.title), 'Log it · ' + rel(o.date).toLowerCase());
+    o.parts.forEach((p, i) => {
+      const k = o['k' + i], kind = partKind(k);
+      h += '<div class="stack" data-part="' + i + '">' + (p.opts.length > 1 ? '<div class="chips wrapc" id="cilogOpts' + i + '">' + p.opts.map(x => '<button type="button" data-a="cilog-opt" data-i="' + i + '" data-v="' + x[0] + '" class="' + (k === x[0] ? 'on' : '') + '" aria-pressed="' + (k === x[0]) + '">' + x[1] + '</button>').join('') + '</div>' : '<div class="eyebrow">' + p.opts[0][1] + '</div>') +
+        '<div class="formgrid">' + num('cilogMin' + i, 'min' + i, 'Minutes', 300) + (kind === 'laps' ? num('cilogLaps' + i, 'laps' + i, 'Laps (8 = 1 mile)', 400) : kind === 'lengths' ? num('cilogLaps' + i, 'laps' + i, 'Lengths (25 yards each)', 400) : '') + '</div>' +
+        (kind !== 'timer' ? '<p class="tiny muted num" id="cilogDist' + i + '">' + distLine(kind, o['laps' + i]) + '</p>' : '') + '</div>';
+    });
+    if (o.heat) h += '<div class="stack" id="cilogHeat"><div class="eyebrow">Sauna, steam or whirlpool (optional)</div><div class="seg">' + HEAT_KEYS.map(k => '<button type="button" data-a="cilog-room" data-k="' + k + '" class="' + (o.room === k ? 'on' : '') + '" aria-pressed="' + (o.room === k) + '">' + ACTS[k].name + '</button>').join('') + '</div>' +
+      '<div class="formgrid">' + num('cilogHeatMin', 'heatMin', 'Minutes, up to 20', 20) + '</div><p class="tiny muted">Logs as recovery: it shows in History but does not count toward active minutes. ' + HEAT_NOTE + '</p></div>';
+    return h + '<div class="row"><button type="button" class="primary" id="cilogSave" data-a="cilog-save">' + cilogLabel(o) + '</button><button type="button" class="small" data-a="ov-close">Back</button></div></div>';
+  }
+};
+ACT['cilog-opt'] = el => { const o = state.ov; o['k' + el.dataset.i] = el.dataset.v; renderOv(); };
+ACT['cilog-room'] = el => { state.ov.room = el.dataset.k; renderOv(); };
+ACT['cilog-save'] = async () => {
+  const o = state.ov, date = o.date, felt = o.felt, now = new Date().toISOString(), names = [], notes = []; let min = 0, first = null;
+  for (let i = 0; i < o.parts.length; i++) {
+    const k = o['k' + i], raw = String(o['min' + i] == null ? '' : o['min' + i]).trim(), m = Math.round(Number(raw)), kind = partKind(k), laps = Math.round(Number(o['laps' + i])) || 0;
+    if (raw === '' || m === 0) continue;
+    if (!(m > 0) || m > 300) { toast('Enter minutes between 1 and 300.'); return; }
+    if (laps < 0 || laps > 400) { toast('Check the ' + (kind === 'laps' ? 'laps' : 'lengths') + '.'); return; }
+    first = first || k; min += m; names.push(partName(k)); notes.push({ name: partName(k), m, d: kind !== 'timer' && laps > 0 ? distText(kind, laps) : '' });
+  }
+  const hRaw = o.heat ? String(o.heatMin == null ? '' : o.heatMin).trim() : '', hm = Math.round(Number(hRaw));
+  if (hRaw !== '' && hm !== 0 && (!(hm > 0) || hm > 20)) { toast('Keep the sauna, steam room or whirlpool to 20 minutes or less.', 3400); return; }
+  const heat = hRaw !== '' && hm > 0 ? { k: HEAT_KEYS.includes(o.room) ? o.room : 'hpsauna', min: hm } : null;
+  if (!min && !heat) { toast('Enter the minutes first.'); return; }
+  // one part: just its laps or lengths. Several: each part's minutes, so the total can be read back.
+  const note = notes.length === 1 ? notes[0].d : notes.map(x => x.name + ' ' + x.m + ' min' + (x.d ? ', ' + x.d : '')).join(' · ');
+  if (first === 'treadmill') { // the lifting log's own treadmill day, saved by the same Save
+    const d = draft(date); d.kindSel = 'cardio'; d.tm.minutes = String(min); if (felt) d.checkin = felt; d.recovered = false; persistDrafts();
+    state.ci = null; closeOv(); if (state.selDate !== date) state.selDate = date;
+    const ok = await save(); if (!ok) render(); return;
+  }
+  const before = scoreSnapshot(); let ok = true;
+  if (min) { const a = ACTS[first] || ACTS.other; ok = await logActivity(date, { id: uid(), a: ACTS[first] ? first : 'other', name: names.join(' + '), min, feel: null, hurt: false, note, mv: a.mv !== false, at: now }, felt); }
+  if (ok && heat) ok = await logActivity(date, { id: uid(), a: heat.k, name: ACTS[heat.k].name, min: heat.min, feel: null, hurt: false, note: '', mv: false, at: now }, felt);
+  if (!ok) return;
+  state.ci = null; closeOv(); render();
+  const di = dayInfo(me(), date);
+  celebrate((min ? min + ' min logged. ' : '') + (heat ? heat.min + ' min of ' + ACTS[heat.k].name.toLowerCase() + ' as recovery. ' : '') + (min ? (di.active ? 'That is an active day.' : 'Not an active day yet.') : ''), { before, force: di.active && min > 0 });
 };
 
 /* ---- 65-workout.js ---- */
@@ -3602,7 +3781,7 @@ function wmOpen(plan, fromEl, resume) {
   if (state.ov) { state.ov = null; state.ovQ = []; renderOv(); }
   wm = { pid: me(), date: state.selDate, plan, view: 'start', before: scoreSnapshot(), started: Date.now(), ms: 0, stale: false, i: -1, edit: null, quit: 0 };
   if (plan.kind === 'lift') wmLiftInit(resume); else wmStagesInit(resume);
-  if (reducedMotion() || resume) wm.view = 'main'; // no start sequence with reduced motion, or when coming back
+  if (motionOf() !== 'full' || resume) wm.view = 'main'; // the start lights belong to Full animations, and never play when coming back
   if (fromEl && fromEl.getBoundingClientRect) { const r = fromEl.getBoundingClientRect(); wmEl.style.transformOrigin = Math.round(r.left + r.width / 2) + 'px ' + Math.round(r.top + r.height / 2) + 'px'; }
   wmEl.hidden = false; wmEl.classList.remove('zoom'); void wmEl.offsetWidth; wmEl.classList.add('zoom'); // the tapped card zooms into the session
   document.body.style.overflow = 'hidden'; state.ci = null; state.wmOpens = (state.wmOpens || 0) + 1;
@@ -3654,9 +3833,18 @@ function wmDraw() {
   wmEl.dataset.view = wm.view; wmEl.dataset.kind = wm.plan.kind;
   if (wm.view === 'start') { wmEl.innerHTML = '<button type="button" class="wm-start" id="wmStartSeq" data-a="wm-go" aria-label="Skip the start"><span class="wm-lights" aria-hidden="true"><i></i><i></i><i></i></span>' + wmFlag('green', false) + '<b class="wm-gotext">GO</b><span class="tiny">' + esc(wm.plan.title) + ' · tap to skip</span></button>'; return; }
   if (wm.view === 'quit') { wmEl.innerHTML = wmQuitHTML(); return; }
-  if (wm.view === 'finish') { wmEl.innerHTML = wm.plan.kind === 'lift' ? wmLiftFinishHTML() : wmStagesFinishHTML(); return; }
+  if (wm.view === 'finish') { wmEl.innerHTML = (motionOf() === 'full' ? '' : '<div class="wm-stripe" id="wmStripe" aria-hidden="true"></div>') + (wm.plan.kind === 'lift' ? wmLiftFinishHTML() : wmStagesFinishHTML()); wmCountUp(); return; }
   wmEl.innerHTML = wm.plan.kind === 'lift' ? (wm.view === 'rest' ? wmRestHTML() : wmLiftHTML()) : wmStageHTML();
 }
+// Finish numbers count up once, in Subtle only (Full has its flag and burst; Off shows them still).
+function wmCountUp() {
+  if (!wm || wm.counted || motionOf() !== 'subtle') return;
+  wm.counted = true;
+  const els = Array.from(wmEl.querySelectorAll('[data-count]')), t0 = Date.now(), ms = 600;
+  const step = () => { const k = Math.min(1, (Date.now() - t0) / ms), e = 1 - Math.pow(1 - k, 3); els.forEach(el => { if (el.isConnected) el.textContent = commas(Math.round(Number(el.dataset.count) * e)); }); if (k >= 1) clearInterval(id); };
+  els.forEach(el => { el.textContent = '0'; }); const id = setInterval(step, 30);
+}
+const wmNum = (v, unit) => '<span data-count="' + v + '">' + commas(v) + '</span>' + (unit || '');
 function wmTick() {
   if (!wm || wm.view === 'start') return;
   const c = $('#wmClock'); if (c) c.textContent = wmTime(wmElapsed());
@@ -3730,7 +3918,7 @@ function wmLiftHTML() {
     '<p class="tiny muted" id="wmEquip">' + esc(ex.equip) + (ex.per ? ' · weight is one dumbbell' : '') + '</p>' +
     '<div class="row wm-tools"><button type="button" class="wm-btn sm" data-a="wm-swap"' + (opts.length ? '' : ' disabled') + ' aria-expanded="' + !!wm.swap + '">Swap</button><button type="button" class="wm-btn sm" id="wmNotGym" data-a="wm-notgym"' + (stand ? '' : ' disabled') + '>Not at my gym</button></div>';
   if (wm.swap) h += '<div class="wm-swaps" id="wmSwaps">' + opts.map(k => '<button type="button" class="wm-btn" data-a="wm-swapto" data-base="' + p.base + '" data-to="' + k + '">' + esc(EX[k].name) + (k === p.base ? ' <span class="tiny muted">(planned)</span>' : '') + '</button>').join('') + '</div>';
-  h += '<div class="wm-pips" id="wmPips" aria-label="Sets">' + s.reps.map((r, i) => '<button type="button" class="wm-pip' + (r != null ? ' on' : '') + (wm.edit === i ? ' edit' : '') + (i === s.next && !editing ? ' next' : '') + '" data-a="wm-pip" data-i="' + i + '"' + (r == null ? ' disabled' : '') + ' aria-label="Set ' + (i + 1) + (r != null ? ': ' + r + ' reps, tap to change' : ', not logged') + '">' + (r != null ? r : i + 1) + '</button>').join('') + '</div>';
+  h += '<div class="wm-pips" id="wmPips" aria-label="Sets">' + s.reps.map((r, i) => '<button type="button" class="wm-pip' + (r != null ? ' on' : '') + (wm.justSet === p.key + ':' + i ? ' new' : '') + (wm.edit === i ? ' edit' : '') + (i === s.next && !editing ? ' next' : '') + '" data-a="wm-pip" data-i="' + i + '"' + (r == null ? ' disabled' : '') + ' aria-label="Set ' + (i + 1) + (r != null ? ': ' + r + ' reps, tap to change' : ', not logged') + '">' + (r != null ? r : i + 1) + '</button>').join('') + '</div>';
   if (wm.err) h += '<p class="banner bad" id="wmErr">' + esc(wm.err) + '</p>';
   if (done) h += '<p class="wm-done" id="wmDone">All ' + s.n + ' sets logged. Tap a set to change it.</p>';
   else h += '<div class="wm-steps' + (ex.bw ? ' one' : '') + '">' + (ex.bw ? '' : '<div class="wm-step"><span class="eyebrow">Weight lb' + (ex.per ? ' each' : '') + '</span><div><button type="button" data-a="wm-w" data-d="-1" aria-label="Less weight">−</button><b class="num" id="wmW">' + wm.w + '</b><button type="button" data-a="wm-w" data-d="1" aria-label="More weight">+</button></div></div>') +
@@ -3756,7 +3944,7 @@ function wmWrite(i, value) { // one set into the draft, exactly as typing it int
 }
 ACT['wm-log'] = el => {
   const slots = wmSlots(), p = slots[wm.i], s = wmSets(p), editing = wm.edit != null, i = editing ? wm.edit : s.next; if (i < 0) return;
-  wmWrite(i, String(wm.r)); wm.err = ''; state.wmLogs = (state.wmLogs || 0) + 1;
+  wmWrite(i, String(wm.r)); wm.err = ''; state.wmLogs = (state.wmLogs || 0) + 1; wm.justSet = p.key + ':' + i; wm.restOf = { key: p.key, reps: wmSets(p).reps, i };
   const r = el.getBoundingClientRect(); burst({ count: 16, x: (r.left + r.width / 2) / window.innerWidth, y: r.top / window.innerHeight }); // a small burst, in this person's style
   if (editing) { wmLoadEx(); wmDraw(); return; }
   const after = wmSets(p), last = after.next < 0, nextSlot = last ? slots.slice(wm.i + 1).find(x => wmSets(x).next >= 0) : null;
@@ -3776,6 +3964,7 @@ function wmRestHTML() {
   const slots = wmSlots(), p = slots[wm.rest.to], s = wmSets(p), sg = suggest(p.key, wm.date), sp = specFor(p.key, wm.date), same = wm.rest.to === wm.i, C = 339.3;
   return wmTopHTML(slots.length + 1, wm.i + 1, (1 + wmLiftFrac() * slots.length) / (slots.length + 1)) + '<div class="wm-body wm-center"><div class="eyebrow">Rest</div>' +
     '<div class="wm-ring" id="wmRing"><svg viewBox="0 0 120 120" aria-hidden="true"><circle class="rbg" cx="60" cy="60" r="54"/><circle class="rfg" id="wmRingFg" cx="60" cy="60" r="54" stroke-dasharray="' + C + '" stroke-dashoffset="0"/></svg><b class="num" id="wmRestTime">' + wmTime(wm.rest.end - Date.now() + 999) + '</b></div>' +
+    (wm.restOf ? '<div class="wm-pips" id="wmRestPips" aria-hidden="true">' + wm.restOf.reps.map((r, i) => '<span class="wm-pip' + (r != null ? ' on' : '') + (i === wm.restOf.i ? ' new' : '') + '">' + (r != null ? r : i + 1) + '</span>').join('') + '</div>' : '') +
     '<div class="row" style="justify-content:center"><button type="button" class="wm-btn" id="wmRestAdd" data-a="wm-restadd">+15 s</button><button type="button" class="wm-btn on" id="wmRestSkip" data-a="wm-restskip">Skip</button></div>' +
     '<div class="wm-nextup" id="wmNextUp"><div class="eyebrow">' + (same ? 'Next' : 'Next lift') + '</div><b>' + esc(EX[p.key].name) + '</b><span class="muted">' + (same ? 'Set ' + (s.next + 1) + ' of ' + s.n : sp.sets + ' × ' + sp.lo + '–' + sp.hi) + (EX[p.key].bw ? '' : ' · ' + (same && s.w !== '' ? s.w : sg.w) + ' lb') + '</span></div></div>';
 }
@@ -3784,7 +3973,7 @@ function wmRestTick() {
   wmPatch('wmRestTime', wmTime(left + 999)); if (fg) fg.setAttribute('stroke-dashoffset', (339.3 * clamp(1 - left / (wm.rest.total * 1000), 0, 1)).toFixed(1));
   if (left <= 0 && !wm.rest.over) { wm.rest.over = true; try { if (navigator.vibrate) navigator.vibrate([180, 90, 180]); } catch (e) { /* not supported */ } wmRestEnd(); }
 }
-function wmRestEnd() { if (!wm || wm.view !== 'rest') return; wm.i = wm.rest.to; wm.view = 'main'; wm.rest = null; wmLoadEx(); wmDraw(); }
+function wmRestEnd() { if (!wm || wm.view !== 'rest') return; wm.i = wm.rest.to; wm.view = 'main'; wm.rest = null; wm.justSet = null; wm.restOf = null; wmLoadEx(); wmDraw(); }
 ACT['wm-restadd'] = () => { if (wm.rest) { wm.rest.end = Math.max(wm.rest.end, Date.now()) + 15000; wm.rest.total += 15; wmRestTick(); } };
 ACT['wm-restskip'] = () => wmRestEnd();
 // the finish: a checkered flag, what was done, then the same save as the Save button
@@ -3802,16 +3991,16 @@ function wmPointsHTML() {
 const wmHeatAsk = () => atHealthplex(wm.pid) && wm.date === todayIso() && !heatDone(wm.pid, wm.date) ? '<button type="button" class="chipbtn" id="wmHeat" data-a="wm-heat">🔥 Sauna, steam or whirlpool after?</button>' : '';
 function wmLiftFinishHTML() {
   const s = wm.sum || wmLiftSummary(), slots = wmSlots().length || 1;
-  let h = wmTopHTML(slots + 1, slots, 1) + '<div class="wm-body wm-center">' + wmFlag('chk', true) + '<h2 id="wmFinishTitle">' + (wm.saved ? 'Saved' : 'Finish line') + '</h2>' +
-    '<div class="wm-sum" id="wmSummary"><div><span class="muted">Sets</span><b class="num">' + s.sets + '</b></div><div><span class="muted">Total lifted</span><b class="num">' + commas(s.lb) + ' lb</b></div>' +
-    '<div><span class="muted">Minutes</span><b class="num">' + s.minutes + '</b></div><div><span class="muted">' + (s.kind === 'strength' ? (s.counts ? 'Counts as a lift day' : 'Not a lift day yet') : s.kind === 'cardio' ? 'Warm-up only' : 'Nothing logged') + '</span><b>' + (s.kind === 'strength' ? esc(DAYS[s.day].name) : '') + '</b></div></div>' +
+  let h = wmTopHTML(slots + 1, slots, 1) + '<div class="wm-body wm-center">' + (motionOf() === 'full' ? wmFlag('chk', true) : '') + '<h2 id="wmFinishTitle">' + (wm.saved ? 'Saved' : 'Finish line') + '</h2>' +
+    '<div class="wm-sum" id="wmSummary"><div><span class="muted">Sets</span><b class="num">' + wmNum(s.sets) + '</b></div><div><span class="muted">Total lifted</span><b class="num">' + wmNum(s.lb, ' lb') + '</b></div>' +
+    '<div><span class="muted">Minutes</span><b class="num">' + wmNum(s.minutes) + '</b></div><div><span class="muted">' + (s.kind === 'strength' ? (s.counts ? 'Counts as a lift day' : 'Not a lift day yet') : s.kind === 'cardio' ? 'Warm-up only' : 'Nothing logged') + '</span><b>' + (s.kind === 'strength' ? esc(DAYS[s.day].name) : '') + '</b></div></div>' +
     (s.ups.length ? '<p class="wm-ups" id="wmUps"><b>Up from last time:</b> ' + s.ups.map(esc).join(' · ') + '</p>' : '');
   if (wm.err) h += '<p class="banner bad" id="wmErr">' + esc(wm.err) + '</p>';
   if (wm.saved) h += wmPointsHTML() + wmHeatAsk() + '<button type="button" class="primary wm-log" id="wmDoneBtn" data-a="wm-done">Done</button>';
   else h += '<button type="button" class="primary wm-log" id="wmSave" data-a="wm-save">Save workout</button><button type="button" class="wm-btn" data-a="wm-unfinish">Back to the lifts</button>';
   return h + '</div>';
 }
-ACT['wm-finish'] = () => { wm.view = 'finish'; wm.err = ''; wm.sum = null; wmDraw(); if (!reducedMotion()) burst({ kind: 'flags', count: 40, y: 0.4 }); };
+ACT['wm-finish'] = () => { wm.view = 'finish'; wm.err = ''; wm.sum = null; wm.counted = false; wmDraw(); burst({ kind: 'flags', count: 40, y: 0.4 }); }; // the burst is Full only
 ACT['wm-unfinish'] = () => { wm.view = 'main'; wm.err = ''; wmDraw(); };
 ACT['wm-save'] = async () => { // the same save as the Save button: same rules, same celebration, same lift-day credit
   const s = wmLiftSummary(); if (s.r.errors.length) { wm.err = s.r.errors[0]; wmDraw(); return; }
@@ -3902,9 +4091,11 @@ ACT['wm-sprev'] = () => { if (wm.si > 0) { wmRun(false); wm.si--; wmStore(); wmD
 ACT['wm-snext'] = () => { if (wm.si < wm.plan.stages.length - 1) { wmRun(false); wm.si++; wmStore(); wmDraw(); } };
 // What the session logs: every moving part as ONE activity (minutes, with laps, miles or station sets in its note),
 // and a recovery room, if it was used, as its own recovery entry that does not count toward active minutes.
+const wmMeasured = i => { const s = wm.st[i], ms = wmStageMs(i); return Math.max(ms >= 20000 || s.laps > 0 || Object.keys(s.sets).length ? 1 : 0, Math.round(ms / 60000)); };
+const wmInt = (v, max) => { const n = Math.round(Number(v)); return isFinite(n) && n > 0 ? Math.min(max, n) : 0; };
 function wmStageOutcome() {
   const parts = [], notes = []; let min = 0, heat = null, first = null;
-  wm.plan.stages.forEach((g, i) => { const s = wm.st[i], ms = wmStageMs(i), m = Math.max(ms >= 20000 || s.laps > 0 || Object.keys(s.sets).length ? 1 : 0, Math.round(ms / 60000));
+  wm.plan.stages.forEach((g, i) => { const f = wm.fin && wm.fin[i], s = f ? Object.assign({}, wm.st[i], { laps: wmInt(f.laps, 400) }) : wm.st[i], m = f ? wmInt(f.min, 300) : wmMeasured(i); // typed on the finish screen, or what the clock measured
     if (g.type === 'heat') { if (m > 0) heat = { k: s.room, min: Math.min(20, m) }; return; }
     if (!m) return; first = first || g; min += m; parts.push(g.name);
     notes.push(g.name + ' ' + m + ' min' + (g.type === 'laps' && s.laps ? ', ' + s.laps + ' lap' + (s.laps === 1 ? '' : 's') + ' (' + milesText(s.laps) + ')' : g.type === 'lengths' && s.laps ? ', ' + s.laps + ' length' + (s.laps === 1 ? '' : 's') + ' (' + s.laps * POOL_YARDS + ' yd)' : '') +
@@ -3913,15 +4104,33 @@ function wmStageOutcome() {
 }
 function wmStagesFinishHTML() {
   const o = wm.out || wmStageOutcome(), n = wm.plan.stages.length;
-  let h = wmTopHTML(n, n - 1, 1) + '<div class="wm-body wm-center">' + wmFlag('chk', true) + '<h2 id="wmFinishTitle">' + (wm.saved ? 'Logged' : 'Finish line') + '</h2><div class="wm-sum" id="wmSummary">' +
-    '<div><span class="muted">' + esc(o.name || 'Movement') + '</span><b class="num">' + o.min + ' min</b></div>' + (o.note ? '<div class="wide"><span class="muted">' + esc(o.note) + '</span></div>' : '') +
+  let h = wmTopHTML(n, n - 1, 1) + '<div class="wm-body wm-center">' + (motionOf() === 'full' ? wmFlag('chk', true) : '') + '<h2 id="wmFinishTitle">' + (wm.saved ? 'Logged' : 'Finish line') + '</h2>';
+  // before logging, every part can be corrected: the timer may have been paused, or never started
+  if (!wm.saved && wm.fin) h += '<div class="wm-fin" id="wmFin">' + wm.plan.stages.map((g, i) => { const f = wm.fin[i], unit = g.type === 'laps' ? 'Laps' : g.type === 'lengths' ? 'Lengths' : '';
+    return '<div class="wm-finrow" data-fin="' + i + '"><b>' + esc(g.type === 'heat' ? ACTS[wm.st[i].room].name : g.name) + '</b><label class="f">Minutes<input type="number" inputmode="numeric" pattern="[0-9]*" min="0" max="' + (g.type === 'heat' ? 20 : 300) + '" data-wmf="min" data-i="' + i + '" value="' + esc(f.min) + '"></label>' +
+      (unit ? '<label class="f">' + unit + '<input type="number" inputmode="numeric" pattern="[0-9]*" min="0" max="400" data-wmf="laps" data-i="' + i + '" value="' + esc(f.laps) + '"></label>' : '<span></span>') + '</div>'; }).join('') +
+    '<p class="tiny muted">Fix anything the timer missed before you log it.</p></div>';
+  h += '<div class="wm-sum" id="wmSummary">' +
+    '<div><span class="muted" id="wmSumName">' + esc(o.name || 'Movement') + '</span><b class="num" id="wmSumMin">' + wmNum(o.min, ' min') + '</b></div>' + (o.note ? '<div class="wide"><span class="muted" id="wmSumNote">' + esc(o.note) + '</span></div>' : '') +
     (o.heat ? '<div><span class="muted">' + ACTS[o.heat.k].name + ' · recovery</span><b class="num">' + o.heat.min + ' min</b></div>' : '') + '</div>';
   if (wm.err) h += '<p class="banner bad" id="wmErr">' + esc(wm.err) + '</p>';
   if (wm.saved) h += wmPointsHTML() + (o.heat ? '' : wmHeatAsk()) + '<button type="button" class="primary wm-log" id="wmDoneBtn" data-a="wm-done">Done</button>';
-  else h += (o.min || o.heat ? '<button type="button" class="primary wm-log" id="wmSave" data-a="wm-stagelog">Log ' + (o.min ? o.min + ' min' : ACTS[o.heat.k].name.toLowerCase()) + '</button>' : '<p class="muted">Nothing to log yet.</p>') + '<button type="button" class="wm-btn" data-a="wm-unfinish">Back</button>';
+  else h += '<button type="button" class="primary wm-log" id="wmSave" data-a="wm-stagelog"' + (o.min || o.heat ? '' : ' disabled') + '>Log ' + (o.min ? o.min + ' min' : o.heat ? ACTS[o.heat.k].name.toLowerCase() : 'it') + '</button><button type="button" class="wm-btn" data-a="wm-unfinish">Back</button>';
   return h + '</div>';
 }
-ACT['wm-sfinish'] = () => { wmRun(false); wmStore(); wm.view = 'finish'; wm.err = ''; wm.out = null; wmDraw(); if (!reducedMotion()) burst({ kind: 'flags', count: 40, y: 0.4 }); };
+ACT['wm-sfinish'] = () => {
+  wmRun(false); wmStore(); wm.out = null; wm.counted = false;
+  wm.fin = wm.plan.stages.map((g, i) => ({ min: String(g.type === 'heat' ? Math.min(20, wmMeasured(i)) : wmMeasured(i)), laps: g.type === 'laps' || g.type === 'lengths' ? String(wm.st[i].laps) : '' }));
+  wm.view = 'finish'; wm.err = ''; wmDraw(); burst({ kind: 'flags', count: 40, y: 0.4 }); // the burst is Full only
+};
+// typing on the finish screen changes what will be logged; the button and the summary follow without a redraw
+wmEl.addEventListener('input', e => {
+  const el = e.target; if (!wm || !wm.fin || !el.dataset || !el.dataset.wmf || !wm.fin[el.dataset.i]) return;
+  wm.fin[el.dataset.i][el.dataset.wmf] = el.value; wm.counted = true;
+  const o = wmStageOutcome(), b = $('#wmSave'), m = $('#wmSumMin'), nt = $('#wmSumNote'), nm = $('#wmSumName');
+  if (b) { b.textContent = 'Log ' + (o.min ? o.min + ' min' : o.heat ? ACTS[o.heat.k].name.toLowerCase() : 'it'); b.disabled = !(o.min || o.heat); }
+  if (m) m.textContent = o.min + ' min'; if (nt) nt.textContent = o.note; if (nm) nm.textContent = o.name || 'Movement';
+});
 ACT['wm-stagelog'] = async () => { // the same logging as the activity menu, or the lifting log's treadmill entry
   wm.st.forEach((s, i) => { if (s.on) { s.ms = wmStageMs(i); s.on = false; } });
   const o = wmStageOutcome(), felt = wm.plan.felt || null, now = new Date().toISOString(); if (!o.min && !o.heat) { wm.err = 'Nothing to log yet.'; wm.view = 'finish'; wmDraw(); return; }
@@ -4772,7 +4981,8 @@ function renderMe() {
     '<div><div class="eyebrow">Headings</div>' + seg('skin-set', 'font', sk.font, FONTS) + '</div>' +
     '<div><div class="eyebrow">Corners</div>' + seg('skin-set', 'shape', sk.shape, SHAPES) + '</div>' +
     '<div><div class="eyebrow">Backdrop</div>' + seg('skin-set', 'backdrop', sk.backdrop, BACKDROPS) + '</div>' +
-    '<div><div class="row between"><div class="eyebrow">Celebrations</div><button type="button" class="quiet" data-a="fx-preview">Preview</button></div>' + seg('skin-set', 'fx', sk.fx, FXS) + '</div>' +
+    '<div id="motionRow"><div class="eyebrow">Animations</div>' + seg('motion-set', 'motion', motionPref(pid), MOTIONS) + '<p class="tiny muted" style="margin-top:4px">' + (osReducedMotion() ? 'Your phone is set to reduce motion, so animations are off whatever is picked here.' : 'Subtle: no confetti, one small effect for real milestones. Full: everything. Off: no motion.') + '</p></div>' +
+    '<div id="fxRow"><div class="row between"><div class="eyebrow">Celebrations' + (motionOf(pid) === 'full' ? '' : ' · with Full animations') + '</div><button type="button" class="quiet" data-a="fx-preview">Preview</button></div>' + seg('skin-set', 'fx', sk.fx, FXS) + '</div>' +
     '<div><div class="eyebrow">Avatar</div><div class="emojis" style="margin-top:6px">' + AVATARS.map(a => '<button type="button" data-a="avatar-set" data-v="' + a + '" class="' + ((p.avatar || '') === a ? 'on' : '') + '" aria-pressed="' + ((p.avatar || '') === a) + '" aria-label="' + (a ? 'Avatar ' + a : 'Use my initial') + '">' + (a || esc(p.name.slice(0, 1).toUpperCase())) + '</button>').join('') + '</div></div>' +
     '<div class="row" style="flex-wrap:nowrap;align-items:flex-end"><label class="f grow">Display name<input type="text" data-form="name" data-k="name" maxlength="20" value="' + esc('name' in (state.forms.name || {}) ? state.forms.name.name : p.name) + '"></label><button type="button" class="small" data-a="name-save" style="min-height:44px">Save</button></div>' +
     '<p class="tiny muted">Your look applies whenever your profile is active, on any phone.</p></section>';
@@ -4825,7 +5035,8 @@ function renderMe() {
 ACT.badge = el => { const b = badgesFor(me()).find(x => x.id === el.dataset.id); if (b) openOv({ type: 'badgeinfo', badge: b }); };
 ACT['skin-preset'] = async el => { await saveProfile(me(), { skin: { preset: el.dataset.v, custom: null } }); applySkin(); render(); };
 ACT['skin-set'] = async el => { const patch = {}; patch[el.dataset.k] = el.dataset.v; await saveProfile(me(), { skin: patch }); applySkin(); render(); if (el.dataset.k === 'fx') burst({ count: 60 }); };
-ACT['fx-preview'] = () => burst({ count: 90 });
+ACT['fx-preview'] = () => { if (motionOf() !== 'full') { toast('Celebration styles play with Full animations.', 3000); return; } burst({ count: 90 }); };
+ACT['motion-set'] = async el => { const v = MOTIONS[el.dataset.v] ? el.dataset.v : 'subtle'; if (!(await saveProfile(me(), { motion: v }))) return; applySkin(); render('[data-a="motion-set"][data-v="' + v + '"]'); toast('Animations: ' + MOTIONS[v] + '.'); };
 ACT['avatar-set'] = async el => { await saveProfile(me(), { avatar: el.dataset.v || '' }); render(); };
 ACT['name-save'] = async () => {
   const name = String((state.forms.name || {}).name == null ? P(me()).name : state.forms.name.name).trim().slice(0, 20);
@@ -5148,7 +5359,7 @@ main.addEventListener('focusout', e => {
 // one click handler for every data-a action, in the page and in overlays
 // Actions that save one thing per tap. A second tap while the first is still saving is dropped, so a slow
 // connection cannot log the same food or activity twice. Water is left out on purpose: tapping it twice means two glasses.
-const ONE_AT_A_TIME = ['act-log', 'act-del', 'rest', 'food-save', 'food-again', 'food-del', 'quick-save', 'custom-save', 'custom-del', 'hk-import', 'hk-off', 'body-save', 'weigh-save', 'name-save', 'gym-save', 'stakes-save', 'cd-save', 'cd-clear', 'meal-copy', 'meal-save', 'meal-add', 'meal-rename', 'meal-del', 'iou-toggle', 'undo', 'scan-digits', 'scan-link-pick', 'describe-go', 'describe-log', 'backup-all', 'backup-workouts', 'backup-food', 'backup-copy', 'wm-save', 'wm-stagelog', 'wm-water', 'wm-notgym', 'water-bottle', 'ci-rest', 'gym-hp', 'split-set', 'lift-goal', 'rem-save', 'nudge-yes', 'nudge-no', 'stall-reset', 'stall-swap', 'deload-take'];
+const ONE_AT_A_TIME = ['act-log', 'act-del', 'rest', 'food-save', 'food-again', 'food-del', 'quick-save', 'custom-save', 'custom-del', 'hk-import', 'hk-off', 'body-save', 'weigh-save', 'name-save', 'gym-save', 'stakes-save', 'cd-save', 'cd-clear', 'meal-copy', 'meal-save', 'meal-add', 'meal-rename', 'meal-del', 'iou-toggle', 'undo', 'scan-digits', 'scan-link-pick', 'describe-go', 'describe-log', 'backup-all', 'backup-workouts', 'backup-food', 'backup-copy', 'wm-save', 'wm-stagelog', 'wm-water', 'wm-notgym', 'water-bottle', 'ci-rest', 'gym-hp', 'split-set', 'lift-goal', 'mode-set', 'motion-set', 'cilog-save', 'rem-save', 'nudge-yes', 'nudge-no', 'stall-reset', 'stall-swap', 'deload-take'];
 const busy = {};
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-a]'); if (!el || el.disabled) return;
@@ -5175,6 +5386,7 @@ function onOvInput(e) {
   if (o.type === 'food' && key === 'q') { if (typed) { clearTimeout(foodT); foodT = setTimeout(fillFoodResults, 90); } }
   else if (o.type === 'health') { if (typed) refreshHealthPreview(); }
   else if (o.type === 'fooditem') refreshFoodItem(); // patches the label and button text in place
+  else if (o.type === 'cilog') refreshCilog(); // labels follow the typing
   else if (o.type === 'act' && key === 'laps') { const l = $('#lapMiles'); if (l) l.textContent = lapLine(el.value); }
   else if (o.type === 'act' && key === 'min') { const b = $('#actLog'), min = Math.round(Number(el.value)); if (b) { b.disabled = !(min > 0); b.textContent = (o.id ? 'Update ' : 'Log ') + (min > 0 ? min + ' min' : ''); } }
 }
@@ -5248,6 +5460,8 @@ function save() {
   }
   delete state.formError[date]; state.menu = null; typing = false;
   const note = saveNote(date, m), before = scoreSnapshot();
+  // a weight above last time's is a milestone (assisted pull-up: less assistance)
+  const up = r.kind === 'strength' && Object.keys(r.doc.ex).some(k => { const l = lastLog(k, date), w = r.doc.ex[k].w; return !EX[k].bw && l && l.w != null && isNum(w) && (EX[k].inc < 0 ? w < l.w : w > l.w); });
   const done = saveRecord(date, r.doc).then(ok => {
     if (ok === false) return false; // nothing was attempted: the log is not loaded yet
     const st = state.status[date];
@@ -5255,6 +5469,7 @@ function save() {
     const msg = r.kind === 'cardio' && r.fromLift ? r.doc.treadmill.minutes + ' treadmill minutes saved. No lifting sets recorded; ' + DAYS[nextDayKey(date)].name + ' remains next.'
       : r.kind === 'strength' ? (note ? note.text : DAYS[r.doc.day].name + ' day saved · counts as lift day · next: ' + DAYS[nextAfter(r.doc.day)].name)
       : r.kind === 'rest' ? 'Rest day saved.' : 'Treadmill saved.';
+    if (up) milestone();
     celebrate(msg + (st && st.s === 'synced' ? ' Synced.' : st && st.s === 'local' ? ' Saved in this browser.' : ''), { ms: 3800, before });
     return true;
   });
@@ -5274,7 +5489,7 @@ function route() {
 window.MorningLaps = { state, P, weekScore, coach, goalsFor, badgesFor, searchFoods, loadFoods, dayTotals, compWeeks, parseHealthPaste, foodCount: () => foodDb.list ? foodDb.list.length : 0,
   EX, DAYS, normalize, dayInfo, weekFacts, scoreFacts, weekGoals, liveGoals, fuelParts, plannedFor, planSlots, swapOptions, defaultSwapOption, alts, teamStats, stakesFor, phaseFor, restT,
   caps, normBarcode, backupDocs, workoutsCsv, foodCsv, canon,
-  ACTS, specFor, splitOf, rotation, nextDayKey, deloadWeeks, checkinSuggest, ciPreview, atHealthplex, lapMiles, wmState: () => wm, wmResumable, MOVE_OF, HOWTO, STRETCHES, demoSVG,
+  ACTS, specFor, splitOf, rotation, nextDayKey, deloadWeeks, checkinSuggest, ciPreview, atHealthplex, lapMiles, wmState: () => wm, wmResumable, motionOf, milestone, modeOf, plannedFor, MOVE_OF, HOWTO, STRETCHES, demoSVG,
   suggest, stallFor, deloadOn, deloadState, completedWeeks, easier, weekRecap, lastWeek, ious, goalNudge, painNotes, painFlag, actList, surpriseActivity, savedMeals, mealItems };
 (function boot() {
   const saved = lsGet('ml.me', null);

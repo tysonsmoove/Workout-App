@@ -23,8 +23,9 @@ ACT['ov-close'] = () => closeOv();
 const fx = { parts: [], raf: 0 };
 function burst(opts) {
   opts = opts || {};
-  if (reducedMotion()) return;
+  if (motionOf() !== 'full') return; // particle bursts belong to Full animations only
   const cv = $('#fx'); if (!cv || !cv.getContext) return;
+  state.fxn.burst++;
   const W = cv.clientWidth, H = cv.clientHeight, dpr = Math.min(2, window.devicePixelRatio || 1);
   if (cv.width !== Math.round(W * dpr) || cv.height !== Math.round(H * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
   const p = P(opts.pid || me()), v = skinVars(p.skin), kind = opts.kind || p.skin.fx || 'confetti';
@@ -100,22 +101,36 @@ function checkBadges(pid, quiet) { // returns badges earned since this device la
 }
 // opts.before: the scores taken just before the change was made. Comparing against that moment, rather than against
 // the last thing this phone celebrated, keeps the other phone's activity in between from faking or hiding a lead change.
+// Subtle animations celebrate real milestones only: a weight increase, a badge, a lead change, a week win or a team
+// week. One short sweep of the person's accent color across the top of the screen, with a check mark. Never two at once.
+let sweepT = 0, sweepAt = 0;
+function milestone() {
+  if (motionOf() !== 'subtle') return; // Full has its own bursts; Off shows nothing
+  const now = Date.now(); if (now - sweepAt < 1500) return;
+  sweepAt = now; state.fxn.milestone++;
+  const el = $('#sweep'); if (!el) return;
+  el.hidden = false; el.classList.remove('run'); void el.offsetWidth; el.classList.add('run');
+  clearTimeout(sweepT); sweepT = setTimeout(() => { el.hidden = true; el.classList.remove('run'); }, 900);
+}
 function celebrate(msg, opts) {
   opts = opts || {};
   const pid = me(), other = otherPid(pid), now = scoreSnapshot(), prev = opts.before || now;
   const gained = now[pid] - prev[pid];
   if (gained > 0 || opts.force) burst({ count: gained >= 10 ? 120 : 70 });
   if (msg) toast(msg + (gained > 0 ? '  +' + gained + ' pts' : ''), opts.ms || 3000);
-  if (prev[pid] <= prev[other] && now[pid] > now[other] && now[other] > 0) queueOv({ type: 'lead', pid });
-  checkBadges(pid).slice(0, 3).forEach(b => queueOv({ type: 'badge', pid, badge: b }));
+  const lead = prev[pid] <= prev[other] && now[pid] > now[other] && now[other] > 0, earned = checkBadges(pid).slice(0, 3);
+  if (lead || earned.length) milestone();
+  if (lead) queueOv({ type: 'lead', pid });
+  earned.forEach(b => queueOv({ type: 'badge', pid, badge: b }));
   return gained;
 }
 // On opening the app: badges, then last week's result. A finished week stays open for late entries through Tuesday,
 // so until its result is stored it only gets a quiet "provisional" line. The winner is announced, once per phone,
 // when the final result exists (ml.seenFinalWeek: the newest final week this phone has shown).
 function announce() {
-  const pid = me();
-  checkBadges(pid).slice(0, 3).forEach(b => queueOv({ type: 'badge', pid, badge: b }));
+  const pid = me(), earned = checkBadges(pid).slice(0, 3);
+  if (earned.length) milestone();
+  earned.forEach(b => queueOv({ type: 'badge', pid, badge: b }));
   const weeks = compWeeks(), finals = weeks.filter(w => w.final && w.played), last = weeks[weeks.length - 1];
   let seen = prefGet('ml.seenFinalWeek', null);
   if (seen == null) { // first run with final-result tracking on this phone
@@ -127,7 +142,7 @@ function announce() {
     prefSet('ml.seenFinalWeek', seen);
   }
   const fresh = finals.filter(w => w.ws > seen).slice(-2);
-  if (fresh.length) { prefSet('ml.seenFinalWeek', fresh[fresh.length - 1].ws); fresh.forEach(w => queueOv({ type: 'weekwin', week: w })); }
+  if (fresh.length) { prefSet('ml.seenFinalWeek', fresh[fresh.length - 1].ws); fresh.forEach(w => queueOv({ type: 'weekwin', week: w })); milestone(); } // a week win or a team week
   // only while late entries still count: from Wednesday the week is about to be closed and announced for real
   if (last && !last.final && last.played && todayIso() < addDays(last.ws, 7 + GRACE_DAYS) && String(prefGet('ml.seenWeek', '')) < last.ws) { prefSet('ml.seenWeek', last.ws); toast(provisionalText(last), 5200); }
 }

@@ -90,7 +90,7 @@ function hpCardHTML(pid, k) {
   return '<div class="act hp back' + (anim ? ' flipin' : '') + '" data-hpback="' + k + '"><span class="an">' + a.icon + ' ' + esc(a.name) + '</span><span class="aw" style="color:var(--muted)">' + esc(a.desc) + '</span>' +
     (tag ? '<span class="aw" data-tag="' + k + '">' + tag + '</span>' : '') + (a.heat ? '<span class="aw">' + HEAT_NOTE + '</span>' : '') +
     (caution.length ? '<span class="aw">Loads an area you are protecting: ' + caution.map(x => AREAS[x].toLowerCase()).join(', ') + '.</span>' : '') +
-    '<span class="row" style="grid-column:1/-1;gap:6px"><button type="button" class="small on" data-a="hp-start" data-k="' + k + '">Start</button><button type="button" class="small" data-a="act" data-k="' + k + '">Log it</button><button type="button" class="quiet" data-a="hp-flip" data-k="' + k + '">Close</button></span></div>';
+    '<span class="row" style="grid-column:1/-1;gap:6px"><button type="button" class="small' + (modeOf(pid) === 'log' ? ' on' : '') + '" data-a="act" data-k="' + k + '">Log it</button><button type="button" class="small' + (modeOf(pid) === 'live' ? ' on' : '') + '" data-a="hp-start" data-k="' + k + '">Start live</button><button type="button" class="quiet" data-a="hp-flip" data-k="' + k + '">Close</button></span></div>';
 }
 ACT['hp-flip'] = el => { const k = el.dataset.k; state.hpFlip = state.hpFlip === k ? null : k; state.hpAnim = state.hpFlip; redrawPicker(); };
 ACT['hp-start'] = el => { const k = el.dataset.k, a = ACTS[k]; if (!a) return; if (state.ov) closeOv(); wmOpen(stagePlan(a.name, null, [stageFor(k)]), el); };
@@ -136,23 +136,28 @@ function checkinSuggest(pid, date) {
 }
 // Cardio a lifting profile can pick when tired: [activity key or 'treadmill', label].
 const cardioOptions = pid => atHealthplex(pid) ? [['hptrack', 'Track walk'], ['hprun', 'Track run/walk'], ['treadmill', 'Treadmill (Fitness+)'], ['bike', 'Bike'], ['elliptical', 'Elliptical'], ['hpswim', 'Lap swim']] : [['treadmill', 'Treadmill (Fitness+)'], ['bike', 'Bike'], ['elliptical', 'Elliptical'], ['walkbrisk', 'Brisk walk']];
-// A pick-your-own check-in choice as stages. `blocked`: the choice has a part with no safe option. `note`: a safe stand-in was used.
+// A pick-your-own check-in choice as stages (for live mode) and as parts (for the "Log it" sheet).
+// `blocked`: the choice has a part with no safe option. `note`: a safe stand-in was used.
 function ciStages(pid, choice) {
   const first = (keys, min) => { const k = keys.find(x => safeAct(pid, x)); return { k: k || keys[0], min, swapped: !!k && k !== keys[0], none: !k, from: keys[0] }; };
+  const opts = keys => keys.map(k => [k, ACTS[k].name]);
   if (choice === 'good') {
     const a = first(['hptrack', 'hpbike'], 10), c = first(['hpcircuit'], 15);
-    return { stages: [stageFor(a.k, a.min), stageFor(c.k, c.min)], blocked: c.none ? whyNot(pid, 'hpcircuit') : a.none ? whyNot(pid, a.from) : '', note: a.swapped ? ACTS[a.k].name + ' instead: ' + whyNot(pid, a.from) : '' };
+    return { stages: [stageFor(a.k, a.min), stageFor(c.k, c.min)], parts: [{ opts: opts(['hptrack', 'hpbike']), k: a.k, min: 10 }, { opts: opts(['hpcircuit']), k: 'hpcircuit', min: 15 }],
+      blocked: c.none ? whyNot(pid, 'hpcircuit') : a.none ? whyNot(pid, a.from) : '', note: a.swapped ? ACTS[a.k].name + ' instead: ' + whyNot(pid, a.from) : '' };
   }
-  if (choice === 'low') { const a = first(['hppool', 'hpbike'], 15); return { stages: [stageFor(a.k, a.min)], blocked: a.none ? whyNot(pid, a.from) : '', note: a.swapped ? ACTS[a.k].name + ' instead: ' + whyNot(pid, a.from) : '' }; }
-  return { stages: [{ type: 'stretch', act: 'stretchfull', name: 'Gentle stretch', min: 10, rounds: 2 }, { type: 'heat', act: 'hpsauna', name: 'Sauna, steam or whirlpool', min: 10 }], blocked: '', note: '' };
+  if (choice === 'low') { const a = first(['hppool', 'hpbike'], 15); return { stages: [stageFor(a.k, a.min)], parts: [{ opts: opts(['hppool', 'hpbike']), k: a.k, min: 15 }], blocked: a.none ? whyNot(pid, a.from) : '', note: a.swapped ? ACTS[a.k].name + ' instead: ' + whyNot(pid, a.from) : '' }; }
+  return { stages: [{ type: 'stretch', act: 'stretchfull', name: 'Gentle stretch', min: 10, rounds: 2 }, { type: 'heat', act: 'hpsauna', name: 'Sauna, steam or whirlpool', min: 10 }], parts: STRETCH_PART, heat: true, blocked: '', note: '' };
 }
-// What a choice will be: a title, how long, the first moves, and the plan workout mode runs.
+const STRETCH_PART = [{ opts: [['stretchfull', 'Stretch']], k: 'stretchfull', min: 10 }];
+// What a choice will be: a title, how long, the first moves, the plan live mode runs, and the "Log it" sheet.
 function ciPreview(pid, date, choice, opt) {
   const program = P(pid).plan === 'program';
   if (choice === 'rest') return { title: 'Rest day', time: '', moves: ['Doesn\'t count as activity' + (program ? ' and doesn\'t move the rotation.' : '.')], rest: true };
   if (!program) {
     const s = ciStages(pid, choice), mins = sum(s.stages, x => x.min);
-    return { title: choice === 'good' ? 'Easy cardio, then the machines' : choice === 'low' ? 'Easy and short' : 'Stretch, then heat', time: 'about ' + mins + ' min', moves: s.stages.map(x => x.name + ' · ' + x.min + ' min'), warn: s.blocked, note: s.note, plan: stagePlan(choice === 'good' ? 'Feeling good' : choice === 'low' ? 'Low energy' : 'Recovery', choice, s.stages) };
+    return { title: choice === 'good' ? 'Easy cardio, then the machines' : choice === 'low' ? 'Easy and short' : 'Stretch, then heat', time: 'about ' + mins + ' min', moves: s.stages.map(x => x.name + ' · ' + x.min + ' min'), warn: s.blocked, note: s.note,
+      plan: stagePlan(choice === 'good' ? 'Feeling good' : choice === 'low' ? 'Low energy' : 'Recovery', choice, s.stages), sheet: { parts: s.parts, heat: !!s.heat } };
   }
   if (choice === 'strong' || choice === 'short') {
     const kind = liftKindFor(date), m = Object.assign({}, model(date), { kindSel: kind, checkin: choice }), slots = plannedFor(date, kind, m), main = slots.filter(p => !(slotOf(kind, p.base) || {}).optional);
@@ -161,38 +166,56 @@ function ciPreview(pid, date, choice, opt) {
   }
   if (choice === 'tired') {
     const opts = cardioOptions(pid), k = opts.some(o => o[0] === opt) ? opt : opts[0][0], st = k === 'treadmill' ? { type: 'timer', act: 'treadmill', name: 'Treadmill (Fitness+)', min: 25 } : stageFor(k, 25);
-    return { title: 'Easy cardio', time: '20 to 30 min', opts, opt: k, moves: [st.name + (st.type === 'laps' ? ' · tap each lap, 8 laps = 1 mile' : st.type === 'lengths' ? ' · tap each 25-yard length' : ' · a timer, with optional intervals')], plan: stagePlan('Cardio', 'tired', [st]) };
+    return { title: 'Easy cardio', time: '20 to 30 min', opts, opt: k, moves: [st.name + (st.type === 'laps' ? ' · tap each lap, 8 laps = 1 mile' : st.type === 'lengths' ? ' · tap each 25-yard length' : ' · a timer, with optional intervals')], plan: stagePlan('Cardio', 'tired', [st]), sheet: { parts: [{ opts, k, min: 25 }], heat: false } };
   }
   // sore: an easy walk, a stretch, then a recovery room where there is one
   const hp = atHealthplex(pid), opts = hp ? [['hptrack', 'Track'], ['hppool', 'Therapy pool']] : [['walkeasy', 'Easy walk']], k = opts.some(o => o[0] === opt) ? opt : opts[0][0];
   const stages = [stageFor(k, 10), { type: 'stretch', act: k, name: 'Stretch', min: 5, rounds: 1 }].concat(hp ? [{ type: 'heat', act: 'hpsauna', name: 'Sauna, steam or whirlpool', min: 10 }] : []);
-  return { title: 'Recovery', time: hp ? 'about 25 min' : 'about 15 min', opts, opt: k, moves: stages.map(x => x.name + ' · ' + x.min + ' min'), plan: stagePlan('Recovery', 'sore', stages) };
+  return { title: 'Recovery', time: hp ? 'about 25 min' : 'about 15 min', opts, opt: k, moves: stages.map(x => x.name + ' · ' + x.min + ' min'), plan: stagePlan('Recovery', 'sore', stages), sheet: { parts: STRETCH_PART, heat: hp } };
 }
+
+/* --- Log it or go live: each person's last pick, kept on their profile --- */
+const modeOf = pid => P(pid).trainMode === 'live' ? 'live' : 'log';
+const modeSwitchHTML = pid => '<div class="seg modesw" id="modeSwitch" role="group" aria-label="Log it, or go live">' + [['log', 'Log it'], ['live', 'Go live']].map(x =>
+  '<button type="button" data-a="mode-set" data-v="' + x[0] + '" class="' + (modeOf(pid) === x[0] ? 'on' : '') + '" aria-pressed="' + (modeOf(pid) === x[0]) + '">' + x[1] + '</button>').join('') + '</div>';
+ACT['mode-set'] = async el => { const v = el.dataset.v === 'live' ? 'live' : 'log'; if (v === modeOf(me())) return; if (await saveProfile(me(), { trainMode: v })) render('[data-a="mode-set"][data-v="' + v + '"]'); };
+const ciList = pid => P(pid).plan === 'program' ? CI_PROGRAM : CI_CHOICE;
+const ciLabel = (pid, c) => { const r = ciList(pid).find(x => x[0] === c) || CI_PROGRAM.concat(CI_CHOICE).find(x => x[0] === c); return r ? r[2] : c === 'extra' ? 'Class or game' : ''; };
+function dayWhat(pid, date) { // one or two words for what a logged day is
+  const r = state.data[pid].sessions[date]; if (!r) return '';
+  const n = normalize(r); return n.kind === 'strength' ? (n.day ? DAYS[n.day].name : 'Lift') : n.kind === 'cardio' ? 'Treadmill' : n.kind === 'rest' ? 'Rest day' : n.acts.length ? actName(n.acts.find(a => a.mv !== false) || n.acts[0]) : 'logged';
+}
+// The check-in sits first on Train, under the Log it / Go live switch, for today only. Once a choice is made or
+// anything is logged today it is one line with "Change", so the log is what the screen is about.
 function checkinHTML() {
-  const pid = me(), date = state.selDate, t = todayIso();
-  if (date !== t || !ciShown(pid)) return '';
-  const going = wmResumable(pid, date), rec = state.data[pid].sessions[date];
-  if (going) return '<section class="card stack ci" id="checkin"><div class="row between"><h3>Workout in progress</h3><span class="tiny muted">' + esc(going.title) + '</span></div><div class="row"><button type="button" class="primary" id="wmResume" data-a="wm-resume">Resume workout</button></div><p class="tiny muted">Everything you logged is kept. Finish or end it from inside.</p></section>';
-  if (rec && !(state.ci && state.ci.date === date && state.ci.pid === pid)) {
-    // a day that is already logged: the answer, if there was one, and a way back to the choices
-    const hp = atHealthplex(pid), felt = CHECKIN_WORDS[rec.checkin]; if (!felt && !hp) return '';
-    return '<section class="card ci" id="checkin"><div class="row between"><span id="ciDone">' + (felt ? 'Checked in: <b>' + felt + '</b>.' : 'Today is logged.') + '</span><button type="button" class="quiet" data-a="ci-again">Do something else too</button></div>' +
-      (hp ? '<div class="row"><button type="button" class="quiet" id="ciExtra" data-a="hp-extra">Class or game (optional)</button></div>' : '') + '</section>';
+  const pid = me(), date = state.selDate;
+  if (date !== todayIso() || !ciShown(pid)) return '';
+  const sw = modeSwitchHTML(pid), going = wmResumable(pid, date), rec = state.data[pid].sessions[date], d = state.draftsBy[pid][date], open = !!(state.ci && state.ci.date === date && state.ci.pid === pid);
+  const line = (text, btn) => sw + '<section class="card ci line" id="checkin"><div class="row between" style="flex-wrap:nowrap"><span id="ciDone">' + text + '</span>' + btn + '</div></section>';
+  if (going) return line('<b>Workout in progress</b> · ' + esc(going.title), '<button type="button" class="small on" id="wmResume" data-a="wm-resume">Resume workout</button>');
+  if (!open) {
+    const felt = (rec && CHECKIN_WORDS[rec.checkin] && rec.checkin) || (d && CHECKIN_WORDS[d.checkin] && d.checkin) || null;
+    if (rec || felt) {
+      const liftPick = !rec && (felt === 'strong' || felt === 'short') && DAYS[kindFor(date, d)], what = rec ? dayWhat(pid, date) : liftPick ? DAYS[kindFor(date, d)].name : '';
+      return line('<b>' + (felt ? ciLabel(pid, felt) : 'Today is logged') + '</b>' + (what ? ' · ' + esc(what) : ''), '<button type="button" class="quiet" id="ciChange" data-a="ci-again">Change</button>');
+    }
   }
-  const program = P(pid).plan === 'program', list = program ? CI_PROGRAM : CI_CHOICE, sg = checkinSuggest(pid, date), sel = state.ci && state.ci.date === date && state.ci.pid === pid ? state.ci.choice : null, anim = sel && state.ciAnim === sel;
+  const list = ciList(pid), sg = checkinSuggest(pid, date), sel = open ? state.ci.choice : null, anim = sel && state.ciAnim === sel, mode = modeOf(pid);
   if (anim) state.ciAnim = null; // the expand plays once, for the tap that caused it
-  let h = '<section class="card stack ci" id="checkin"' + (sel ? ' data-open="' + sel + '"' : '') + (anim ? ' data-anim="1"' : '') + '><div class="row between"><h3>How are you feeling?</h3><span class="tiny muted">' + nice(date) + '</span></div>';
+  let h = sw + '<section class="card stack ci" id="checkin"' + (sel ? ' data-open="' + sel + '"' : '') + (anim ? ' data-anim="1"' : '') + '><div class="row between"><h3>How are you feeling?</h3><span class="tiny muted">' + nice(date) + '</span></div>';
   list.forEach(c => {
     const on = sel === c[0], sug = sg.choice === c[0];
     h += '<button type="button" class="cic' + (on ? ' sel' + (anim ? ' lift' : '') : sel ? ' fade' : '') + (sug ? ' sug' : '') + '" data-a="ci-pick" data-v="' + c[0] + '" aria-expanded="' + on + '"><span class="ci-i" aria-hidden="true">' + c[1] + '</span><span class="ci-t"><b>' + c[2] + '</b>' +
       (sug ? '<span class="tiny" data-ci-why>' + esc(sg.why) + '</span>' : '') + '</span>' + (sug ? '<span class="chip accent" id="ciSuggested">Suggested</span>' : '') + '</button>';
     if (!on) return;
-    const pv = ciPreview(pid, date, c[0], state.ci.opt);
+    const pv = ciPreview(pid, date, c[0], state.ci.opt), btn = (id, a, label, main) => '<button type="button" class="' + (main ? 'primary' : 'second') + '" id="' + id + '" data-a="' + a + '">' + label + '</button>';
     h += '<div class="cip' + (anim ? ' grow' : '') + '" id="ciPreview"><div class="row between"><b id="ciTitle">' + esc(pv.title) + '</b><span class="muted tiny" id="ciTime">' + esc(pv.time) + '</span></div>' +
       (pv.opts ? '<div class="chips wrapc" id="ciOpts">' + pv.opts.map(o => '<button type="button" data-a="ci-opt" data-v="' + o[0] + '" class="' + (pv.opt === o[0] ? 'on' : '') + '" aria-pressed="' + (pv.opt === o[0]) + '">' + o[1] + '</button>').join('') + '</div>' : '') +
       '<ol class="ci-moves" id="ciMoves">' + pv.moves.map(x => '<li>' + esc(x) + '</li>').join('') + '</ol>' + (pv.more ? '<span class="tiny muted">' + pv.more + '</span>' : '') +
       (pv.warn ? '<p class="banner" id="ciWarn">' + esc(pv.warn) + ' You can still do it: keep it short and easy.</p>' : pv.note ? '<p class="tiny muted" id="ciNote">' + esc(pv.note) + '</p>' : '') +
-      '<div class="row"><button type="button" class="primary" id="ciStart" data-a="' + (pv.rest ? 'ci-rest' : 'ci-start') + '">' + (pv.rest ? 'Log rest day' : 'Start') + '</button><button type="button" class="small" data-a="ci-back">Back</button></div></div>';
+      // two equal buttons: type it in, or do it live. The one this person used last leads.
+      (pv.rest ? '<div class="row two">' + btn('ciRest', 'ci-rest', 'Log rest day', true) + '</div>' : '<div class="row two" id="ciGo">' + btn('ciLog', 'ci-log', 'Log it', mode === 'log') + btn('ciStart', 'ci-start', 'Start live', mode === 'live') + '</div>') +
+      '<div class="row"><button type="button" class="quiet" data-a="ci-back">Back</button></div></div>';
   });
   if (atHealthplex(pid)) h += '<div class="row"><button type="button" class="quiet" id="ciExtra" data-a="hp-extra">Class or game (optional)</button></div>';
   return h + '</section>';
@@ -200,12 +223,12 @@ function checkinHTML() {
 ACT['ci-pick'] = (el, e) => {
   const v = el.dataset.v, r = el.getBoundingClientRect();
   state.ci = { pid: me(), date: state.selDate, choice: v, opt: null }; state.ciAnim = v; state.ciPicks = (state.ciPicks || 0) + 1;
-  render('#ciStart');
-  burst({ count: 14, x: (r.left + r.width / 2) / window.innerWidth, y: Math.min(0.9, (r.top + r.height / 2) / window.innerHeight) });
+  render('#ciPreview .primary');
+  burst({ count: 14, x: (r.left + r.width / 2) / window.innerWidth, y: Math.min(0.9, (r.top + r.height / 2) / window.innerHeight) }); // Full animations only
 };
 ACT['ci-opt'] = el => { if (state.ci) { state.ci.opt = el.dataset.v; render('[data-a="ci-opt"][data-v="' + el.dataset.v + '"]'); } };
 ACT['ci-back'] = () => { const v = state.ci && state.ci.choice; state.ci = null; render(v ? '[data-a="ci-pick"][data-v="' + v + '"]' : null); };
-ACT['ci-again'] = () => { state.ci = { pid: me(), date: state.selDate, choice: null, opt: null }; render(); };
+ACT['ci-again'] = () => { state.ci = { pid: me(), date: state.selDate, choice: null, opt: null }; render('#checkin .cic'); };
 ACT['ci-start'] = el => {
   const c = state.ci; if (!c) return;
   const pv = ciPreview(c.pid, c.date, c.choice, c.opt);
@@ -217,4 +240,78 @@ ACT['ci-rest'] = async () => {
   if (P(c.pid).plan === 'program') { const d = draft(c.date); d.kindSel = 'rest'; d.checkin = c.choice; persistDrafts(); state.ci = null; const ok = await save(); if (!ok) render(); return; }
   const ok = await logRest(c.date, c.choice); if (!ok) return;
   state.ci = null; render(); celebrate('Rest day logged. Rest is part of the plan.', { before });
+};
+
+/* --- "Log it": the same session, typed in instead of done live --- */
+// A lift goes to the lifting log: the day is selected, the check-in is kept on the draft, and the first weight field
+// has the cursor. Everything else gets one short sheet: the activity, minutes, and laps or lengths where they apply.
+ACT['ci-log'] = () => {
+  const c = state.ci; if (!c) return;
+  const pv = ciPreview(c.pid, c.date, c.choice, c.opt);
+  if (pv.lift) {
+    const d = draft(c.date); d.kindSel = pv.lift.kind; d.checkin = c.choice; d.recovered = false; persistDrafts();
+    const first = plannedFor(c.date, pv.lift.kind, d).find(p => !EX[p.key].bw);
+    state.ci = null; state.scrollTo = 'logHead'; state.logJumps = (state.logJumps || 0) + 1;
+    render(first ? '#w-' + first.key : '#tmMin'); return;
+  }
+  if (!pv.sheet) return;
+  const o = { type: 'cilog', date: c.date, felt: c.choice, title: pv.title, parts: pv.sheet.parts, heat: !!pv.sheet.heat, room: 'hpsauna', heatMin: '' };
+  pv.sheet.parts.forEach((p, i) => { o['k' + i] = p.k; o['min' + i] = String(p.min); o['laps' + i] = ''; });
+  openOv(o);
+};
+const partKind = k => ACTS[k] && ACTS[k].wm === 'laps' ? 'laps' : ACTS[k] && ACTS[k].wm === 'lengths' ? 'lengths' : 'timer';
+const partName = k => k === 'treadmill' ? 'Treadmill (Fitness+)' : ACTS[k] ? ACTS[k].name : 'Activity';
+const distText = (kind, n) => kind === 'laps' ? n + ' lap' + (n === 1 ? '' : 's') + ' (' + milesText(n) + ')' : n + ' length' + (n === 1 ? '' : 's') + ' (' + n * POOL_YARDS + ' yd)';
+const distLine = (kind, v) => { const n = Math.round(Number(v)); return n > 0 ? (kind === 'laps' ? n + ' lap' + (n === 1 ? '' : 's') + ' = ' + milesText(n) : n + ' length' + (n === 1 ? '' : 's') + ' = ' + n * POOL_YARDS + ' yards') : kind === 'laps' ? 'Each lap is 1/8 mile.' : 'Each length is ' + POOL_YARDS + ' yards.'; };
+const cilogMin = o => o.parts.reduce((t, p, i) => t + (Math.round(Number(o['min' + i])) > 0 ? Math.round(Number(o['min' + i])) : 0), 0) + (o.heat && Math.round(Number(o.heatMin)) > 0 ? Math.round(Number(o.heatMin)) : 0);
+const cilogLabel = o => { const m = cilogMin(o); return m > 0 ? 'Log ' + m + ' min' : 'Log it'; };
+function refreshCilog() { // typing patches the labels in place, so the keyboard stays up
+  const o = state.ov; if (!o || o.type !== 'cilog') return;
+  o.parts.forEach((p, i) => { const el = document.getElementById('cilogDist' + i), kind = partKind(o['k' + i]); if (el && kind !== 'timer') el.textContent = distLine(kind, o['laps' + i]); });
+  const b = $('#cilogSave'); if (b) b.textContent = cilogLabel(o);
+}
+OV.cilog = {
+  html: o => {
+    const num = (id, key, label, max, ph) => '<label class="f">' + label + '<input type="number" id="' + id + '" data-ovf="' + key + '" inputmode="numeric" pattern="[0-9]*" min="0" max="' + max + '" value="' + esc(o[key]) + '" placeholder="' + (ph || '–') + '"></label>';
+    let h = '<div class="ov" role="dialog" aria-modal="true" aria-label="Log it">' + ovHead(esc(o.title), 'Log it · ' + rel(o.date).toLowerCase());
+    o.parts.forEach((p, i) => {
+      const k = o['k' + i], kind = partKind(k);
+      h += '<div class="stack" data-part="' + i + '">' + (p.opts.length > 1 ? '<div class="chips wrapc" id="cilogOpts' + i + '">' + p.opts.map(x => '<button type="button" data-a="cilog-opt" data-i="' + i + '" data-v="' + x[0] + '" class="' + (k === x[0] ? 'on' : '') + '" aria-pressed="' + (k === x[0]) + '">' + x[1] + '</button>').join('') + '</div>' : '<div class="eyebrow">' + p.opts[0][1] + '</div>') +
+        '<div class="formgrid">' + num('cilogMin' + i, 'min' + i, 'Minutes', 300) + (kind === 'laps' ? num('cilogLaps' + i, 'laps' + i, 'Laps (8 = 1 mile)', 400) : kind === 'lengths' ? num('cilogLaps' + i, 'laps' + i, 'Lengths (25 yards each)', 400) : '') + '</div>' +
+        (kind !== 'timer' ? '<p class="tiny muted num" id="cilogDist' + i + '">' + distLine(kind, o['laps' + i]) + '</p>' : '') + '</div>';
+    });
+    if (o.heat) h += '<div class="stack" id="cilogHeat"><div class="eyebrow">Sauna, steam or whirlpool (optional)</div><div class="seg">' + HEAT_KEYS.map(k => '<button type="button" data-a="cilog-room" data-k="' + k + '" class="' + (o.room === k ? 'on' : '') + '" aria-pressed="' + (o.room === k) + '">' + ACTS[k].name + '</button>').join('') + '</div>' +
+      '<div class="formgrid">' + num('cilogHeatMin', 'heatMin', 'Minutes, up to 20', 20) + '</div><p class="tiny muted">Logs as recovery: it shows in History but does not count toward active minutes. ' + HEAT_NOTE + '</p></div>';
+    return h + '<div class="row"><button type="button" class="primary" id="cilogSave" data-a="cilog-save">' + cilogLabel(o) + '</button><button type="button" class="small" data-a="ov-close">Back</button></div></div>';
+  }
+};
+ACT['cilog-opt'] = el => { const o = state.ov; o['k' + el.dataset.i] = el.dataset.v; renderOv(); };
+ACT['cilog-room'] = el => { state.ov.room = el.dataset.k; renderOv(); };
+ACT['cilog-save'] = async () => {
+  const o = state.ov, date = o.date, felt = o.felt, now = new Date().toISOString(), names = [], notes = []; let min = 0, first = null;
+  for (let i = 0; i < o.parts.length; i++) {
+    const k = o['k' + i], raw = String(o['min' + i] == null ? '' : o['min' + i]).trim(), m = Math.round(Number(raw)), kind = partKind(k), laps = Math.round(Number(o['laps' + i])) || 0;
+    if (raw === '' || m === 0) continue;
+    if (!(m > 0) || m > 300) { toast('Enter minutes between 1 and 300.'); return; }
+    if (laps < 0 || laps > 400) { toast('Check the ' + (kind === 'laps' ? 'laps' : 'lengths') + '.'); return; }
+    first = first || k; min += m; names.push(partName(k)); notes.push({ name: partName(k), m, d: kind !== 'timer' && laps > 0 ? distText(kind, laps) : '' });
+  }
+  const hRaw = o.heat ? String(o.heatMin == null ? '' : o.heatMin).trim() : '', hm = Math.round(Number(hRaw));
+  if (hRaw !== '' && hm !== 0 && (!(hm > 0) || hm > 20)) { toast('Keep the sauna, steam room or whirlpool to 20 minutes or less.', 3400); return; }
+  const heat = hRaw !== '' && hm > 0 ? { k: HEAT_KEYS.includes(o.room) ? o.room : 'hpsauna', min: hm } : null;
+  if (!min && !heat) { toast('Enter the minutes first.'); return; }
+  // one part: just its laps or lengths. Several: each part's minutes, so the total can be read back.
+  const note = notes.length === 1 ? notes[0].d : notes.map(x => x.name + ' ' + x.m + ' min' + (x.d ? ', ' + x.d : '')).join(' · ');
+  if (first === 'treadmill') { // the lifting log's own treadmill day, saved by the same Save
+    const d = draft(date); d.kindSel = 'cardio'; d.tm.minutes = String(min); if (felt) d.checkin = felt; d.recovered = false; persistDrafts();
+    state.ci = null; closeOv(); if (state.selDate !== date) state.selDate = date;
+    const ok = await save(); if (!ok) render(); return;
+  }
+  const before = scoreSnapshot(); let ok = true;
+  if (min) { const a = ACTS[first] || ACTS.other; ok = await logActivity(date, { id: uid(), a: ACTS[first] ? first : 'other', name: names.join(' + '), min, feel: null, hurt: false, note, mv: a.mv !== false, at: now }, felt); }
+  if (ok && heat) ok = await logActivity(date, { id: uid(), a: heat.k, name: ACTS[heat.k].name, min: heat.min, feel: null, hurt: false, note: '', mv: false, at: now }, felt);
+  if (!ok) return;
+  state.ci = null; closeOv(); render();
+  const di = dayInfo(me(), date);
+  celebrate((min ? min + ' min logged. ' : '') + (heat ? heat.min + ' min of ' + ACTS[heat.k].name.toLowerCase() + ' as recovery. ' : '') + (min ? (di.active ? 'That is an active day.' : 'Not an active day yet.') : ''), { before, force: di.active && min > 0 });
 };

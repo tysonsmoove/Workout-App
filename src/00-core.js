@@ -26,7 +26,13 @@ const commas = n => Math.round(n).toLocaleString('en-US');
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 const lsGet = (k, dflt) => { try { const v = localStorage.getItem(k); return v == null ? dflt : JSON.parse(v); } catch (e) { return dflt; } };
 const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* storage unavailable */ } };
-const reducedMotion = () => { try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } };
+const osReducedMotion = () => { try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } };
+// Animations, chosen per person on Me. Subtle is the default: no particle bursts, one small effect for real milestones.
+// Full is everything (bursts, start lights, flips). Off is the same as the phone's own reduce-motion setting, which always wins.
+const MOTIONS = { subtle: 'Subtle', full: 'Full', off: 'Off' };
+const motionPref = pid => { const m = (state.data[pid || me()].profile || {}).motion; return MOTIONS[m] ? m : 'subtle'; };
+const motionOf = pid => osReducedMotion() ? 'off' : motionPref(pid);
+const reducedMotion = () => motionOf() === 'off';
 let toastT;
 function toast(msg, ms) { const t = $('#toast'); t.textContent = msg; t.classList.remove('act'); t.hidden = false; state.undo = null; clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, ms || 2200); }
 
@@ -79,6 +85,7 @@ const state = {
   have: {},           // path -> the stored document, for the one-per-person documents (settings, profile, shared settings); null when there is none
   undo: null,         // the last removal, while its "Undo" is still on offer
   backupNote: '',     // what the last backup did, shown on the Backup card
+  fxn: { burst: 0, milestone: 0 }, // how many particle bursts and milestone effects have actually played (this visit)
   stallOpen: {},      // exercise key -> its stuck-lift choices are open (this visit)
   iou: {},            // week start -> { paid }: whether what was on the line has been settled. Kept apart from results, which never change
   draftsBy: { tyson: {}, jacquie: {} },   // date -> unsaved lifting form draft (this device, mirrored to the account)
@@ -173,6 +180,7 @@ function applySkin() {
   root.dataset.font = FONTS[p.skin.font] ? p.skin.font : 'sporty';
   root.dataset.shape = SHAPES[p.skin.shape] ? p.skin.shape : 'soft';
   root.dataset.backdrop = BACKDROPS[p.skin.backdrop] ? p.skin.backdrop : 'plain';
+  root.dataset.motion = motionOf(me()); // the stylesheet keys every animation off this
   loadFont(p.skin.font);
 }
 function avStyle(pid) { const v = skinVars(P(pid).skin); return '--ph:' + v.ah + ';--ps:' + v.as + '%;--pl:' + v.al + '%;--pld:' + v.ald + '%' + (v.ink ? ';--pink:' + v.ink : ''); }

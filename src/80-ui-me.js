@@ -38,7 +38,8 @@ function renderMe() {
     '<div><div class="eyebrow">Headings</div>' + seg('skin-set', 'font', sk.font, FONTS) + '</div>' +
     '<div><div class="eyebrow">Corners</div>' + seg('skin-set', 'shape', sk.shape, SHAPES) + '</div>' +
     '<div><div class="eyebrow">Backdrop</div>' + seg('skin-set', 'backdrop', sk.backdrop, BACKDROPS) + '</div>' +
-    '<div><div class="row between"><div class="eyebrow">Celebrations</div><button type="button" class="quiet" data-a="fx-preview">Preview</button></div>' + seg('skin-set', 'fx', sk.fx, FXS) + '</div>' +
+    '<div id="motionRow"><div class="eyebrow">Animations</div>' + seg('motion-set', 'motion', motionPref(pid), MOTIONS) + '<p class="tiny muted" style="margin-top:4px">' + (osReducedMotion() ? 'Your phone is set to reduce motion, so animations are off whatever is picked here.' : 'Subtle: no confetti, one small effect for real milestones. Full: everything. Off: no motion.') + '</p></div>' +
+    '<div id="fxRow"><div class="row between"><div class="eyebrow">Celebrations' + (motionOf(pid) === 'full' ? '' : ' · with Full animations') + '</div><button type="button" class="quiet" data-a="fx-preview">Preview</button></div>' + seg('skin-set', 'fx', sk.fx, FXS) + '</div>' +
     '<div><div class="eyebrow">Avatar</div><div class="emojis" style="margin-top:6px">' + AVATARS.map(a => '<button type="button" data-a="avatar-set" data-v="' + a + '" class="' + ((p.avatar || '') === a ? 'on' : '') + '" aria-pressed="' + ((p.avatar || '') === a) + '" aria-label="' + (a ? 'Avatar ' + a : 'Use my initial') + '">' + (a || esc(p.name.slice(0, 1).toUpperCase())) + '</button>').join('') + '</div></div>' +
     '<div class="row" style="flex-wrap:nowrap;align-items:flex-end"><label class="f grow">Display name<input type="text" data-form="name" data-k="name" maxlength="20" value="' + esc('name' in (state.forms.name || {}) ? state.forms.name.name : p.name) + '"></label><button type="button" class="small" data-a="name-save" style="min-height:44px">Save</button></div>' +
     '<p class="tiny muted">Your look applies whenever your profile is active, on any phone.</p></section>';
@@ -91,7 +92,8 @@ function renderMe() {
 ACT.badge = el => { const b = badgesFor(me()).find(x => x.id === el.dataset.id); if (b) openOv({ type: 'badgeinfo', badge: b }); };
 ACT['skin-preset'] = async el => { await saveProfile(me(), { skin: { preset: el.dataset.v, custom: null } }); applySkin(); render(); };
 ACT['skin-set'] = async el => { const patch = {}; patch[el.dataset.k] = el.dataset.v; await saveProfile(me(), { skin: patch }); applySkin(); render(); if (el.dataset.k === 'fx') burst({ count: 60 }); };
-ACT['fx-preview'] = () => burst({ count: 90 });
+ACT['fx-preview'] = () => { if (motionOf() !== 'full') { toast('Celebration styles play with Full animations.', 3000); return; } burst({ count: 90 }); };
+ACT['motion-set'] = async el => { const v = MOTIONS[el.dataset.v] ? el.dataset.v : 'subtle'; if (!(await saveProfile(me(), { motion: v }))) return; applySkin(); render('[data-a="motion-set"][data-v="' + v + '"]'); toast('Animations: ' + MOTIONS[v] + '.'); };
 ACT['avatar-set'] = async el => { await saveProfile(me(), { avatar: el.dataset.v || '' }); render(); };
 ACT['name-save'] = async () => {
   const name = String((state.forms.name || {}).name == null ? P(me()).name : state.forms.name.name).trim().slice(0, 20);

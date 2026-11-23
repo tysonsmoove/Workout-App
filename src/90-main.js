@@ -123,7 +123,7 @@ main.addEventListener('focusout', e => {
 // one click handler for every data-a action, in the page and in overlays
 // Actions that save one thing per tap. A second tap while the first is still saving is dropped, so a slow
 // connection cannot log the same food or activity twice. Water is left out on purpose: tapping it twice means two glasses.
-const ONE_AT_A_TIME = ['act-log', 'act-del', 'rest', 'food-save', 'food-again', 'food-del', 'quick-save', 'custom-save', 'custom-del', 'hk-import', 'hk-off', 'body-save', 'weigh-save', 'name-save', 'gym-save', 'stakes-save', 'cd-save', 'cd-clear', 'meal-copy', 'meal-save', 'meal-add', 'meal-rename', 'meal-del', 'iou-toggle', 'undo', 'scan-digits', 'scan-link-pick', 'describe-go', 'describe-log', 'backup-all', 'backup-workouts', 'backup-food', 'backup-copy', 'wm-save', 'wm-stagelog', 'wm-water', 'wm-notgym', 'water-bottle', 'ci-rest', 'gym-hp', 'split-set', 'lift-goal', 'rem-save', 'nudge-yes', 'nudge-no', 'stall-reset', 'stall-swap', 'deload-take'];
+const ONE_AT_A_TIME = ['act-log', 'act-del', 'rest', 'food-save', 'food-again', 'food-del', 'quick-save', 'custom-save', 'custom-del', 'hk-import', 'hk-off', 'body-save', 'weigh-save', 'name-save', 'gym-save', 'stakes-save', 'cd-save', 'cd-clear', 'meal-copy', 'meal-save', 'meal-add', 'meal-rename', 'meal-del', 'iou-toggle', 'undo', 'scan-digits', 'scan-link-pick', 'describe-go', 'describe-log', 'backup-all', 'backup-workouts', 'backup-food', 'backup-copy', 'wm-save', 'wm-stagelog', 'wm-water', 'wm-notgym', 'water-bottle', 'ci-rest', 'gym-hp', 'split-set', 'lift-goal', 'mode-set', 'motion-set', 'cilog-save', 'rem-save', 'nudge-yes', 'nudge-no', 'stall-reset', 'stall-swap', 'deload-take'];
 const busy = {};
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-a]'); if (!el || el.disabled) return;
@@ -150,6 +150,7 @@ function onOvInput(e) {
   if (o.type === 'food' && key === 'q') { if (typed) { clearTimeout(foodT); foodT = setTimeout(fillFoodResults, 90); } }
   else if (o.type === 'health') { if (typed) refreshHealthPreview(); }
   else if (o.type === 'fooditem') refreshFoodItem(); // patches the label and button text in place
+  else if (o.type === 'cilog') refreshCilog(); // labels follow the typing
   else if (o.type === 'act' && key === 'laps') { const l = $('#lapMiles'); if (l) l.textContent = lapLine(el.value); }
   else if (o.type === 'act' && key === 'min') { const b = $('#actLog'), min = Math.round(Number(el.value)); if (b) { b.disabled = !(min > 0); b.textContent = (o.id ? 'Update ' : 'Log ') + (min > 0 ? min + ' min' : ''); } }
 }
@@ -223,6 +224,8 @@ function save() {
   }
   delete state.formError[date]; state.menu = null; typing = false;
   const note = saveNote(date, m), before = scoreSnapshot();
+  // a weight above last time's is a milestone (assisted pull-up: less assistance)
+  const up = r.kind === 'strength' && Object.keys(r.doc.ex).some(k => { const l = lastLog(k, date), w = r.doc.ex[k].w; return !EX[k].bw && l && l.w != null && isNum(w) && (EX[k].inc < 0 ? w < l.w : w > l.w); });
   const done = saveRecord(date, r.doc).then(ok => {
     if (ok === false) return false; // nothing was attempted: the log is not loaded yet
     const st = state.status[date];
@@ -230,6 +233,7 @@ function save() {
     const msg = r.kind === 'cardio' && r.fromLift ? r.doc.treadmill.minutes + ' treadmill minutes saved. No lifting sets recorded; ' + DAYS[nextDayKey(date)].name + ' remains next.'
       : r.kind === 'strength' ? (note ? note.text : DAYS[r.doc.day].name + ' day saved · counts as lift day · next: ' + DAYS[nextAfter(r.doc.day)].name)
       : r.kind === 'rest' ? 'Rest day saved.' : 'Treadmill saved.';
+    if (up) milestone();
     celebrate(msg + (st && st.s === 'synced' ? ' Synced.' : st && st.s === 'local' ? ' Saved in this browser.' : ''), { ms: 3800, before });
     return true;
   });
@@ -249,7 +253,7 @@ function route() {
 window.MorningLaps = { state, P, weekScore, coach, goalsFor, badgesFor, searchFoods, loadFoods, dayTotals, compWeeks, parseHealthPaste, foodCount: () => foodDb.list ? foodDb.list.length : 0,
   EX, DAYS, normalize, dayInfo, weekFacts, scoreFacts, weekGoals, liveGoals, fuelParts, plannedFor, planSlots, swapOptions, defaultSwapOption, alts, teamStats, stakesFor, phaseFor, restT,
   caps, normBarcode, backupDocs, workoutsCsv, foodCsv, canon,
-  ACTS, specFor, splitOf, rotation, nextDayKey, deloadWeeks, checkinSuggest, ciPreview, atHealthplex, lapMiles, wmState: () => wm, wmResumable, MOVE_OF, HOWTO, STRETCHES, demoSVG,
+  ACTS, specFor, splitOf, rotation, nextDayKey, deloadWeeks, checkinSuggest, ciPreview, atHealthplex, lapMiles, wmState: () => wm, wmResumable, motionOf, milestone, modeOf, plannedFor, MOVE_OF, HOWTO, STRETCHES, demoSVG,
   suggest, stallFor, deloadOn, deloadState, completedWeeks, easier, weekRecap, lastWeek, ious, goalNudge, painNotes, painFlag, actList, surpriseActivity, savedMeals, mealItems };
 (function boot() {
   const saved = lsGet('ml.me', null);

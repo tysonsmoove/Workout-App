@@ -47,8 +47,8 @@ function seedDocs(opt) {
     kv['profiles/jacquie/sessions/' + d(4)] = day(d(4), [act(d(4), 'walkeasy', 'Easy walk', 20)]);
   });
   (opt.thisWeek || []).forEach(r => { sessions[r.date] = r; });
-  kv['profiles/jacquie'] = Object.assign({ name: 'Jacquie', body: { sex: 'f', age: 30, heightIn: 64, weightLb: 150, activity: 'light', pace: 'maintain' } }, opt.jGym ? { place: opt.jGym, placeSince: '2026-11-01' } : null, opt.jProfile);
-  kv['profiles/tyson'] = Object.assign({ name: 'Tyson' }, opt.tGym ? { place: opt.tGym, placeSince: opt.tSince || '2026-11-01' } : null);
+  kv['profiles/jacquie'] = Object.assign({ name: 'Jacquie', motion: 'full', body: { sex: 'f', age: 30, heightIn: 64, weightLb: 150, activity: 'light', pace: 'maintain' } }, opt.jGym ? { place: opt.jGym, placeSince: '2026-11-01' } : null, opt.jProfile);
+  kv['profiles/tyson'] = Object.assign({ name: 'Tyson', motion: 'full' }, opt.tGym ? { place: opt.tGym, placeSince: opt.tSince || '2026-11-01' } : null);
   kv['comp/settings'] = { start: '2026-10-26', stakes: '' };
   Object.assign(kv, opt.kv);
   return { sessions, settings: Object.assign({ startDate: '2026-10-26', goal: 5, maxed: {}, swaps: {} }, opt.settings), kv };
@@ -117,10 +117,10 @@ const MON = '2026-12-07', TUE = '2026-12-08', WED = '2026-12-09', THU = '2026-12
     await watchWrites(page); const before = await all(page), previews = [];
     for (const c of ['strong', 'short', 'tired', 'sore', 'rest']) {
       await page.click('[data-a="ci-pick"][data-v="' + c + '"]'); await page.waitForSelector('#ciPreview');
-      previews.push(await page.evaluate(() => ({ t: document.getElementById('ciTitle').textContent, time: document.getElementById('ciTime').textContent, moves: Array.from(document.querySelectorAll('#ciMoves li')).map(l => l.textContent), start: document.getElementById('ciStart').textContent, faded: document.querySelectorAll('#checkin .cic.fade').length })));
+      previews.push(await page.evaluate(() => ({ t: document.getElementById('ciTitle').textContent, time: document.getElementById('ciTime').textContent, moves: Array.from(document.querySelectorAll('#ciMoves li')).map(l => l.textContent), start: (document.getElementById('ciStart') || document.getElementById('ciRest')).textContent, faded: document.querySelectorAll('#checkin .cic.fade').length })));
       await page.click('[data-a="ci-back"]'); await page.waitForSelector('#ciPreview', { state: 'detached' });
     }
-    check('C each choice opens a preview with the session, the time, the first moves and Start', previews[0].t === 'Full Body A' && previews[0].time === 'about 45 min' && previews[0].moves.length === 3 && previews[0].moves[0].startsWith('Barbell back squat · 3 × 6–10 · 155 lb') && previews[0].start === 'Start' && previews[0].faded === 4 &&
+    check('C each choice opens a preview with the session, the time, the first moves and Start', previews[0].t === 'Full Body A' && previews[0].time === 'about 45 min' && previews[0].moves.length === 3 && previews[0].moves[0].startsWith('Barbell back squat · 3 × 6–10 · 155 lb') && previews[0].start === 'Start live' && previews[0].faded === 4 &&
       previews[1].t === 'Express Full Body A' && previews[1].time === 'about 25 min' && previews[1].moves.length === 3 && previews[1].moves.every(m => m.includes(' · 3 × ')) && previews[2].t === 'Easy cardio' && previews[3].t === 'Recovery' && previews[3].moves.length === 3 && previews[4].t === 'Rest day' && previews[4].start === 'Log rest day', JSON.stringify(previews));
     check('C picking a choice and backing out writes nothing, not even a draft', (await writes(page)).length === 0 && (await all(page)) === before);
     await page.click('[data-a="ci-pick"][data-v="tired"]');
@@ -138,13 +138,13 @@ const MON = '2026-12-07', TUE = '2026-12-08', WED = '2026-12-09', THU = '2026-12
     const rec = await ses(page, WED), sc1 = await score(page, 'tyson');
     check('C the saved day carries the check-in, plans 3 lifts and counts as a lift day', rec.checkin === 'short' && rec.kind === 'strength' && rec.day === 'fba' && same(rec.planned, ['squat', 'dbbench', 'latpull']) && rec.qualifies === true && rec.complete === true && sc1.lifts === sc0.lifts + 1 && rec.treadmill.minutes === 5, JSON.stringify([rec.planned, rec.qualifies, rec.complete, sc0.lifts, sc1.lifts]));
     await page.click('#wmDoneBtn'); await page.waitForSelector('#wm', { state: 'hidden' });
-    check('C Train then shows the check-in as answered', (await txt(page, '#ciDone')) === 'Checked in: short on time.');
+    check('C Train then shows the check-in as answered, on one line', (await txt(page, '#ciDone')) === 'Short on time · Full Body A' && (await txt(page, '#ciChange')) === 'Change');
     await go(page, 'history');
     check('C History shows "Felt: short on time"', (await txt(page, 'details.hi[data-hdate="' + WED + '"] summary')).includes('Felt: short on time') && !(await txt(page, 'details.hi[data-hdate="' + WED + '"] summary')).includes('Phase'), await txt(page, 'details.hi[data-hdate="' + WED + '"] summary'));
     await ctx.close();
     // a rest day from the check-in
     await open({ me: 'tyson', time: at(WED), init: local(seedDocs({ settings: full })) });
-    await page.click('[data-a="ci-pick"][data-v="rest"]'); await page.click('#ciStart'); await page.waitForFunction(d => { const r = JSON.parse(localStorage.getItem('ml.sessions'))[d]; return r && r.kind === 'rest'; }, WED);
+    await page.click('[data-a="ci-pick"][data-v="rest"]'); await page.click('#ciRest'); await page.waitForFunction(d => { const r = JSON.parse(localStorage.getItem('ml.sessions'))[d]; return r && r.kind === 'rest'; }, WED);
     check('C "Not going today" saves a rest day with its check-in', (await ses(page, WED)).checkin === 'rest' && !(await has(page, '#ciExtra')));
     const never = await ML(page, () => { const M = window.MorningLaps, out = []; for (let i = 0; i < 28; i++) { const d = new Date(Date.UTC(2026, 10, 9 + i)).toISOString().slice(0, 10); out.push(M.checkinSuggest('tyson', d).choice, M.checkinSuggest('jacquie', d).choice); } return Array.from(new Set(out)); });
     check('C a class is never the suggestion on any day', never.every(c => ['strong', 'short', 'tired', 'sore', 'good', 'low'].includes(c)), JSON.stringify(never));
@@ -214,7 +214,7 @@ const MON = '2026-12-07', TUE = '2026-12-08', WED = '2026-12-09', THU = '2026-12
     // a tapped card flips to its details
     await page.click('.act.hp[data-k="hptrack"]'); await page.waitForSelector('[data-hpback="hptrack"]');
     const flip = await page.evaluate(() => { const b = document.querySelector('[data-hpback="hptrack"]'); return { cls: b.className, text: b.textContent, btns: Array.from(b.querySelectorAll('button')).map(x => x.textContent), dur: getComputedStyle(b).animationDuration }; });
-    check('H a tapped Healthplex card flips to show its details, with Start and Log it', flip.cls.includes('flipin') && flip.text.includes('8 laps make a mile') && same(flip.btns, ['Start', 'Log it', 'Close']) && parseFloat(flip.dur) <= 0.4, JSON.stringify(flip));
+    check('H a tapped Healthplex card flips to show its details, with Start and Log it', flip.cls.includes('flipin') && flip.text.includes('8 laps make a mile') && same(flip.btns, ['Log it', 'Start live', 'Close']) && parseFloat(flip.dur) <= 0.4, JSON.stringify(flip));
     await page.click('[data-a="filter-quick"]'); await page.click('[data-a="filter-quick"]');
     check('H the flip runs once per tap, not again on the next redraw', await page.evaluate(() => { const b = document.querySelector('[data-hpback="hptrack"]'); return !!b && !b.className.includes('flipin'); }));
     // laps convert to miles
@@ -240,7 +240,7 @@ const MON = '2026-12-07', TUE = '2026-12-08', WED = '2026-12-09', THU = '2026-12
     await page.click('#toast [data-a="water-bottle"]'); await page.waitForFunction(d => { const f = JSON.parse(localStorage.getItem('ml.kv'))['profiles/jacquie/food/' + d]; return f && f.water > 0; }, WED);
     check('H the water button adds 16.9 oz', Math.abs((await kv(page, 'profiles/jacquie/food/' + WED)).water - water0 - 16.9) < 0.01);
     // classes and courts from the optional link
-    await page.click('#ciExtra'); await page.waitForSelector('#hpExtra');
+    await page.click('#ciChange'); await page.click('#ciExtra'); await page.waitForSelector('#hpExtra');
     check('H "Class or game (optional)" lists the classes and courts', (await page.$$('#hpExtra [data-a="hpextra-pick"]')).length === 10 && (await txt(page, '#hpExtra')).includes('Specialty class · extra fee.') && (await txt(page, '#ov')).includes('Never suggested'));
   });
 
@@ -273,7 +273,7 @@ const MON = '2026-12-07', TUE = '2026-12-08', WED = '2026-12-09', THU = '2026-12
     await open({ me: 'tyson', time: at(WED), init: local(seedDocs({ settings: { split: 'full', liftGoal: 2, goal: 6 }, kv: locks })) });
     const nd = await ML(page, () => window.MorningLaps.goalNudge('tyson'));
     check('G the goal nudge can raise the lift goal later', !!nd && nd.kind === 'lift' && nd.to === 3 && (await txt(page, '#nudgeCard')).includes('Raise your lift goal to 3 lift days starting Monday?'), JSON.stringify(nd));
-    await page.click('[data-a="nudge-yes"]'); await page.waitForFunction(() => JSON.parse(localStorage.getItem('ml.settings')).liftGoal === 3);
+    await page.evaluate(() => document.querySelectorAll('#coach details').forEach(d => { d.open = true; })); await page.click('[data-a="nudge-yes"]'); await page.waitForFunction(() => JSON.parse(localStorage.getItem('ml.settings')).liftGoal === 3);
     check('G raising it changes the setting only: this week stays at 2', await ML(page, () => window.MorningLaps.weekGoals('tyson', '2026-12-07').liftGoal === 2 && window.MorningLaps.liveGoals('tyson').liftGoal === 3));
   });
 
@@ -450,7 +450,7 @@ const MON = '2026-12-07', TUE = '2026-12-08', WED = '2026-12-09', THU = '2026-12
     check('W a finished lift gets lift-day credit exactly as a normal save would', rec.kind === 'strength' && rec.qualifies === true && rec.day === 'fba' && sc1.lifts === sc0.lifts + 1 && sc1.total > sc0.total && !(await page.evaluate(() => (JSON.parse(localStorage.getItem('ml.drafts') || '{}'))['2026-12-09'])), JSON.stringify([rec.qualifies, sc0.lifts, sc1.lifts]));
     check('W then the week\'s points before and after, and the sauna chip', pts.includes(sc0.total + ' → ' + sc1.total) && (await txt(page, '#wmHeat')).includes('Sauna, steam or whirlpool after?'), pts);
     await page.click('#wmDoneBtn'); await page.waitForSelector('#wm', { state: 'hidden' });
-    check('W closing workout mode redraws the page, with the saved day', (await txt(page, '#ciDone')).includes('feeling strong') && (await txt(page, '#whyLine')).includes('Counted Full Body A day. Next: Full Body B.'), await txt(page, '#whyLine'));
+    check('W closing workout mode redraws the page, with the saved day', (await txt(page, '#ciDone')) === 'Feeling strong · Full Body A' && (await txt(page, '#whyLine')).includes('Counted Full Body A day. Next: Full Body B.'), await txt(page, '#whyLine'));
     const viaWm = rec; await ctx.close();
     // the same inputs through the normal log
     await open({ me: 'tyson', time: at(WED), init: seed() });

@@ -203,7 +203,7 @@ function drawPhoto(o) { // runs in the page: a package label on a table, photogr
     const sug = k => ML(page, key => { const s = window.MorningLaps.suggest(key, window.MorningLaps.state.today); return { w: s.w, sets: s.sets, reset: !!s.reset, deload: !!s.deload, why: s.why }; }, k);
     const s0 = await sug('shoulderpress');
     check('2 the reset is waiting: 45 lb for 3 sets', s0.w === 45 && s0.reset && !s0.deload && s0.sets === 3, JSON.stringify(s0));
-    await page.click('[data-a="deload-take"]'); await page.waitForFunction(() => document.getElementById('deloadBanner').textContent.includes('Deload week is on'));
+    await page.evaluate(() => document.querySelectorAll('#coach details').forEach(d => { d.open = true; })); await page.click('[data-a="deload-take"]'); await page.waitForFunction(() => document.getElementById('deloadBanner').textContent.includes('Deload week is on'));
     const s1 = await sug('shoulderpress'), p1 = await sug('pushdown');
     check('2 shoulder press at 50 lb with a reset waiting suggests 45 during the deload, not 40', s1.w === 45 && s1.deload && s1.sets === 2 && await page.$eval('[data-usew="shoulderpress"]', b => b.dataset.val === '45') && s1.why.includes('still waiting'), JSON.stringify(s1));
     check('2 a lift with no reset still gets 90% in the deload week', p1.w === 35 && p1.deload && p1.sets === 2 && !p1.reset, JSON.stringify(p1));

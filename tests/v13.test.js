@@ -163,7 +163,7 @@ const MON = T('2026-12-07T17:00:00Z'), WED = T('2026-12-09T17:00:00Z'), NEXT = T
     const later = await carry(page); await ctx.close();
     await open({ me: 'tyson', time: T('2027-01-06T17:00:00Z'), init: later });
     check('P1 after 4 weeks it offers to switch back', (await txt(page, '[data-swapback="shoulderpress"]')).includes('Four weeks on Seated dumbbell shoulder press') && (await txt(page, '[data-swapback="shoulderpress"]')).includes('Switch back to Shoulder press machine?'));
-    await page.click('[data-a="swapback-yes"]'); await page.waitForFunction(() => !document.querySelector('[data-swapback]'));
+    await page.evaluate(() => document.querySelectorAll('#coach details').forEach(d => { d.open = true; })); await page.click('[data-a="swapback-yes"]'); await page.waitForFunction(() => !document.querySelector('[data-swapback]'));
     check('P1 switching back removes the swap', !(await settings(page)).swaps.shoulderpress && !(await settings(page)).swapBack.shoulderpress);
     await ctx.close();
 
@@ -173,7 +173,7 @@ const MON = T('2026-12-07T17:00:00Z'), WED = T('2026-12-09T17:00:00Z'), NEXT = T
     check('P3 after 5 completed lift weeks the banner offers a deload', offer.includes('Deload week: 2 sets per lift at about 90% weight. Recovery week, same points.') && await has(page, '[data-a="deload-take"]') && await has(page, '[data-a="deload-skip"]'), offer);
     const normal = await ML(page, () => ['inclinedb', 'pecdeck', 'shoulderpress', 'latraise', 'pushdown'].map(k => { const s = window.MorningLaps.suggest(k, '2026-12-09'); return [k, s.w, s.sets]; }));
     check('P3 before taking it each lift shows 3 sets', (await page.$$eval('.ex[data-ex]', els => els.map(e => e.querySelectorAll('[data-field="rep"]').length))).join() === '3,3,3,3,3');
-    await page.click('[data-a="deload-take"]'); await page.waitForFunction(() => document.getElementById('deloadBanner').textContent.includes('Deload week is on'));
+    await page.evaluate(() => document.querySelectorAll('#coach details').forEach(d => { d.open = true; })); await page.click('[data-a="deload-take"]'); await page.waitForFunction(() => document.getElementById('deloadBanner').textContent.includes('Deload week is on'));
     const dl = await ML(page, () => ['inclinedb', 'pecdeck', 'shoulderpress', 'latraise', 'pushdown'].map(k => { const s = window.MorningLaps.suggest(k, '2026-12-09'); return [k, s.w, s.sets]; }));
     check('P3 a deload week shows 2 sets per lift', (await page.$$eval('.ex[data-ex]', els => els.map(e => e.querySelectorAll('[data-field="rep"]').length))).join() === '2,2,2,2,2' && (await txt(page, '.ex[data-ex="shoulderpress"] .exrx')).includes('2 sets'));
     check('P3 and lighter suggestions: about 90%, rounded to the step', JSON.stringify(dl) === JSON.stringify([['inclinedb', 20, 2], ['pecdeck', 55, 2], ['shoulderpress', 45, 2], ['latraise', 7.5, 2], ['pushdown', 65, 2]]) && JSON.stringify(normal) === JSON.stringify([['inclinedb', 25, 3], ['pecdeck', 60, 3], ['shoulderpress', 50, 3], ['latraise', 10, 3], ['pushdown', 70, 3]]), JSON.stringify(dl) + ' vs ' + JSON.stringify(normal));
@@ -202,7 +202,7 @@ const MON = T('2026-12-07T17:00:00Z'), WED = T('2026-12-09T17:00:00Z'), NEXT = T
     check('P5 a deload week scores the same as a normal week with the same lift days', JSON.stringify(a) === JSON.stringify(b) && a[5] === 3, JSON.stringify(a) + ' vs ' + JSON.stringify(b));
     await ctx.close();
     await open({ me: 'tyson', time: WED, init: seed() });
-    await page.click('[data-a="deload-skip"]'); await page.waitForFunction(() => !document.getElementById('deloadBanner'));
+    await page.evaluate(() => document.querySelectorAll('#coach details').forEach(d => { d.open = true; })); await page.click('[data-a="deload-skip"]'); await page.waitForFunction(() => !document.getElementById('deloadBanner'));
     await page.reload(); await page.waitForSelector('#main .card'); await settled(page);
     check('P3 Skip puts the offer away until the next five weeks', !(await has(page, '#deloadBanner')) && (await settings(page)).deloadAsked === 5 && !(await settings(page)).deload);
   });
@@ -291,7 +291,7 @@ const MON = T('2026-12-07T17:00:00Z'), WED = T('2026-12-09T17:00:00Z'), NEXT = T
     const card = await txt(page, '#nudgeCard');
     check('N1 after 3 straight full weeks the card shows on Train', card.includes('Three full weeks in a row. Raise your goal to 4 days starting Monday?') && await has(page, '[data-a="nudge-yes"]') && await has(page, '[data-a="nudge-no"]') && await page.evaluate(() => window.MorningLaps.state.tab === 'train'), card);
     const before = await score(page, 'jacquie');
-    await page.click('[data-a="nudge-yes"]'); await page.waitForFunction(() => !document.getElementById('nudgeCard'));
+    await page.evaluate(() => document.querySelectorAll('#coach details').forEach(d => { d.open = true; })); await page.click('[data-a="nudge-yes"]'); await page.waitForFunction(() => !document.getElementById('nudgeCard'));
     const now = await ML(page, () => ({ wk: window.MorningLaps.weekGoals('jacquie', '2026-12-07').goal, live: window.MorningLaps.liveGoals('jacquie').goal, sc: window.MorningLaps.weekScore('jacquie').total }));
     check('N2 "Raise it" changes the setting and leaves this week\'s score alone', (await kv(page, 'profiles/jacquie')).move.goalDays === 4 && now.live === 4 && now.wk === 3 && now.sc === before.total && await txt(page, '#actCount') === '2/3', JSON.stringify(now));
     const next = await carry(page); await ctx.close();
@@ -307,7 +307,7 @@ const MON = T('2026-12-07T17:00:00Z'), WED = T('2026-12-09T17:00:00Z'), NEXT = T
     check('N1 not after a broken streak', !(await has(page, '#nudgeCard')) && (await ML(page, () => window.MorningLaps.weekScore('jacquie', '2026-11-30').moveFull && !window.MorningLaps.weekScore('jacquie', '2026-11-23').moveFull && window.MorningLaps.weekScore('jacquie', '2026-11-16').moveFull)));
     await ctx.close();
     await open({ me: 'jacquie', time: WED, init: seed() });
-    await page.click('[data-a="nudge-no"]'); await page.waitForFunction(() => !document.getElementById('nudgeCard'));
+    await page.evaluate(() => document.querySelectorAll('#coach details').forEach(d => { d.open = true; })); await page.click('[data-a="nudge-no"]'); await page.waitForFunction(() => !document.getElementById('nudgeCard'));
     check('N3 "Not now" hides the card and notes 3 weeks from today', (await kv(page, 'profiles/jacquie')).goalNudge.until === '2026-12-30' && (await kv(page, 'profiles/jacquie')).move === undefined);
     await page.reload(); await page.waitForSelector('#main .card'); await settled(page);
     check('N3 it stays hidden after a reload', !(await has(page, '#nudgeCard')));
@@ -321,7 +321,7 @@ const MON = T('2026-12-07T17:00:00Z'), WED = T('2026-12-09T17:00:00Z'), NEXT = T
     // caps
     await open({ me: 'tyson', time: WED, init: seed() });
     check('N4 the lifting program is offered 6 from 5', (await txt(page, '#nudgeCard')).includes('Raise your goal to 6 days starting Monday?'));
-    await page.click('[data-a="nudge-yes"]'); await page.waitForFunction(() => !document.getElementById('nudgeCard'));
+    await page.evaluate(() => document.querySelectorAll('#coach details').forEach(d => { d.open = true; })); await page.click('[data-a="nudge-yes"]'); await page.waitForFunction(() => !document.getElementById('nudgeCard'));
     check('N4 "Raise it" on the lifting program changes the weekly activity goal for next week', (await settings(page)).goal === 6 && (await ML(page, () => window.MorningLaps.weekGoals('tyson', '2026-12-07').goal)) === 5);
     await ctx.close();
     await open({ me: 'tyson', time: WED, init: seed({ sixDay: true, sevenDay: true, settings: { goal: 6 }, jProfile: { move: { goalDays: 7 } } }) });

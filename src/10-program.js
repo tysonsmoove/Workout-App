@@ -223,7 +223,7 @@ const stepUp = (ex, w) => Math.max(0, w + ex.inc);
 function specFor(key, date) {
   const ex = EX[key]; if (!ex || !date) return ex;
   const m = model(date), kind = kindFor(date, m); if (!DAYS[kind] || !DAYS[kind].slots) return ex;
-  const p = plannedFor(date, kind, m).find(x => x.key === key), s = p && slotOf(kind, p.base); if (!s) return ex;
+  const p = plannedFor(date, kind, m, true).find(x => x.key === key), s = p && slotOf(kind, p.base); if (!s) return ex;
   return Object.assign({}, ex, { sets: s.sets }, p.key === p.base ? { lo: s.lo, hi: s.hi } : null, s.optional ? { optional: true } : null);
 }
 function suggest(key, date) {
@@ -301,22 +301,26 @@ function kindFor(date, m) {
   return nextDayKey(date);
 }
 function phaseOf(date) { const rec = state.sessions[date], ph = rec ? Number(rec.phase) : 0; return ph >= 1 && ph <= 3 ? Math.floor(ph) : phaseFor(date); }
-function plannedFor(date, kind, m) {
+function plannedFor(date, kind, m, all) { // all: every slot of the day, also on an express session
   // Returns [{base, key}] in order. An existing record keeps its own planned list; swaps in the draft apply on top.
   const rec = state.sessions[date]; const n = rec ? normalize(rec) : null;
   let bases;
   if (n && n.kind === 'strength' && n.day === kind && n.plannedBase) bases = n.plannedBase.filter(k => EX[k]);
   else if (n && n.kind === 'strength' && n.day === kind && n.legacy) bases = Array.from(new Set((DAYS[kind].phases[phaseOf(date)] || []).concat(n.keys)));
   else bases = DAYS[kind].phases[phaseOf(date)];
-  if (m.checkin === 'short' && !(n && n.kind === 'strength' && n.day === kind && n.plannedBase)) bases = bases.slice(0, EXPRESS_LIFTS); // an express session plans the first three lifts
   // a saved lift day keeps the exercises it was saved with: today's default swaps apply to new workouts only
   const own = n && n.kind === 'strength' && n.day === kind;
   const dflt = own ? (n.swaps || {}) : (state.settings.swaps || {});
-  return settleSwaps(bases.map(b => {
+  const slots = settleSwaps(bases.map(b => {
     let key = m.swaps[b] != null ? m.swaps[b] : (dflt[b] || b);
     if (!EX[key]) key = b;
     return { base: b, key };
   }));
+  // An express session ("short on time") plans the first three lifts. Any later lift with a set logged joins the
+  // plan, so nothing typed under "More lifts" is ever left out of the save.
+  if (all || m.checkin !== 'short' || own && n.plannedBase) return slots;
+  const logged = k => !!(m.ex[k] && m.ex[k].reps.some(r => r !== '' && r != null));
+  return slots.filter((p, i) => i < EXPRESS_LIFTS || logged(p.key));
 }
 function setCount(key, m, date) {
   const sg = suggest(key, date);

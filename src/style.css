@@ -517,3 +517,49 @@ textarea.plaintext { font-family: var(--body); min-height: 88px; }
 }
 /* while workout mode is open, messages sit under its top strip, clear of the big buttons at the bottom */
 .wm:not([hidden]) ~ .toast { bottom: auto; top: calc(64px + env(safe-area-inset-top, 0px)); }
+
+/* ---------- Version 17: Log it or go live, the Coach card, calmer animations ---------- */
+.modesw { background: var(--card); }
+.modesw button { min-height: 40px; font-weight: 600; }
+.ci.line { padding: 8px 14px; }
+.ci.line #ciDone { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.card.stack.ci { gap: 6px; padding-block: 10px; }
+.ci .cic { min-height: 48px; padding: 5px 12px; }
+.cip .row.two { flex-wrap: nowrap; }
+.cip .row.two > button { flex: 1 1 0; min-width: 0; min-height: 52px; }
+button.second { font-family: var(--display); font-size: 1.125rem; font-weight: 700; text-transform: var(--caps); letter-spacing: .05em; background: var(--card); border-color: var(--fg); }
+.loghead { font-size: 1.25rem; margin-top: 4px; }
+.coach { display: grid; padding: 8px 14px; }
+.coach .coachrow { border-top: 1px solid var(--line); }
+.coach .eyebrow + .coachrow { border-top: 0; }
+.coach .coachrow > summary { min-height: 36px; color: var(--fg); }
+.coachbody { display: grid; gap: 8px; padding: 2px 0 10px; font-size: .875rem; }
+.morelifts > summary { min-height: 44px; }
+.sweep { position: fixed; inset: 0 0 auto 0; height: calc(6px + env(safe-area-inset-top, 0px)); z-index: 46; pointer-events: none; }
+.sweep[hidden] { display: none; }
+.sweep i { position: absolute; inset: 0; overflow: hidden; }
+.sweep i::before { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, var(--accent) 35%, var(--accent) 65%, transparent); transform: translateX(-100%); }
+.sweep b { position: absolute; top: calc(26px + env(safe-area-inset-top, 0px)); left: 50%; margin-left: -14px; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: var(--accent-ink); font-size: .9375rem; opacity: 0; }
+.sweep.run i::before { animation: sweepGo .6s ease-out both; }
+.sweep.run b { animation: sweepTick .8s ease both; }
+@keyframes sweepGo { to { transform: translateX(100%); } }
+@keyframes sweepTick { 0% { opacity: 0; } 25%, 75% { opacity: 1; } 100% { opacity: 0; } }
+.wm-stripe { height: 8px; flex: none; background: conic-gradient(var(--fg) 25%, var(--card) 0 50%, var(--fg) 0 75%, var(--card) 0) 0 0 / 8px 8px; }
+.wm-fin { display: grid; gap: 8px; width: 100%; text-align: left; }
+.wm-finrow { display: grid; grid-template-columns: minmax(0, 1fr) 84px 84px; gap: 8px; align-items: end; }
+span.wm-pip { display: inline-grid; place-items: center; height: 48px; }
+@keyframes mlFade { from { opacity: 0; } }
+@keyframes mlRise { from { opacity: 0; transform: translateY(10px); } }
+@keyframes pipFill { from { background: var(--soft); color: var(--muted); } }
+/* Subtle (the default): fades and short slides of 150 to 250 ms, no overshoot, nothing that bounces, flips, zooms or spins. */
+:root[data-motion="subtle"] .pop { animation: mlFade .2s ease both; }
+:root[data-motion="subtle"] .bump, :root[data-motion="subtle"] .restbar.done, :root[data-motion="subtle"] .ci .cic.lift { animation: none; }
+:root[data-motion="subtle"] .lane .car, :root[data-motion="subtle"] .lane .fill { animation-duration: .25s; animation-timing-function: ease-out; }
+:root[data-motion="subtle"] .ci .cic.sel { transform: none; box-shadow: none; }
+:root[data-motion="subtle"] .cip.grow { animation: mlRise .2s ease-out both; }
+:root[data-motion="subtle"] .ci[data-anim] .cic.fade { animation: ciFade .2s ease both; }
+:root[data-motion="subtle"] .act.hp.back.flipin { animation: mlFade .2s ease both; }
+:root[data-motion="subtle"] .wm.zoom { animation: mlRise .2s ease-out both; }
+:root[data-motion="subtle"] .wm-pip.new { animation: pipFill .15s ease-out both; }
+/* Off: the same as the phone's reduce-motion setting. */
+:root[data-motion="off"] *, :root[data-motion="off"] *::before, :root[data-motion="off"] *::after { animation: none !important; transition: none !important; }

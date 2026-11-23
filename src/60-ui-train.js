@@ -51,12 +51,12 @@ function renderTrain() {
   else if (isLift && kind !== nextK) why += ' You picked ' + DAYS[kind].name + '.';
 
   const rot = rotation(), segDays = !DAYS[kind] || rot.includes(kind) ? rot : rot.concat([kind]), full = !!(DAYS[kind] ? DAYS[kind].full : splitOf() === 'full'); // an old day from the other split keeps its own button
-  let h = trainTopHTML() + checkinHTML() + '<section class="card sess">' + dateHead('Logging for') +
+  let h = checkinHTML() + coachHTML() + '<h2 class="loghead" id="logHead">Log your workout</h2><section class="card sess">' + dateHead('Logging for') +
     '<div class="seg" id="kindSeg" aria-label="Workout type">' + segDays.map(k => '<button type="button" data-kind="' + k + '" class="' + (kind === k ? 'on' : '') + '" aria-pressed="' + (kind === k) + '">' + DAYS[k].name + '</button>').join('') +
     '<button type="button" data-kind="cardio" class="' + (kind === 'cardio' ? 'on' : '') + '" aria-pressed="' + (kind === 'cardio') + '">Treadmill</button><button type="button" data-kind="rest" class="' + (kind === 'rest' ? 'on' : '') + '" aria-pressed="' + (kind === 'rest') + '">Rest</button></div>' +
     '<div class="status"><span id="statusLine">' + esc(statusText(date)) + '</span>' + (full ? '' : '<span>·</span><span>Phase ' + phase + '</span>') + healthButton() + '</div>' +
     '<p class="tiny muted" id="whyLine" style="margin-top:-4px">' + esc(why) + '</p>' + hkLineHTML(date) +
-    (isLift && date <= todayIso() ? '<div class="row"><button type="button" class="small" id="wmStart" data-a="wm-lift">' + (wmDraftOn(date) ? 'Resume workout' : 'Start guided workout') + '</button><span class="tiny muted">full screen, one lift at a time</span></div>' : '');
+    (isLift && date <= todayIso() ? '<div class="row"><button type="button" class="small" id="wmStart" data-a="wm-lift">' + (wmDraftOn(date) ? 'Resume workout' : 'Go live') + '</button></div>' : '');
   if (d && d.recovered && draftHasContent(d)) h += '<div class="banner"><span>Unsaved draft from ' + tzTime.format(new Date(d.updatedAt)) + ' restored. Not saved until you tap Save.</span><div class="row"><button type="button" class="small" id="discardDraft">Discard draft</button></div></div>';
   if (n && n.ambiguous) h += '<div class="banner">Saved as a ' + (DAYS[rec.day] ? DAYS[rec.day].name : 'lift') + ' day by the earlier version but has no lifting sets. It counts as ' + (n.kind === 'cardio' ? 'treadmill only' : 'no activity') + '. Add sets or re-save to confirm.</div>';
   h += '</section>';
@@ -78,6 +78,9 @@ function renderTrain() {
     const day = DAYS[kind]; const planned = plannedFor(date, kind, m);
     h += '<div class="blk" style="gap:2px"><div class="bhead"><h3>' + day.name + ' day</h3><span class="tiny muted">' + day.sub + '</span></div></div>';
     planned.forEach(p => { h += renderExercise(p, m, date); });
+    // an express session shows its three lifts; the rest of the day waits under "More lifts", and a set typed there is saved like any other
+    const more = m.checkin === 'short' ? plannedFor(date, kind, m, true).filter(p => !planned.some(q => q.base === p.base)) : [];
+    if (more.length) h += '<details class="blk plain morelifts" id="moreLifts" data-dk="morelifts"><summary>More lifts (' + more.length + ')</summary>' + more.map(p => renderExercise(p, m, date)).join('') + '</details>';
   }
   h += '<div class="blk"><label class="f">Notes<input type="text" id="notes" data-field="notes" value="' + esc(m.notes) + '" placeholder="Optional"></label></div>';
   if (isLift) {
@@ -106,18 +109,23 @@ function extrasHTML(date) {
 /* ---------- Progression after Phase 3: deload weeks, stalled lifts, the goal nudge ---------- */
 // What sits above the lifting log: the deload offer (or the reminder that one is on), a swap whose four weeks are up,
 // and the goal nudge. Each is a choice saved to settings or the profile by its button, never by drawing it.
-function trainTopHTML() {
-  const st = deloadState(), sb = state.settings.swapBack || {}, sw = state.settings.swaps || {}, t = todayIso(); let h = '';
-  if (st === 'on') h += '<div class="banner good" id="deloadBanner"><span><b>Deload week is on.</b> 2 sets per lift at about 90% weight. Recovery week, same points.</span><div class="row"><button type="button" class="small" data-a="deload-off">End the deload early</button></div></div>';
-  else if (st === 'offer') h += '<div class="banner accent" id="deloadBanner"><span><b>Deload week:</b> 2 sets per lift at about 90% weight. Recovery week, same points.</span><span class="tiny muted">You have finished ' + deloadWeeks(t) + ' full lift weeks. A lighter week now lets the next five go heavier. Lift days still count as lift days.</span><div class="row"><button type="button" class="small" data-a="deload-take">Take it</button><button type="button" class="small" data-a="deload-skip">Skip</button></div></div>';
-  Object.keys(sb).forEach(base => { const x = sb[base]; if (!x || !EX[base] || !EX[x.to] || !EX[x.from] || !validIso(x.until) || t < x.until || (sw[base] || base) !== x.to) return;
-    h += '<div class="banner" data-swapback="' + base + '"><span><b>Four weeks on ' + esc(EX[x.to].name) + '.</b> Switch back to ' + esc(EX[x.from].name) + '?</span><div class="row"><button type="button" class="small" data-a="swapback-yes" data-base="' + base + '">Switch back</button><button type="button" class="small" data-a="swapback-no" data-base="' + base + '">Keep ' + esc(EX[x.to].name) + '</button></div></div>'; });
-  return h + nudgeHTML(me());
-}
-function nudgeHTML(pid) {
-  const n = goalNudge(pid); if (!n) return '';
-  return '<section class="card stack" id="nudgeCard"><p>' + (n.kind === 'lift' ? '<b>Three weeks with 3 lifts.</b> Raise your lift goal to 3 lift days starting Monday?' : '<b>Three full weeks in a row.</b> Raise your goal to ' + n.to + ' days starting Monday?') + '</p><div class="row"><button type="button" class="small" data-a="nudge-yes">Raise it</button><button type="button" class="quiet" data-a="nudge-no">Not now</button></div>' +
-    '<p class="tiny muted">This week stays at ' + n.from + '. A raised goal locks in next Monday, like any goal change.</p></section>';
+// Coach: the deload offer, a swap that is due for review and the goal nudge, one line each in one card under the
+// check-in. A tap opens a line. Each is a choice saved by its own button, never by drawing it.
+const coachRow = (attrs, line, body) => '<details class="plain coachrow" ' + attrs + '><summary>' + line + '</summary><div class="coachbody">' + body + '</div></details>';
+function coachHTML() {
+  const pid = me(), rows = [], t = todayIso();
+  if (P(pid).plan === 'program') {
+    const st = deloadState(), sb = state.settings.swapBack || {}, sw = state.settings.swaps || {};
+    if (st === 'on') rows.push(coachRow('id="deloadBanner" data-dk="coach-deload"', 'Deload week is on · 2 sets at about 90%', '<span><b>Deload week is on.</b> 2 sets per lift at about 90% weight. Recovery week, same points.</span><div class="row"><button type="button" class="small" data-a="deload-off">End the deload early</button></div>'));
+    else if (st === 'offer') rows.push(coachRow('id="deloadBanner" data-dk="coach-deload"', 'Deload week on offer · a lighter week', '<span><b>Deload week:</b> 2 sets per lift at about 90% weight. Recovery week, same points.</span><span class="tiny muted">You have finished ' + deloadWeeks(t) + ' full lift weeks. A lighter week now lets the next five go heavier. Lift days still count as lift days.</span><div class="row"><button type="button" class="small" data-a="deload-take">Take it</button><button type="button" class="small" data-a="deload-skip">Skip</button></div>'));
+    Object.keys(sb).forEach(base => { const x = sb[base]; if (!x || !EX[base] || !EX[x.to] || !EX[x.from] || !validIso(x.until) || t < x.until || (sw[base] || base) !== x.to) return;
+      rows.push(coachRow('data-swapback="' + base + '" data-dk="coach-swap-' + base + '"', 'Four weeks on ' + esc(EX[x.to].name) + ' · switch back?', '<span><b>Four weeks on ' + esc(EX[x.to].name) + '.</b> Switch back to ' + esc(EX[x.from].name) + '?</span><div class="row"><button type="button" class="small" data-a="swapback-yes" data-base="' + base + '">Switch back</button><button type="button" class="small" data-a="swapback-no" data-base="' + base + '">Keep ' + esc(EX[x.to].name) + '</button></div>')); });
+  }
+  const n = goalNudge(pid);
+  if (n) rows.push(coachRow('id="nudgeCard" data-dk="coach-nudge-' + pid + '"', n.kind === 'lift' ? 'Three weeks with 3 lifts · raise your lift goal?' : 'Three full weeks in a row · raise your goal?',
+    '<p>' + (n.kind === 'lift' ? '<b>Three weeks with 3 lifts.</b> Raise your lift goal to 3 lift days starting Monday?' : '<b>Three full weeks in a row.</b> Raise your goal to ' + n.to + ' days starting Monday?') + '</p><div class="row"><button type="button" class="small" data-a="nudge-yes">Raise it</button><button type="button" class="quiet" data-a="nudge-no">Not now</button></div>' +
+    '<p class="tiny muted">This week stays at ' + n.from + '. A raised goal locks in next Monday, like any goal change.</p>'));
+  return rows.length ? '<section class="card coach" id="coach"><div class="eyebrow">Coach</div>' + rows.join('') + '</section>' : '';
 }
 // where a stalled slot can go for four weeks: another alternate that is free in every phase, else back to its planned exercise
 const stallSwapTarget = p => { const taken = defaultSwapTaken(p.base); return alts(p.base).concat(p.key !== p.base ? [p.base] : []).find(k => k !== p.key && (k === p.base || !taken[k])) || null; };
@@ -292,7 +300,7 @@ function renderMove() {
   if (rest) status = 'Rest day logged';
   else if (program) status = progText + (acts.length ? ' + ' + n.actMin + ' min of activities' : '') + ' · counts as an active day';
   else if (acts.length) status = n.allMin + ' min logged · ' + (di.active ? 'counts as an active day' : (mm - di.minutes) + ' more min of movement to count');
-  let h = nudgeHTML(pid) + checkinHTML() + '<section class="card sess">' + dateHead('Logging for') + '<div class="status"><span id="statusLine">' + esc(status) + '</span>' + healthButton() + '</div>' + hkLineHTML(date) + '</section>' + heatChipHTML(date);
+  let h = checkinHTML() + coachHTML() + '<h2 class="loghead" id="logHead">Log your workout</h2><section class="card sess">' + dateHead('Logging for') + '<div class="status"><span id="statusLine">' + esc(status) + '</span>' + healthButton() + '</div>' + hkLineHTML(date) + '</section>' + heatChipHTML(date);
   if (acts.length || rest || program) {
     h += '<section class="card"><div class="row between"><h3>Logged ' + (rel(date) === nice(date) ? nice(date) : rel(date).toLowerCase()) + '</h3>' + (rest ? '<span class="chip">rest</span>' : di.active ? '<span class="chip good">active day</span>' : '<span class="chip warn">' + di.minutes + ' of ' + mm + ' min</span>') + '</div><div class="done-list" style="margin-top:4px">';
     if (rest) h += '<button type="button" data-a="rest-undo"><span>🛌 Rest day</span><span class="muted">tap to remove</span></button>';

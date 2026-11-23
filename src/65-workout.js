@@ -23,7 +23,7 @@ function wmOpen(plan, fromEl, resume) {
   if (state.ov) { state.ov = null; state.ovQ = []; renderOv(); }
   wm = { pid: me(), date: state.selDate, plan, view: 'start', before: scoreSnapshot(), started: Date.now(), ms: 0, stale: false, i: -1, edit: null, quit: 0 };
   if (plan.kind === 'lift') wmLiftInit(resume); else wmStagesInit(resume);
-  if (reducedMotion() || resume) wm.view = 'main'; // no start sequence with reduced motion, or when coming back
+  if (motionOf() !== 'full' || resume) wm.view = 'main'; // the start lights belong to Full animations, and never play when coming back
   if (fromEl && fromEl.getBoundingClientRect) { const r = fromEl.getBoundingClientRect(); wmEl.style.transformOrigin = Math.round(r.left + r.width / 2) + 'px ' + Math.round(r.top + r.height / 2) + 'px'; }
   wmEl.hidden = false; wmEl.classList.remove('zoom'); void wmEl.offsetWidth; wmEl.classList.add('zoom'); // the tapped card zooms into the session
   document.body.style.overflow = 'hidden'; state.ci = null; state.wmOpens = (state.wmOpens || 0) + 1;
@@ -75,9 +75,18 @@ function wmDraw() {
   wmEl.dataset.view = wm.view; wmEl.dataset.kind = wm.plan.kind;
   if (wm.view === 'start') { wmEl.innerHTML = '<button type="button" class="wm-start" id="wmStartSeq" data-a="wm-go" aria-label="Skip the start"><span class="wm-lights" aria-hidden="true"><i></i><i></i><i></i></span>' + wmFlag('green', false) + '<b class="wm-gotext">GO</b><span class="tiny">' + esc(wm.plan.title) + ' · tap to skip</span></button>'; return; }
   if (wm.view === 'quit') { wmEl.innerHTML = wmQuitHTML(); return; }
-  if (wm.view === 'finish') { wmEl.innerHTML = wm.plan.kind === 'lift' ? wmLiftFinishHTML() : wmStagesFinishHTML(); return; }
+  if (wm.view === 'finish') { wmEl.innerHTML = (motionOf() === 'full' ? '' : '<div class="wm-stripe" id="wmStripe" aria-hidden="true"></div>') + (wm.plan.kind === 'lift' ? wmLiftFinishHTML() : wmStagesFinishHTML()); wmCountUp(); return; }
   wmEl.innerHTML = wm.plan.kind === 'lift' ? (wm.view === 'rest' ? wmRestHTML() : wmLiftHTML()) : wmStageHTML();
 }
+// Finish numbers count up once, in Subtle only (Full has its flag and burst; Off shows them still).
+function wmCountUp() {
+  if (!wm || wm.counted || motionOf() !== 'subtle') return;
+  wm.counted = true;
+  const els = Array.from(wmEl.querySelectorAll('[data-count]')), t0 = Date.now(), ms = 600;
+  const step = () => { const k = Math.min(1, (Date.now() - t0) / ms), e = 1 - Math.pow(1 - k, 3); els.forEach(el => { if (el.isConnected) el.textContent = commas(Math.round(Number(el.dataset.count) * e)); }); if (k >= 1) clearInterval(id); };
+  els.forEach(el => { el.textContent = '0'; }); const id = setInterval(step, 30);
+}
+const wmNum = (v, unit) => '<span data-count="' + v + '">' + commas(v) + '</span>' + (unit || '');
 function wmTick() {
   if (!wm || wm.view === 'start') return;
   const c = $('#wmClock'); if (c) c.textContent = wmTime(wmElapsed());
@@ -151,7 +160,7 @@ function wmLiftHTML() {
     '<p class="tiny muted" id="wmEquip">' + esc(ex.equip) + (ex.per ? ' · weight is one dumbbell' : '') + '</p>' +
     '<div class="row wm-tools"><button type="button" class="wm-btn sm" data-a="wm-swap"' + (opts.length ? '' : ' disabled') + ' aria-expanded="' + !!wm.swap + '">Swap</button><button type="button" class="wm-btn sm" id="wmNotGym" data-a="wm-notgym"' + (stand ? '' : ' disabled') + '>Not at my gym</button></div>';
   if (wm.swap) h += '<div class="wm-swaps" id="wmSwaps">' + opts.map(k => '<button type="button" class="wm-btn" data-a="wm-swapto" data-base="' + p.base + '" data-to="' + k + '">' + esc(EX[k].name) + (k === p.base ? ' <span class="tiny muted">(planned)</span>' : '') + '</button>').join('') + '</div>';
-  h += '<div class="wm-pips" id="wmPips" aria-label="Sets">' + s.reps.map((r, i) => '<button type="button" class="wm-pip' + (r != null ? ' on' : '') + (wm.edit === i ? ' edit' : '') + (i === s.next && !editing ? ' next' : '') + '" data-a="wm-pip" data-i="' + i + '"' + (r == null ? ' disabled' : '') + ' aria-label="Set ' + (i + 1) + (r != null ? ': ' + r + ' reps, tap to change' : ', not logged') + '">' + (r != null ? r : i + 1) + '</button>').join('') + '</div>';
+  h += '<div class="wm-pips" id="wmPips" aria-label="Sets">' + s.reps.map((r, i) => '<button type="button" class="wm-pip' + (r != null ? ' on' : '') + (wm.justSet === p.key + ':' + i ? ' new' : '') + (wm.edit === i ? ' edit' : '') + (i === s.next && !editing ? ' next' : '') + '" data-a="wm-pip" data-i="' + i + '"' + (r == null ? ' disabled' : '') + ' aria-label="Set ' + (i + 1) + (r != null ? ': ' + r + ' reps, tap to change' : ', not logged') + '">' + (r != null ? r : i + 1) + '</button>').join('') + '</div>';
   if (wm.err) h += '<p class="banner bad" id="wmErr">' + esc(wm.err) + '</p>';
   if (done) h += '<p class="wm-done" id="wmDone">All ' + s.n + ' sets logged. Tap a set to change it.</p>';
   else h += '<div class="wm-steps' + (ex.bw ? ' one' : '') + '">' + (ex.bw ? '' : '<div class="wm-step"><span class="eyebrow">Weight lb' + (ex.per ? ' each' : '') + '</span><div><button type="button" data-a="wm-w" data-d="-1" aria-label="Less weight">−</button><b class="num" id="wmW">' + wm.w + '</b><button type="button" data-a="wm-w" data-d="1" aria-label="More weight">+</button></div></div>') +
@@ -177,7 +186,7 @@ function wmWrite(i, value) { // one set into the draft, exactly as typing it int
 }
 ACT['wm-log'] = el => {
   const slots = wmSlots(), p = slots[wm.i], s = wmSets(p), editing = wm.edit != null, i = editing ? wm.edit : s.next; if (i < 0) return;
-  wmWrite(i, String(wm.r)); wm.err = ''; state.wmLogs = (state.wmLogs || 0) + 1;
+  wmWrite(i, String(wm.r)); wm.err = ''; state.wmLogs = (state.wmLogs || 0) + 1; wm.justSet = p.key + ':' + i; wm.restOf = { key: p.key, reps: wmSets(p).reps, i };
   const r = el.getBoundingClientRect(); burst({ count: 16, x: (r.left + r.width / 2) / window.innerWidth, y: r.top / window.innerHeight }); // a small burst, in this person's style
   if (editing) { wmLoadEx(); wmDraw(); return; }
   const after = wmSets(p), last = after.next < 0, nextSlot = last ? slots.slice(wm.i + 1).find(x => wmSets(x).next >= 0) : null;
@@ -197,6 +206,7 @@ function wmRestHTML() {
   const slots = wmSlots(), p = slots[wm.rest.to], s = wmSets(p), sg = suggest(p.key, wm.date), sp = specFor(p.key, wm.date), same = wm.rest.to === wm.i, C = 339.3;
   return wmTopHTML(slots.length + 1, wm.i + 1, (1 + wmLiftFrac() * slots.length) / (slots.length + 1)) + '<div class="wm-body wm-center"><div class="eyebrow">Rest</div>' +
     '<div class="wm-ring" id="wmRing"><svg viewBox="0 0 120 120" aria-hidden="true"><circle class="rbg" cx="60" cy="60" r="54"/><circle class="rfg" id="wmRingFg" cx="60" cy="60" r="54" stroke-dasharray="' + C + '" stroke-dashoffset="0"/></svg><b class="num" id="wmRestTime">' + wmTime(wm.rest.end - Date.now() + 999) + '</b></div>' +
+    (wm.restOf ? '<div class="wm-pips" id="wmRestPips" aria-hidden="true">' + wm.restOf.reps.map((r, i) => '<span class="wm-pip' + (r != null ? ' on' : '') + (i === wm.restOf.i ? ' new' : '') + '">' + (r != null ? r : i + 1) + '</span>').join('') + '</div>' : '') +
     '<div class="row" style="justify-content:center"><button type="button" class="wm-btn" id="wmRestAdd" data-a="wm-restadd">+15 s</button><button type="button" class="wm-btn on" id="wmRestSkip" data-a="wm-restskip">Skip</button></div>' +
     '<div class="wm-nextup" id="wmNextUp"><div class="eyebrow">' + (same ? 'Next' : 'Next lift') + '</div><b>' + esc(EX[p.key].name) + '</b><span class="muted">' + (same ? 'Set ' + (s.next + 1) + ' of ' + s.n : sp.sets + ' × ' + sp.lo + '–' + sp.hi) + (EX[p.key].bw ? '' : ' · ' + (same && s.w !== '' ? s.w : sg.w) + ' lb') + '</span></div></div>';
 }
@@ -205,7 +215,7 @@ function wmRestTick() {
   wmPatch('wmRestTime', wmTime(left + 999)); if (fg) fg.setAttribute('stroke-dashoffset', (339.3 * clamp(1 - left / (wm.rest.total * 1000), 0, 1)).toFixed(1));
   if (left <= 0 && !wm.rest.over) { wm.rest.over = true; try { if (navigator.vibrate) navigator.vibrate([180, 90, 180]); } catch (e) { /* not supported */ } wmRestEnd(); }
 }
-function wmRestEnd() { if (!wm || wm.view !== 'rest') return; wm.i = wm.rest.to; wm.view = 'main'; wm.rest = null; wmLoadEx(); wmDraw(); }
+function wmRestEnd() { if (!wm || wm.view !== 'rest') return; wm.i = wm.rest.to; wm.view = 'main'; wm.rest = null; wm.justSet = null; wm.restOf = null; wmLoadEx(); wmDraw(); }
 ACT['wm-restadd'] = () => { if (wm.rest) { wm.rest.end = Math.max(wm.rest.end, Date.now()) + 15000; wm.rest.total += 15; wmRestTick(); } };
 ACT['wm-restskip'] = () => wmRestEnd();
 // the finish: a checkered flag, what was done, then the same save as the Save button
@@ -223,16 +233,16 @@ function wmPointsHTML() {
 const wmHeatAsk = () => atHealthplex(wm.pid) && wm.date === todayIso() && !heatDone(wm.pid, wm.date) ? '<button type="button" class="chipbtn" id="wmHeat" data-a="wm-heat">🔥 Sauna, steam or whirlpool after?</button>' : '';
 function wmLiftFinishHTML() {
   const s = wm.sum || wmLiftSummary(), slots = wmSlots().length || 1;
-  let h = wmTopHTML(slots + 1, slots, 1) + '<div class="wm-body wm-center">' + wmFlag('chk', true) + '<h2 id="wmFinishTitle">' + (wm.saved ? 'Saved' : 'Finish line') + '</h2>' +
-    '<div class="wm-sum" id="wmSummary"><div><span class="muted">Sets</span><b class="num">' + s.sets + '</b></div><div><span class="muted">Total lifted</span><b class="num">' + commas(s.lb) + ' lb</b></div>' +
-    '<div><span class="muted">Minutes</span><b class="num">' + s.minutes + '</b></div><div><span class="muted">' + (s.kind === 'strength' ? (s.counts ? 'Counts as a lift day' : 'Not a lift day yet') : s.kind === 'cardio' ? 'Warm-up only' : 'Nothing logged') + '</span><b>' + (s.kind === 'strength' ? esc(DAYS[s.day].name) : '') + '</b></div></div>' +
+  let h = wmTopHTML(slots + 1, slots, 1) + '<div class="wm-body wm-center">' + (motionOf() === 'full' ? wmFlag('chk', true) : '') + '<h2 id="wmFinishTitle">' + (wm.saved ? 'Saved' : 'Finish line') + '</h2>' +
+    '<div class="wm-sum" id="wmSummary"><div><span class="muted">Sets</span><b class="num">' + wmNum(s.sets) + '</b></div><div><span class="muted">Total lifted</span><b class="num">' + wmNum(s.lb, ' lb') + '</b></div>' +
+    '<div><span class="muted">Minutes</span><b class="num">' + wmNum(s.minutes) + '</b></div><div><span class="muted">' + (s.kind === 'strength' ? (s.counts ? 'Counts as a lift day' : 'Not a lift day yet') : s.kind === 'cardio' ? 'Warm-up only' : 'Nothing logged') + '</span><b>' + (s.kind === 'strength' ? esc(DAYS[s.day].name) : '') + '</b></div></div>' +
     (s.ups.length ? '<p class="wm-ups" id="wmUps"><b>Up from last time:</b> ' + s.ups.map(esc).join(' · ') + '</p>' : '');
   if (wm.err) h += '<p class="banner bad" id="wmErr">' + esc(wm.err) + '</p>';
   if (wm.saved) h += wmPointsHTML() + wmHeatAsk() + '<button type="button" class="primary wm-log" id="wmDoneBtn" data-a="wm-done">Done</button>';
   else h += '<button type="button" class="primary wm-log" id="wmSave" data-a="wm-save">Save workout</button><button type="button" class="wm-btn" data-a="wm-unfinish">Back to the lifts</button>';
   return h + '</div>';
 }
-ACT['wm-finish'] = () => { wm.view = 'finish'; wm.err = ''; wm.sum = null; wmDraw(); if (!reducedMotion()) burst({ kind: 'flags', count: 40, y: 0.4 }); };
+ACT['wm-finish'] = () => { wm.view = 'finish'; wm.err = ''; wm.sum = null; wm.counted = false; wmDraw(); burst({ kind: 'flags', count: 40, y: 0.4 }); }; // the burst is Full only
 ACT['wm-unfinish'] = () => { wm.view = 'main'; wm.err = ''; wmDraw(); };
 ACT['wm-save'] = async () => { // the same save as the Save button: same rules, same celebration, same lift-day credit
   const s = wmLiftSummary(); if (s.r.errors.length) { wm.err = s.r.errors[0]; wmDraw(); return; }
@@ -323,9 +333,11 @@ ACT['wm-sprev'] = () => { if (wm.si > 0) { wmRun(false); wm.si--; wmStore(); wmD
 ACT['wm-snext'] = () => { if (wm.si < wm.plan.stages.length - 1) { wmRun(false); wm.si++; wmStore(); wmDraw(); } };
 // What the session logs: every moving part as ONE activity (minutes, with laps, miles or station sets in its note),
 // and a recovery room, if it was used, as its own recovery entry that does not count toward active minutes.
+const wmMeasured = i => { const s = wm.st[i], ms = wmStageMs(i); return Math.max(ms >= 20000 || s.laps > 0 || Object.keys(s.sets).length ? 1 : 0, Math.round(ms / 60000)); };
+const wmInt = (v, max) => { const n = Math.round(Number(v)); return isFinite(n) && n > 0 ? Math.min(max, n) : 0; };
 function wmStageOutcome() {
   const parts = [], notes = []; let min = 0, heat = null, first = null;
-  wm.plan.stages.forEach((g, i) => { const s = wm.st[i], ms = wmStageMs(i), m = Math.max(ms >= 20000 || s.laps > 0 || Object.keys(s.sets).length ? 1 : 0, Math.round(ms / 60000));
+  wm.plan.stages.forEach((g, i) => { const f = wm.fin && wm.fin[i], s = f ? Object.assign({}, wm.st[i], { laps: wmInt(f.laps, 400) }) : wm.st[i], m = f ? wmInt(f.min, 300) : wmMeasured(i); // typed on the finish screen, or what the clock measured
     if (g.type === 'heat') { if (m > 0) heat = { k: s.room, min: Math.min(20, m) }; return; }
     if (!m) return; first = first || g; min += m; parts.push(g.name);
     notes.push(g.name + ' ' + m + ' min' + (g.type === 'laps' && s.laps ? ', ' + s.laps + ' lap' + (s.laps === 1 ? '' : 's') + ' (' + milesText(s.laps) + ')' : g.type === 'lengths' && s.laps ? ', ' + s.laps + ' length' + (s.laps === 1 ? '' : 's') + ' (' + s.laps * POOL_YARDS + ' yd)' : '') +
@@ -334,15 +346,33 @@ function wmStageOutcome() {
 }
 function wmStagesFinishHTML() {
   const o = wm.out || wmStageOutcome(), n = wm.plan.stages.length;
-  let h = wmTopHTML(n, n - 1, 1) + '<div class="wm-body wm-center">' + wmFlag('chk', true) + '<h2 id="wmFinishTitle">' + (wm.saved ? 'Logged' : 'Finish line') + '</h2><div class="wm-sum" id="wmSummary">' +
-    '<div><span class="muted">' + esc(o.name || 'Movement') + '</span><b class="num">' + o.min + ' min</b></div>' + (o.note ? '<div class="wide"><span class="muted">' + esc(o.note) + '</span></div>' : '') +
+  let h = wmTopHTML(n, n - 1, 1) + '<div class="wm-body wm-center">' + (motionOf() === 'full' ? wmFlag('chk', true) : '') + '<h2 id="wmFinishTitle">' + (wm.saved ? 'Logged' : 'Finish line') + '</h2>';
+  // before logging, every part can be corrected: the timer may have been paused, or never started
+  if (!wm.saved && wm.fin) h += '<div class="wm-fin" id="wmFin">' + wm.plan.stages.map((g, i) => { const f = wm.fin[i], unit = g.type === 'laps' ? 'Laps' : g.type === 'lengths' ? 'Lengths' : '';
+    return '<div class="wm-finrow" data-fin="' + i + '"><b>' + esc(g.type === 'heat' ? ACTS[wm.st[i].room].name : g.name) + '</b><label class="f">Minutes<input type="number" inputmode="numeric" pattern="[0-9]*" min="0" max="' + (g.type === 'heat' ? 20 : 300) + '" data-wmf="min" data-i="' + i + '" value="' + esc(f.min) + '"></label>' +
+      (unit ? '<label class="f">' + unit + '<input type="number" inputmode="numeric" pattern="[0-9]*" min="0" max="400" data-wmf="laps" data-i="' + i + '" value="' + esc(f.laps) + '"></label>' : '<span></span>') + '</div>'; }).join('') +
+    '<p class="tiny muted">Fix anything the timer missed before you log it.</p></div>';
+  h += '<div class="wm-sum" id="wmSummary">' +
+    '<div><span class="muted" id="wmSumName">' + esc(o.name || 'Movement') + '</span><b class="num" id="wmSumMin">' + wmNum(o.min, ' min') + '</b></div>' + (o.note ? '<div class="wide"><span class="muted" id="wmSumNote">' + esc(o.note) + '</span></div>' : '') +
     (o.heat ? '<div><span class="muted">' + ACTS[o.heat.k].name + ' · recovery</span><b class="num">' + o.heat.min + ' min</b></div>' : '') + '</div>';
   if (wm.err) h += '<p class="banner bad" id="wmErr">' + esc(wm.err) + '</p>';
   if (wm.saved) h += wmPointsHTML() + (o.heat ? '' : wmHeatAsk()) + '<button type="button" class="primary wm-log" id="wmDoneBtn" data-a="wm-done">Done</button>';
-  else h += (o.min || o.heat ? '<button type="button" class="primary wm-log" id="wmSave" data-a="wm-stagelog">Log ' + (o.min ? o.min + ' min' : ACTS[o.heat.k].name.toLowerCase()) + '</button>' : '<p class="muted">Nothing to log yet.</p>') + '<button type="button" class="wm-btn" data-a="wm-unfinish">Back</button>';
+  else h += '<button type="button" class="primary wm-log" id="wmSave" data-a="wm-stagelog"' + (o.min || o.heat ? '' : ' disabled') + '>Log ' + (o.min ? o.min + ' min' : o.heat ? ACTS[o.heat.k].name.toLowerCase() : 'it') + '</button><button type="button" class="wm-btn" data-a="wm-unfinish">Back</button>';
   return h + '</div>';
 }
-ACT['wm-sfinish'] = () => { wmRun(false); wmStore(); wm.view = 'finish'; wm.err = ''; wm.out = null; wmDraw(); if (!reducedMotion()) burst({ kind: 'flags', count: 40, y: 0.4 }); };
+ACT['wm-sfinish'] = () => {
+  wmRun(false); wmStore(); wm.out = null; wm.counted = false;
+  wm.fin = wm.plan.stages.map((g, i) => ({ min: String(g.type === 'heat' ? Math.min(20, wmMeasured(i)) : wmMeasured(i)), laps: g.type === 'laps' || g.type === 'lengths' ? String(wm.st[i].laps) : '' }));
+  wm.view = 'finish'; wm.err = ''; wmDraw(); burst({ kind: 'flags', count: 40, y: 0.4 }); // the burst is Full only
+};
+// typing on the finish screen changes what will be logged; the button and the summary follow without a redraw
+wmEl.addEventListener('input', e => {
+  const el = e.target; if (!wm || !wm.fin || !el.dataset || !el.dataset.wmf || !wm.fin[el.dataset.i]) return;
+  wm.fin[el.dataset.i][el.dataset.wmf] = el.value; wm.counted = true;
+  const o = wmStageOutcome(), b = $('#wmSave'), m = $('#wmSumMin'), nt = $('#wmSumNote'), nm = $('#wmSumName');
+  if (b) { b.textContent = 'Log ' + (o.min ? o.min + ' min' : o.heat ? ACTS[o.heat.k].name.toLowerCase() : 'it'); b.disabled = !(o.min || o.heat); }
+  if (m) m.textContent = o.min + ' min'; if (nt) nt.textContent = o.note; if (nm) nm.textContent = o.name || 'Movement';
+});
 ACT['wm-stagelog'] = async () => { // the same logging as the activity menu, or the lifting log's treadmill entry
   wm.st.forEach((s, i) => { if (s.on) { s.ms = wmStageMs(i); s.on = false; } });
   const o = wmStageOutcome(), felt = wm.plan.felt || null, now = new Date().toISOString(); if (!o.min && !o.heat) { wm.err = 'Nothing to log yet.'; wm.view = 'finish'; wmDraw(); return; }
