@@ -193,16 +193,16 @@ Scoring, the season, `results/` and `iou/` are untouched. Two fields are new, bo
 - **The switch.** `#modeSwitch` sits at the top of Train for both profiles. `modeOf(pid)` reads `profile.trainMode` and defaults to `'log'`. It only decides which of the two preview buttons is the primary one.
 - **The preview** has two equal buttons, `#ciLog` and `#ciStart`. Rest keeps its single `#ciRest` button.
 - **Log it, lifts.** The choice goes on the draft (`kindSel`, `checkin`), the check-in collapses to one line, the page scrolls to `#logHead` and the first weight field takes focus. Saving is the ordinary Save button. "Short on time" shows the first `EXPRESS_LIFTS` lifts; the rest sit in `#moreLifts` and save with the others when filled (`plannedFor` in `src/10-program.js`).
-- **Log it, everything else.** `OV.cilog` is one sheet built from the same parts as the live session (`ciStages`): an activity picker, minutes, laps for the track or lengths for the pool, and for recovery an optional sauna, steam or whirlpool. It logs one activity through `logActivity()` with laps and miles in the note, plus a recovery entry (`mv: false`) for the room. The treadmill saves as the lifting log's own treadmill day.
+- **Log it, everything else.** `OV.cilog` is one sheet built from the same parts as the live session (`ciStages`): an activity picker, minutes, laps for the track or lengths for the pool, and for recovery an optional sauna, steam or whirlpool. It logs one activity through `logActivity()` with laps and miles in the note, plus a recovery entry (`mv: false`) for the room. The treadmill saves as the lifting log's own treadmill day; on a day that already holds lifts the minutes go into that lift day's treadmill field instead, so the lifts are kept (`treadmillDraft`, also used by a live treadmill session).
 - **One line once answered.** With a record for today, or a choice on the draft, the check-in is `#ciDone` plus `#ciChange`. Past days show no check-in and no switch.
-- **Live finish screens.** `wm.fin` holds the minutes, laps and lengths shown on a timed session's finish screen. Typing there changes what `wmStageOutcome()` logs.
+- **Live finish screens.** `wm.fin` holds the minutes, laps and lengths shown on a timed session's finish screen. Typing there changes what `wmStageOutcome()` logs and redraws the summary. Going back to the session drops it, so the next Finish starts from the clock again.
 
 ### Animations (`motionOf` in `src/00-core.js`, `src/50-fx.js`)
 
 `motionOf(pid)` is `'off'` when the phone asks for reduced motion, otherwise the profile's `motion`, default `'subtle'`. It is mirrored to `<html data-motion>` for the stylesheet.
 
 - **Full** is version 16's behavior: bursts, start lights, the flag, flips and bounces. The celebration style applies only here.
-- **Subtle** never calls `burst()`. `milestone()` runs one 600 ms sweep of the accent color across the top with a check mark, at most once per 1.5 s, and only for a weight increase, a badge, a lead change, a week win or a team week. Live mode opens with a 200 ms fade and slide, a logged set fills its pip in 150 ms, and the finish screen has a thin checkered stripe and numbers that count up once.
+- **Subtle** never calls `burst()`. `milestone()` runs one 600 ms sweep of the accent color across the top with a check mark, at most once per 1.5 s, and only for a weight increase, a badge, a lead change, this person's own week win or a team week. Live mode opens with a 200 ms fade and slide, a logged set fills its pip in 150 ms, and the finish screen has a thin checkered stripe and numbers that count up once.
 - **Off** stops every animation and transition.
 - `state.fxn` counts bursts and milestone effects for the tests.
 

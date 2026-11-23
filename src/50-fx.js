@@ -142,7 +142,7 @@ function announce() {
     prefSet('ml.seenFinalWeek', seen);
   }
   const fresh = finals.filter(w => w.ws > seen).slice(-2);
-  if (fresh.length) { prefSet('ml.seenFinalWeek', fresh[fresh.length - 1].ws); fresh.forEach(w => queueOv({ type: 'weekwin', week: w })); milestone(); } // a week win or a team week
+  if (fresh.length) { prefSet('ml.seenFinalWeek', fresh[fresh.length - 1].ws); fresh.forEach(w => queueOv({ type: 'weekwin', week: w })); if (fresh.some(w => w.winner === me() || isTeamWeek(w.ws))) milestone(); } // this person's week win, or a team week
   // only while late entries still count: from Wednesday the week is about to be closed and announced for real
   if (last && !last.final && last.played && todayIso() < addDays(last.ws, 7 + GRACE_DAYS) && String(prefGet('ml.seenWeek', '')) < last.ws) { prefSet('ml.seenWeek', last.ws); toast(provisionalText(last), 5200); }
 }

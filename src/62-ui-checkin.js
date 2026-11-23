@@ -194,9 +194,9 @@ function checkinHTML() {
   const line = (text, btn) => sw + '<section class="card ci line" id="checkin"><div class="row between" style="flex-wrap:nowrap"><span id="ciDone">' + text + '</span>' + btn + '</div></section>';
   if (going) return line('<b>Workout in progress</b> · ' + esc(going.title), '<button type="button" class="small on" id="wmResume" data-a="wm-resume">Resume workout</button>');
   if (!open) {
-    const felt = (rec && CHECKIN_WORDS[rec.checkin] && rec.checkin) || (d && CHECKIN_WORDS[d.checkin] && d.checkin) || null;
+    const dFelt = d && CHECKIN_WORDS[d.checkin] ? d.checkin : null, felt = dFelt || (rec && CHECKIN_WORDS[rec.checkin] && rec.checkin) || null; // the newest choice: the draft's, then the saved day's
     if (rec || felt) {
-      const liftPick = !rec && (felt === 'strong' || felt === 'short') && DAYS[kindFor(date, d)], what = rec ? dayWhat(pid, date) : liftPick ? DAYS[kindFor(date, d)].name : '';
+      const dk = d ? kindFor(date, d) : null, liftPick = (dFelt === 'strong' || dFelt === 'short') && DAYS[dk], what = liftPick ? DAYS[dk].name : rec ? dayWhat(pid, date) : '';
       return line('<b>' + (felt ? ciLabel(pid, felt) : 'Today is logged') + '</b>' + (what ? ' · ' + esc(what) : ''), '<button type="button" class="quiet" id="ciChange" data-a="ci-again">Change</button>');
     }
   }
@@ -287,6 +287,14 @@ OV.cilog = {
 };
 ACT['cilog-opt'] = el => { const o = state.ov; o['k' + el.dataset.i] = el.dataset.v; renderOv(); };
 ACT['cilog-room'] = el => { state.ov.room = el.dataset.k; renderOv(); };
+// Treadmill minutes from a sheet or a live session. A day that already holds lifts keeps them: the minutes go in that
+// lift day's treadmill field instead of turning the day into a treadmill day. Returns true when the lifts were kept.
+function treadmillDraft(date, min, felt) {
+  const d = draft(date), lifting = !!DAYS[kindFor(date, d)] && Object.keys(d.ex).some(k => d.ex[k].reps.some(r => r !== '' && r != null));
+  if (!lifting) d.kindSel = 'cardio';
+  d.tm.minutes = String(min); if (felt && !(lifting && d.checkin)) d.checkin = felt; d.recovered = false; persistDrafts();
+  return lifting;
+}
 ACT['cilog-save'] = async () => {
   const o = state.ov, date = o.date, felt = o.felt, now = new Date().toISOString(), names = [], notes = []; let min = 0, first = null;
   for (let i = 0; i < o.parts.length; i++) {
@@ -303,12 +311,12 @@ ACT['cilog-save'] = async () => {
   // one part: just its laps or lengths. Several: each part's minutes, so the total can be read back.
   const note = notes.length === 1 ? notes[0].d : notes.map(x => x.name + ' ' + x.m + ' min' + (x.d ? ', ' + x.d : '')).join(' · ');
   if (first === 'treadmill') { // the lifting log's own treadmill day, saved by the same Save
-    const d = draft(date); d.kindSel = 'cardio'; d.tm.minutes = String(min); if (felt) d.checkin = felt; d.recovered = false; persistDrafts();
+    treadmillDraft(date, min, felt);
     state.ci = null; closeOv(); if (state.selDate !== date) state.selDate = date;
     const ok = await save(); if (!ok) render(); return;
   }
   const before = scoreSnapshot(); let ok = true;
-  if (min) { const a = ACTS[first] || ACTS.other; ok = await logActivity(date, { id: uid(), a: ACTS[first] ? first : 'other', name: names.join(' + '), min, feel: null, hurt: false, note, mv: a.mv !== false, at: now }, felt); }
+  if (min && !o.actDone) { const a = ACTS[first] || ACTS.other; ok = await logActivity(date, { id: uid(), a: ACTS[first] ? first : 'other', name: names.join(' + '), min, feel: null, hurt: false, note, mv: a.mv !== false, at: now }, felt); if (ok) o.actDone = true; } // a retry after a failed second write does not log the first again
   if (ok && heat) ok = await logActivity(date, { id: uid(), a: heat.k, name: ACTS[heat.k].name, min: heat.min, feel: null, hurt: false, note: '', mv: false, at: now }, felt);
   if (!ok) return;
   state.ci = null; closeOv(); render();

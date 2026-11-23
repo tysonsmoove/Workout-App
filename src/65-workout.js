@@ -133,7 +133,8 @@ function wmSets(p) { // the sets of one slot: how many, which are logged, which 
 const wmLiftAny = () => { const m = wmM(); return m.tm.minutes !== '' && Number(m.tm.minutes) > 0 || Object.keys(m.ex).some(k => m.ex[k].reps.some(r => r !== '' && r != null)); };
 function wmLiftFrac() { const s = wmSlots(); let done = 0, all = 0; s.forEach(p => { const x = wmSets(p); done += x.done; all += x.n; }); return all ? done / all : 0; }
 function wmLoadEx() { // the steppers start from the suggestion and from last time
-  const p = wmSlots()[wm.i]; wm.edit = null; wm.swap = false; if (!p) return;
+  const all = wmSlots(); if (wm.i >= all.length) wm.i = all.length - 1; // a lift past the first three leaves a short session when its only set is removed
+  const p = all[wm.i]; wm.edit = null; wm.swap = false; if (!p) return;
   const ex = EX[p.key], sg = suggest(p.key, wm.date), s = wmSets(p), i = s.next < 0 ? s.n - 1 : s.next, sp = specFor(p.key, wm.date);
   wm.w = ex.bw ? null : s.w !== '' && isFinite(Number(s.w)) ? Number(s.w) : (sg.w != null ? sg.w : ex.start);
   const prev = i > 0 && s.reps[i - 1] != null ? s.reps[i - 1] : null, last = sg.last && sg.last.reps[i] != null ? sg.last.reps[i] : null;
@@ -141,6 +142,7 @@ function wmLoadEx() { // the steppers start from the suggestion and from last ti
 }
 function wmLiftHTML() {
   const slots = wmSlots(), kind = wmKind(), day = DAYS[kind], n = slots.length;
+  if (wm.i >= n) wm.i = n - 1;
   let h = wmTopHTML(n + 1, wm.i + 1, (1 + wmLiftFrac() * n) / (n + 1) * (wm.i < 0 && !wmLiftAny() ? 0 : 1));
   if (wm.i < 0) { // the warm-up lap
     const full = day.full;
@@ -206,7 +208,7 @@ function wmRestHTML() {
   const slots = wmSlots(), p = slots[wm.rest.to], s = wmSets(p), sg = suggest(p.key, wm.date), sp = specFor(p.key, wm.date), same = wm.rest.to === wm.i, C = 339.3;
   return wmTopHTML(slots.length + 1, wm.i + 1, (1 + wmLiftFrac() * slots.length) / (slots.length + 1)) + '<div class="wm-body wm-center"><div class="eyebrow">Rest</div>' +
     '<div class="wm-ring" id="wmRing"><svg viewBox="0 0 120 120" aria-hidden="true"><circle class="rbg" cx="60" cy="60" r="54"/><circle class="rfg" id="wmRingFg" cx="60" cy="60" r="54" stroke-dasharray="' + C + '" stroke-dashoffset="0"/></svg><b class="num" id="wmRestTime">' + wmTime(wm.rest.end - Date.now() + 999) + '</b></div>' +
-    (wm.restOf ? '<div class="wm-pips" id="wmRestPips" aria-hidden="true">' + wm.restOf.reps.map((r, i) => '<span class="wm-pip' + (r != null ? ' on' : '') + (i === wm.restOf.i ? ' new' : '') + '">' + (r != null ? r : i + 1) + '</span>').join('') + '</div>' : '') +
+    (wm.restOf && motionOf() !== 'full' ? '<div class="wm-pips" id="wmRestPips" aria-hidden="true">' + wm.restOf.reps.map((r, i) => '<span class="wm-pip' + (r != null ? ' on' : '') + (i === wm.restOf.i ? ' new' : '') + '">' + (r != null ? r : i + 1) + '</span>').join('') + '</div>' : '') +
     '<div class="row" style="justify-content:center"><button type="button" class="wm-btn" id="wmRestAdd" data-a="wm-restadd">+15 s</button><button type="button" class="wm-btn on" id="wmRestSkip" data-a="wm-restskip">Skip</button></div>' +
     '<div class="wm-nextup" id="wmNextUp"><div class="eyebrow">' + (same ? 'Next' : 'Next lift') + '</div><b>' + esc(EX[p.key].name) + '</b><span class="muted">' + (same ? 'Set ' + (s.next + 1) + ' of ' + s.n : sp.sets + ' × ' + sp.lo + '–' + sp.hi) + (EX[p.key].bw ? '' : ' · ' + (same && s.w !== '' ? s.w : sg.w) + ' lb') + '</span></div></div>';
 }
@@ -243,7 +245,7 @@ function wmLiftFinishHTML() {
   return h + '</div>';
 }
 ACT['wm-finish'] = () => { wm.view = 'finish'; wm.err = ''; wm.sum = null; wm.counted = false; wmDraw(); burst({ kind: 'flags', count: 40, y: 0.4 }); }; // the burst is Full only
-ACT['wm-unfinish'] = () => { wm.view = 'main'; wm.err = ''; wmDraw(); };
+ACT['wm-unfinish'] = () => { wm.view = 'main'; wm.err = ''; wm.fin = null; wmDraw(); }; // going back drops what was typed on the finish screen: the next Finish starts from the clock again
 ACT['wm-save'] = async () => { // the same save as the Save button: same rules, same celebration, same lift-day credit
   const s = wmLiftSummary(); if (s.r.errors.length) { wm.err = s.r.errors[0]; wmDraw(); return; }
   if (state.selDate !== wm.date) state.selDate = wm.date;
@@ -344,6 +346,8 @@ function wmStageOutcome() {
       (g.type === 'circuit' && Object.keys(s.sets).length ? ': ' + CIRCUIT.map((nm, k) => s.sets[k] ? nm.toLowerCase() + ' ' + s.sets[k] : '').filter(Boolean).join(', ') : '') + (s.iv ? ', intervals' : '')); });
   return { min, heat, first, name: parts.join(' + '), note: notes.length === 1 && parts.length === 1 ? notes[0].replace(parts[0] + ' ', '').replace(/^\d+ min,? ?/, '') : notes.join(' · ') };
 }
+const wmStageSumHTML = o => '<div><span class="muted" id="wmSumName">' + esc(o.name || 'Movement') + '</span><b class="num" id="wmSumMin">' + wmNum(o.min, ' min') + '</b></div>' + (o.note ? '<div class="wide"><span class="muted" id="wmSumNote">' + esc(o.note) + '</span></div>' : '') +
+  (o.heat ? '<div><span class="muted">' + ACTS[o.heat.k].name + ' · recovery</span><b class="num" id="wmSumHeat">' + o.heat.min + ' min</b></div>' : '');
 function wmStagesFinishHTML() {
   const o = wm.out || wmStageOutcome(), n = wm.plan.stages.length;
   let h = wmTopHTML(n, n - 1, 1) + '<div class="wm-body wm-center">' + (motionOf() === 'full' ? wmFlag('chk', true) : '') + '<h2 id="wmFinishTitle">' + (wm.saved ? 'Logged' : 'Finish line') + '</h2>';
@@ -352,9 +356,7 @@ function wmStagesFinishHTML() {
     return '<div class="wm-finrow" data-fin="' + i + '"><b>' + esc(g.type === 'heat' ? ACTS[wm.st[i].room].name : g.name) + '</b><label class="f">Minutes<input type="number" inputmode="numeric" pattern="[0-9]*" min="0" max="' + (g.type === 'heat' ? 20 : 300) + '" data-wmf="min" data-i="' + i + '" value="' + esc(f.min) + '"></label>' +
       (unit ? '<label class="f">' + unit + '<input type="number" inputmode="numeric" pattern="[0-9]*" min="0" max="400" data-wmf="laps" data-i="' + i + '" value="' + esc(f.laps) + '"></label>' : '<span></span>') + '</div>'; }).join('') +
     '<p class="tiny muted">Fix anything the timer missed before you log it.</p></div>';
-  h += '<div class="wm-sum" id="wmSummary">' +
-    '<div><span class="muted" id="wmSumName">' + esc(o.name || 'Movement') + '</span><b class="num" id="wmSumMin">' + wmNum(o.min, ' min') + '</b></div>' + (o.note ? '<div class="wide"><span class="muted" id="wmSumNote">' + esc(o.note) + '</span></div>' : '') +
-    (o.heat ? '<div><span class="muted">' + ACTS[o.heat.k].name + ' · recovery</span><b class="num">' + o.heat.min + ' min</b></div>' : '') + '</div>';
+  h += '<div class="wm-sum" id="wmSummary">' + wmStageSumHTML(o) + '</div>';
   if (wm.err) h += '<p class="banner bad" id="wmErr">' + esc(wm.err) + '</p>';
   if (wm.saved) h += wmPointsHTML() + (o.heat ? '' : wmHeatAsk()) + '<button type="button" class="primary wm-log" id="wmDoneBtn" data-a="wm-done">Done</button>';
   else h += '<button type="button" class="primary wm-log" id="wmSave" data-a="wm-stagelog"' + (o.min || o.heat ? '' : ' disabled') + '>Log ' + (o.min ? o.min + ' min' : o.heat ? ACTS[o.heat.k].name.toLowerCase() : 'it') + '</button><button type="button" class="wm-btn" data-a="wm-unfinish">Back</button>';
@@ -369,9 +371,9 @@ ACT['wm-sfinish'] = () => {
 wmEl.addEventListener('input', e => {
   const el = e.target; if (!wm || !wm.fin || !el.dataset || !el.dataset.wmf || !wm.fin[el.dataset.i]) return;
   wm.fin[el.dataset.i][el.dataset.wmf] = el.value; wm.counted = true;
-  const o = wmStageOutcome(), b = $('#wmSave'), m = $('#wmSumMin'), nt = $('#wmSumNote'), nm = $('#wmSumName');
+  const o = wmStageOutcome(), b = $('#wmSave'), sm = $('#wmSummary');
   if (b) { b.textContent = 'Log ' + (o.min ? o.min + ' min' : o.heat ? ACTS[o.heat.k].name.toLowerCase() : 'it'); b.disabled = !(o.min || o.heat); }
-  if (m) m.textContent = o.min + ' min'; if (nt) nt.textContent = o.note; if (nm) nm.textContent = o.name || 'Movement';
+  if (sm) sm.innerHTML = wmStageSumHTML(o); // the whole summary: a note or a recovery row can appear or go as the fields change
 });
 ACT['wm-stagelog'] = async () => { // the same logging as the activity menu, or the lifting log's treadmill entry
   wm.st.forEach((s, i) => { if (s.on) { s.ms = wmStageMs(i); s.on = false; } });
@@ -379,7 +381,7 @@ ACT['wm-stagelog'] = async () => { // the same logging as the activity menu, or 
   let ok = true;
   if (o.min && o.first.act === 'treadmill') { // the lifting log's own treadmill day
     if (state.selDate !== wm.date) state.selDate = wm.date;
-    const d = draft(wm.date); d.kindSel = 'cardio'; d.tm.minutes = String(o.min); if (felt) d.checkin = felt; d.recovered = false; persistDrafts(); ok = await save();
+    treadmillDraft(wm.date, o.min, felt); ok = await save();
   } else if (o.min) {
     const a = ACTS[o.first.act] || ACTS.other, before = scoreSnapshot();
     ok = await logActivity(wm.date, { id: uid(), a: ACTS[o.first.act] ? o.first.act : 'other', name: o.name, min: o.min, feel: null, hurt: false, note: o.note.slice(0, 200), mv: a.mv !== false, at: now }, felt);

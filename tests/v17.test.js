@@ -51,7 +51,7 @@ const FULLA = [['squat', 3], ['dbbench', 3], ['latpull', 3], ['dbshoulder', 2], 
   const browser = await chromium.launch();
   let ctx, page; const consoleErrors = [];
   const open = async (opts) => {
-    ({ ctx, page } = await newPage(browser, Object.assign({ time: at(WED), width: 390, height: 844 }, opts))); page.on('console', m => { if (m.type() === 'error' && !/favicon/i.test(m.text())) consoleErrors.push(m.text()); });
+    ({ ctx, page } = await newPage(browser, Object.assign({ time: at(WED), width: 390, height: 844 }, opts))); page.on('console', m => { if (m.type() === 'error' && !/favicon/i.test(m.text())) consoleErrors.push(m.text()); }); page.on('pageerror', e => consoleErrors.push('uncaught: ' + e.message));
     await settled(page); await page.clock.fastForward(2500); // past anything announced on opening
     await page.evaluate(() => { const f = window.MorningLaps.state.fxn; f.burst = 0; f.milestone = 0; });
     return page;
@@ -159,6 +159,17 @@ const FULLA = [['squat', 3], ['dbbench', 3], ['latpull', 3], ['dbshoulder', 2], 
     const r2 = await ses(page, WED);
     check('F a set typed under "More lifts" is saved with the rest, exactly as Save does', same(r2.planned, ['squat', 'dbbench', 'latpull', 'legcurl']) && same(r2.ex.legcurl.reps, [12, 12]) && r2.checkin === 'short' && r2.qualifies === true && (await opens()) === 0, JSON.stringify([r2.planned, r2.ex.legcurl]));
     await ctx.close();
+    // a short session in live mode: removing the only set of a lift past the first three does not break the screen
+    await open({ me: 'tyson', init: local(seedDocs()) });
+    await pick('short'); await page.click('#ciLog'); await page.waitForSelector('#moreLifts'); await page.click('#moreLifts summary'); await page.click('[data-usew="legcurl"]'); await fill(page, '#r-legcurl-0', 12);
+    await closeRest(); await page.click('h1'); await page.click('#wmStart'); await page.waitForSelector('#wm:not([hidden])'); await waitView('main');
+    for (let i = 0; i < 6 && (await txt(page, '#wmName')) !== 'Leg curl machine'; i++) await page.click('[data-a="wm-next"]');
+    const at4 = [await txt(page, '#wmName'), await page.evaluate(() => window.MorningLaps.wmState().i)];
+    await page.click('#wmPips [data-a="wm-pip"][data-i="0"]'); await page.click('[data-a="wm-del"]'); await page.waitForTimeout(200);
+    const gone = await page.evaluate(() => ({ i: window.MorningLaps.wmState().i, view: window.MorningLaps.wmState().view, name: document.getElementById('wmName').textContent, log: !!document.getElementById('wmLog') }));
+    await page.click('#wmLog'); await skipRest();
+    check('F live, short on time: removing the only set of a fourth lift steps back to the third lift and keeps working', at4[0] === 'Leg curl machine' && at4[1] === 3 && gone.i === 2 && gone.view === 'main' && gone.name === 'Lat pulldown machine' && gone.log && consoleErrors.length === 0, JSON.stringify([at4, gone, consoleErrors.slice(0, 2)]));
+    await ctx.close();
     // anything logged today, with no check-in answered, also collapses it
     await open({ me: 'tyson', init: local(seedDocs()) });
     await page.click('#kindSeg [data-kind="cardio"]'); await fill(page, '#tmMin', 20); await page.click('h1'); await page.click('#saveBtn');
@@ -187,6 +198,8 @@ const FULLA = [['squat', 3], ['dbbench', 3], ['latpull', 3], ['dbshoulder', 2], 
     const c = await ses(page, WED);
     check('Q 16 laps and 32 minutes save a 32-minute track walk with "16 laps (2.0 mi)" in the note', c.kind === 'activity' && c.acts.length === 1 && c.acts[0].a === 'hptrack' && c.acts[0].name === 'Track walk' && c.acts[0].min === 32 && c.acts[0].note === '16 laps (2.0 mi)' && c.checkin === 'tired' && (await opens()) === 0, JSON.stringify(c));
     check('Q then the check-in is one line', (await txt(page, '#ciDone')) === 'Tired, just want to move · Track walk');
+    await page.click('#ciChange'); await pick('strong'); await page.click('#ciLog'); await page.waitForSelector('#ciPreview', { state: 'detached' });
+    check('Q a new choice on a day that is already logged shows on the line at once', (await txt(page, '#ciDone')) === 'Feeling strong · Full Body A' && (await ses(page, WED)).checkin === 'tired');
     await ctx.close();
     await open({ me: 'tyson', init: local(seedDocs()) });
     await pick('tired'); await page.click('#ciLog'); await page.waitForSelector('#cilogSave'); await page.click('#cilogOpts0 [data-v="hpswim"]');
@@ -203,6 +216,14 @@ const FULLA = [['squat', 3], ['dbbench', 3], ['latpull', 3], ['dbshoulder', 2], 
     await fill(page, '#cilogMin0', 22); await page.click('#cilogSave'); await page.waitForFunction(d => { const r = JSON.parse(localStorage.getItem('ml.sessions'))[d]; return r && r.kind === 'cardio'; }, WED);
     const tm = await ses(page, WED);
     check('Q and saves as the lifting log\'s own treadmill day', tm.treadmill.minutes === 22 && tm.checkin === 'tired' && !tm.acts);
+    await ctx.close();
+    await open({ me: 'tyson', init: local(seedDocs()) });
+    await pick('strong'); await page.click('#ciLog'); await page.waitForSelector('#w-squat'); await page.click('[data-usew="squat"]'); for (let i = 0; i < 3; i++) await fill(page, '#r-squat-' + i, 8);
+    await closeRest(); await page.click('h1'); await page.click('#saveBtn'); await page.waitForFunction(d => { const r = JSON.parse(localStorage.getItem('ml.sessions'))[d]; return r && r.kind === 'strength'; }, WED);
+    await page.evaluate(() => window.scrollTo(0, 0)); await page.click('#ciChange'); await pick('tired'); await page.click('#ciLog'); await page.waitForSelector('#cilogSave'); await page.click('#cilogOpts0 [data-v="treadmill"]'); await fill(page, '#cilogMin0', 22); await page.click('#cilogSave');
+    await page.waitForFunction(d => { const r = JSON.parse(localStorage.getItem('ml.sessions'))[d]; return r && r.treadmill && r.treadmill.minutes === 22; }, WED);
+    const keep = await ses(page, WED);
+    check('Q a treadmill logged from the sheet on a day with a saved lift keeps the lift', keep.kind === 'strength' && keep.day === 'fba' && same(keep.ex.squat.reps, [8, 8, 8]) && keep.treadmill.minutes === 22 && keep.checkin === 'strong', JSON.stringify([keep.kind, keep.day, keep.ex, keep.treadmill, keep.checkin]));
     await ctx.close();
     // recovery: stretch, plus an optional room
     await open({ me: 'tyson', init: local(seedDocs()) });
@@ -243,6 +264,11 @@ const FULLA = [['squat', 3], ['dbbench', 3], ['latpull', 3], ['dbshoulder', 2], 
     await page.clock.fastForward(5 * 60000); await page.click('#wmFinish'); await waitView('finish');
     const f = await page.evaluate(() => ({ min: document.querySelector('#wmFin [data-wmf="min"]').value, laps: document.querySelector('#wmFin [data-wmf="laps"]').value, btn: document.getElementById('wmSave').textContent, name: document.querySelector('#wmFin b').textContent }));
     check('E the finish screen of a timed session shows minutes and laps as fields', f.min === '5' && f.laps === '3' && f.btn === 'Log 5 min' && f.name === 'Track walk', JSON.stringify(f));
+    await fill(page, '#wmFin [data-wmf="min"]', 40); await page.click('[data-a="wm-unfinish"]'); await waitView('main');
+    for (let i = 0; i < 2; i++) await page.click('#wmLap');
+    await page.click('#wmFinish'); await waitView('finish');
+    const f2 = await page.evaluate(() => [document.querySelector('#wmFin [data-wmf="min"]').value, document.querySelector('#wmFin [data-wmf="laps"]').value, document.getElementById('wmSumNote').textContent]);
+    check('E going back and walking more starts the fields from the clock again, not from what was typed', same(f2, ['5', '5', '5 laps (0.63 mi)']), JSON.stringify(f2));
     await fill(page, '#wmFin [data-wmf="min"]', 30); await fill(page, '#wmFin [data-wmf="laps"]', 16);
     check('E editing them changes what the button will log', (await txt(page, '#wmSave')) === 'Log 30 min' && (await txt(page, '#wmSumNote')) === '16 laps (2.0 mi)');
     await page.click('#wmSave'); await page.waitForSelector('#wmDoneBtn');
@@ -265,6 +291,8 @@ const FULLA = [['squat', 3], ['dbbench', 3], ['latpull', 3], ['dbshoulder', 2], 
     await pick('sore'); await live(); await page.click('#wmFinish'); await waitView('finish');
     check('E with nothing measured the Log button waits', await page.$eval('#wmSave', b => b.disabled) && (await page.$$('#wmFin .wm-finrow')).length === 3);
     await fill(page, '#wmFin [data-i="0"][data-wmf="min"]', 10); await fill(page, '#wmFin [data-i="1"][data-wmf="min"]', 5); await fill(page, '#wmFin [data-i="2"][data-wmf="min"]', 12);
+    const sum = await page.evaluate(() => [document.getElementById('wmSumMin').textContent, (document.getElementById('wmSumHeat') || {}).textContent || '', document.getElementById('wmSave').textContent, document.getElementById('wmSave').disabled]);
+    check('E the summary follows what is typed, the recovery room included', same(sum, ['15 min', '12 min', 'Log 15 min', false]), JSON.stringify(sum));
     await page.click('#wmSave'); await page.waitForSelector('#wmDoneBtn');
     const s = await ses(page, WED);
     check('E recovery minutes typed on the finish screen are logged: movement as one activity, the room as recovery', s.acts.length === 2 && s.acts[0].min === 15 && s.acts[0].mv === true && s.acts[1].a === 'hpsauna' && s.acts[1].min === 12 && s.acts[1].mv === false, JSON.stringify(s.acts));
@@ -332,11 +360,11 @@ const FULLA = [['squat', 3], ['dbbench', 3], ['latpull', 3], ['dbshoulder', 2], 
     const fpv = await page.evaluate(() => [getComputedStyle(document.getElementById('ciPreview')).animationName, getComputedStyle(document.querySelector('#checkin .cic.sel')).animationName]);
     await page.click('#ciStart'); await page.waitForSelector('#wmStartSeq');
     const fz = await page.evaluate(() => [getComputedStyle(document.getElementById('wm')).animationName, document.querySelectorAll('.wm-lights i').length]);
-    await page.click('#wmStartSeq'); await page.click('#wmWarmLog'); await page.click('#wmLog'); await page.click('#wmRestSkip');
+    await page.click('#wmStartSeq'); await page.click('#wmWarmLog'); await page.click('#wmLog'); const fullRestPips = await has(page, '#wmRestPips'); await page.click('#wmRestSkip');
     const fb = await fxn();
     await page.click('#wmFinish'); await waitView('finish');
     const ff = await page.evaluate(() => [!!document.querySelector('#wm .wm-flag.chk'), !!document.getElementById('wmStripe'), window.MorningLaps.state.fxn.burst, window.MorningLaps.state.fxn.milestone]);
-    check('A Full behaves as before: bursts on a pick and on a logged set, start lights, zoom, flag and burst at the finish', same(fpv, ['ciGrow', 'ciLift']) && same(fz, ['wmZoom', 3]) && fb.burst === 2 && same(ff, [true, false, 3, 0]), JSON.stringify([fpv, fz, fb, ff]));
+    check('A Full behaves as before: bursts on a pick and on a logged set, start lights, zoom, flag and burst at the finish', same(fpv, ['ciGrow', 'ciLift']) && same(fz, ['wmZoom', 3]) && fb.burst === 2 && same(ff, [true, false, 3, 0]) && fullRestPips === false, JSON.stringify([fpv, fz, fb, ff, fullRestPips]));
     await ctx.close();
     // Off, and the phone's reduce-motion setting
     for (const [name, opts] of [['Off', { init: local(seedDocs({ tProfile: { motion: 'off' } })) }], ['reduced motion', { reducedMotion: 'reduce', init: local(seedDocs({ tProfile: { motion: 'full' } })) }]]) {
