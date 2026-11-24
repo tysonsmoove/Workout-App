@@ -3,6 +3,7 @@
 // "Reopen" below means a fresh browser context (empty device storage) against the same account store.
 // Run: node tests/account.test.js  (see tests/helpers.js for the local server it expects)
 const { chromium, check, T, newPage, val, txt, has, fill, cssVar, fakeDb, finish } = require('./helpers');
+require('./helpers').legacyDefault = true; // written before version 18: the lift log, the 7-day strip and the activity menu open in their sheets on demand
 const seen = page => page.evaluate(() => window.__seen.slice());
 const dump = page => page.evaluate(() => JSON.parse(JSON.stringify(window.__store)));
 const ready = page => page.waitForFunction(() => window.MorningLaps.state.ready && window.MorningLaps.state.storage === 'db');

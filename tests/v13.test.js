@@ -3,6 +3,7 @@
 // Jacquie, pain notes, and stakes on closed weeks. "Carry" means a fresh browser context later in time, same storage.
 // Run: node tests/v13.test.js  (see tests/helpers.js for the local server it expects)
 const { chromium, check, T, newPage, val, txt, has, fill, go, score, finish } = require('./helpers');
+require('./helpers').legacyDefault = true; // written before version 18: the lift log, the 7-day strip and the activity menu open in their sheets on demand
 const seen = page => page.evaluate(() => window.__seen.slice());
 const kvAll = page => page.evaluate(() => JSON.parse(localStorage.getItem('ml.kv') || '{}'));
 const kv = (page, path) => page.evaluate(p => (JSON.parse(localStorage.getItem('ml.kv') || '{}'))[p] || null, path);
@@ -227,7 +228,7 @@ const MON = T('2026-12-07T17:00:00Z'), WED = T('2026-12-09T17:00:00Z'), NEXT = T
     await switchTo(page, 'jacquie'); await go(page, 'me');
     check('R1 and hers are still hers', (await steps()).m.includes('5:45 AM') && await val(page, '[data-form="rem"][data-k="water"]') === '15:15');
     // clipboard
-    await go(page, 'train'); await page.click('.sess [data-a="health"]'); await page.waitForSelector('#hkText');
+    await go(page, 'train'); await page.click('[data-a="health"]'); await page.waitForSelector('#hkText');
     check('R2 (v15) the clipboard button is gone, and the box has focus when the sheet opens', !(await has(page, '#hkPaste')) && !(await has(page, '[data-a="hk-paste"]')) && await page.evaluate(() => document.activeElement.id === 'hkText') && await page.$eval('#hkText', b => b.placeholder === 'Tap here, then Paste'));
     await fill(page, '#hkText', 'date: 2026-12-09\nsteps: 4100');
     check('R2 the text box keeps working as before', (await txt(page, '#hkPreview')).includes('4,100 steps') && await page.$eval('#hkGo', b => !b.disabled));
@@ -374,7 +375,7 @@ const MON = T('2026-12-07T17:00:00Z'), WED = T('2026-12-09T17:00:00Z'), NEXT = T
     for (const who of ['tyson', 'jacquie']) { if (who === 'jacquie') await switchTo(page, 'jacquie');
       for (const tab of ['train', 'program', 'history', 'fuel', 'compete', 'me']) { await go(page, tab); const n = await page.evaluate(() => document.querySelectorAll('#main .card, #main .sheet').length); if (!n || /undefined|NaN|\[object/.test(await txt(page, '#main'))) bad.push(who + ':' + tab); }
       await go(page, 'fuel'); await page.click('[data-a="food-add"][data-meal="b"]'); await page.waitForSelector('#foodQ'); await page.keyboard.press('Escape');
-      await go(page, 'train'); await page.click('.sess [data-a="health"]'); await page.waitForSelector('#hkText'); await page.keyboard.press('Escape'); }
+      await go(page, 'train'); await page.click('[data-a="health"]'); await page.waitForSelector('#hkText'); await page.keyboard.press('Escape'); }
     await page.waitForTimeout(400);
     check('G smoke: every tab draws for both profiles, with nothing broken in the text', bad.length === 0, bad.join(' '));
     check('G showing screens and sheets writes nothing to the store', (await page.evaluate(() => window.__w.length)) === 0, JSON.stringify(await page.evaluate(() => window.__w)));

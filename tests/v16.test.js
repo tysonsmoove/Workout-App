@@ -5,6 +5,7 @@
 // or set to the Healthplex, one "Go easy on" area and one pain-flagged activity.
 // Run: node tests/v16.test.js   (ML_ONLY=C,W runs just those sections)
 const { chromium, check, results, T, newPage, val, txt, has, fill, go, score, finish } = require('./helpers');
+require('./helpers').legacyDefault = true; // written before version 18: the lift log, the 7-day strip and the activity menu open in their sheets on demand
 const kvAll = page => page.evaluate(() => JSON.parse(localStorage.getItem('ml.kv') || '{}'));
 const kv = (page, path) => page.evaluate(p => (JSON.parse(localStorage.getItem('ml.kv') || '{}'))[p] || null, path);
 const ses = (page, d) => page.evaluate(x => (JSON.parse(localStorage.getItem('ml.sessions') || '{}'))[x] || null, d);
@@ -138,7 +139,7 @@ const MON = '2026-12-07', TUE = '2026-12-08', WED = '2026-12-09', THU = '2026-12
     const rec = await ses(page, WED), sc1 = await score(page, 'tyson');
     check('C the saved day carries the check-in, plans 3 lifts and counts as a lift day', rec.checkin === 'short' && rec.kind === 'strength' && rec.day === 'fba' && same(rec.planned, ['squat', 'dbbench', 'latpull']) && rec.qualifies === true && rec.complete === true && sc1.lifts === sc0.lifts + 1 && rec.treadmill.minutes === 5, JSON.stringify([rec.planned, rec.qualifies, rec.complete, sc0.lifts, sc1.lifts]));
     await page.click('#wmDoneBtn'); await page.waitForSelector('#wm', { state: 'hidden' });
-    check('C Train then shows the check-in as answered, on one line', (await txt(page, '#ciDone')) === 'Short on time · Full Body A' && (await txt(page, '#ciChange')) === 'Change');
+    check('C Train then shows the lift as one row on the Today card, and the check-in is gone', (await txt(page, '[data-row="prog"]')).includes('Full Body A') && (await txt(page, '[data-row="prog"]')).includes('3 lifts') && !(await has(page, '#checkin')));
     await go(page, 'history');
     check('C History shows "Felt: short on time"', (await txt(page, 'details.hi[data-hdate="' + WED + '"] summary')).includes('Felt: short on time') && !(await txt(page, 'details.hi[data-hdate="' + WED + '"] summary')).includes('Phase'), await txt(page, 'details.hi[data-hdate="' + WED + '"] summary'));
     await ctx.close();
@@ -161,7 +162,7 @@ const MON = '2026-12-07', TUE = '2026-12-08', WED = '2026-12-09', THU = '2026-12
     check('P switching splits leaves every old record identical', (await page.evaluate(() => localStorage.getItem('ml.sessions'))) === before);
     const prog = await txt(page, '#main');
     check('P the plan lists A and B with each slot\'s own sets and range, and the optional lifts', prog.includes('Full Body A day') && prog.includes('Full Body B day') && /Seated dumbbell shoulder press[^×]*2 × 8–12/.test(prog) && /Barbell back squat[^×]*3 × 6–10/.test(prog) && /Dumbbell Romanian deadlift[^×]*3 × 8–12/.test(prog) && /Walking lunges[^×]*2 × 10–12/.test(prog) && /Dumbbell biceps curl if there's time[^×]*2 × 10–12/.test(prog) && prog.includes('Warm-up (track, treadmill or bike)') && !/Phase \d/.test(prog.replace(/Phases do not apply[^.]*\./, '')), prog.slice(0, 300));
-    await go(page, 'train');
+    await go(page, 'train'); await page.waitForSelector('#kindSeg'); // version 18: the lift log is a sheet
     const tr = await page.evaluate(() => ({ seg: document.getElementById('kindSeg').textContent, status: document.querySelector('.sess .status').textContent, ex: Array.from(document.querySelectorAll('.ex[data-ex]')).map(e => e.dataset.ex + ':' + e.querySelectorAll('[data-field="rep"]').length), warm: document.querySelector('#logForm .bhead').textContent, why: document.getElementById('whyLine').textContent }));
     check('P after switching, the next lift is A, with 3-set and 2-set slots', tr.seg.startsWith('Full Body AFull Body B') && same(tr.ex, ['squat:3', 'dbbench:3', 'latpull:3', 'dbshoulder:2', 'legcurl:2', 'legraise:2']) && tr.why.includes('Full Body A is next'), JSON.stringify(tr));
     check('P the Phase label is hidden, and the treadmill block is a 5–10 min warm-up', !tr.status.includes('Phase') && tr.warm.includes('Warm-up (track, treadmill or bike)') && tr.warm.includes('5–10 min'), tr.status + ' | ' + tr.warm);
@@ -225,11 +226,11 @@ const MON = '2026-12-07', TUE = '2026-12-08', WED = '2026-12-09', THU = '2026-12
     const tr = (await kv(page, 'profiles/jacquie/sessions/' + WED)).acts[0];
     check('H the track walk logs its minutes, with laps and miles in the note', tr.a === 'hptrack' && tr.min === 32 && tr.note === '16 laps (2.0 mi)' && tr.mv === true, JSON.stringify(tr));
     // recovery rooms
-    check('H after a workout is logged: "Sauna, steam or whirlpool after?"', (await txt(page, '#heatChip')).includes('Sauna, steam or whirlpool after?'));
+    check('H after a workout is logged there is no page-level chip: the rooms are in Add, under Recovery', !(await has(page, '#heatChip')) && !(await txt(page, '#main')).includes('Sauna, steam or whirlpool after?'));
     const min0 = await ML(page, () => window.MorningLaps.dayInfo('jacquie', '2026-12-09').minutes), water0 = (await kv(page, 'profiles/jacquie/food/' + WED) || { water: 0 }).water;
-    await page.click('[data-a="heat-open"]'); await page.waitForSelector('[data-a="heat-pick"]');
-    check('H the chip opens the three rooms, with the safety line', same(await page.$$eval('[data-a="heat-pick"] .fn', els => els.map(e => e.textContent.replace(/^\S+ /, ''))), ['Dry sauna', 'Steam room', 'Whirlpool']) && (await txt(page, '#heatNote')) === 'Keep it to 10–15 minutes, drink water after, and get out if you feel dizzy or unwell. Skip it after drinking alcohol.');
-    await page.click('[data-a="heat-pick"][data-k="hpsauna"]'); await page.waitForSelector('#actMin');
+    await page.click('#addRecovery'); await page.waitForSelector('#cilogHeat');
+    check('H Recovery lists the three rooms, with the safety line', same(await page.$$eval('#cilogHeat .seg button', els => els.map(e => e.textContent)), ['Dry sauna', 'Steam room', 'Whirlpool']) && (await txt(page, '#cilogHeat')).includes('Keep it to 10–15 minutes, drink water after, and get out if you feel dizzy or unwell. Skip it after drinking alcohol.'));
+    await page.click('[data-a="ov-close"]'); await page.click('.act.hp[data-k="hpsauna"]'); await page.click('[data-hpback="hpsauna"] [data-a="act"]'); await page.waitForSelector('#actMin');
     check('H a recovery room defaults to 10 minutes', await val(page, '#actMin') === '10' && (await txt(page, '#heatNote')).startsWith('Keep it to 10–15 minutes'));
     for (let i = 0; i < 4; i++) await page.click('[data-a="act-min"][data-d="5"]');
     check('H and tops out at 20', await val(page, '#actMin') === '20');
@@ -240,7 +241,8 @@ const MON = '2026-12-07', TUE = '2026-12-08', WED = '2026-12-09', THU = '2026-12
     await page.click('#toast [data-a="water-bottle"]'); await page.waitForFunction(d => { const f = JSON.parse(localStorage.getItem('ml.kv'))['profiles/jacquie/food/' + d]; return f && f.water > 0; }, WED);
     check('H the water button adds 16.9 oz', Math.abs((await kv(page, 'profiles/jacquie/food/' + WED)).water - water0 - 16.9) < 0.01);
     // classes and courts from the optional link
-    await page.click('#ciChange'); await page.click('#ciExtra'); await page.waitForSelector('#hpExtra');
+    await ctx.close(); await open({ me: 'jacquie', time: at(WED), init: local(seedDocs({ jGym: HP, jProfile: { move: { goalDays: 3, minMinutes: 10, protect: ['knee'] } } })) }); // the link sits in the check-in, before anything is logged
+    await page.click('#ciExtra'); await page.waitForSelector('#hpExtra');
     check('H "Class or game (optional)" lists the classes and courts', (await page.$$('#hpExtra [data-a="hpextra-pick"]')).length === 10 && (await txt(page, '#hpExtra')).includes('Specialty class · extra fee.') && (await txt(page, '#ov')).includes('Never suggested'));
   });
 
@@ -290,13 +292,15 @@ const MON = '2026-12-07', TUE = '2026-12-08', WED = '2026-12-09', THU = '2026-12
     check('M with the line about hours', card.includes('Hours as of Nov 2026. Check the Healthplex site before holidays.'));
     check('M the first-week banner shows once, on Program and Train', (await txt(page, '#gymBanner')) === 'First week at the Healthplex: if a machine isn\'t there, use ··· → Not at my gym.' && (await page.$$('#gymBanner')).length === 1);
     check('M no Healthplex artwork is used: no images at all on the page', (await page.$$('#main img, #main picture, #wm img')).length === 0 && !/healthplex[^"']*\.(png|svg|jpg)/i.test(await page.content()));
-    await go(page, 'train');
+    await go(page, 'program');
     const plan = await page.evaluate(() => { const d = document.getElementById('morningPlan'); d.open = true; return d.textContent; });
     check('M the morning plan is the Healthplex one for a full-body day', ['6:00', 'Up. Water, small bite.', '6:20', 'At the Healthplex. Warm-up 5–10 min.', '6:30', 'Full Body A (about 40 min, or 25 for express).', '7:15', 'Optional sauna or steam, 10 min. Drink water.', '7:35', 'Shower. Out the door by 8:15, at IMS by 9.', 'Weekdays the Healthplex opens at 5:15'].every(x => plan.includes(x)), plan);
-    await page.click('[data-a="ci-pick"][data-v="tired"]');
+    await go(page, 'train'); check('M the morning plan is no longer on Train', !(await has(page, '#morningPlan')));
+    await page.click('[data-a="ci-pick"][data-v="tired"]'); await go(page, 'program');
     const p2 = await page.evaluate(() => document.getElementById('morningPlan').textContent);
-    await page.click('[data-a="ci-pick"][data-v="sore"]');
+    await go(page, 'train'); await page.click('[data-a="ci-pick"][data-v="sore"]'); await go(page, 'program');
     const p3 = await page.evaluate(() => document.getElementById('morningPlan').textContent);
+    await go(page, 'train');
     check('M the plan follows the check-in: cardio and recovery days get their own short version', p2.includes('Easy cardio, 20 to 30 min') && !p2.includes('Full Body A') && p3.includes('10 easy minutes on the track or in the therapy pool, then stretch') && p3.includes('Sauna, steam or whirlpool, 10 min'), p2 + ' | ' + p3);
     await page.click('[data-a="ci-back"]');
     // "Not at my gym"
@@ -313,6 +317,7 @@ const MON = '2026-12-07', TUE = '2026-12-08', WED = '2026-12-09', THU = '2026-12
     check('M an exercise with no stand-in says so instead of dropping out', await page.$eval('.menu [data-act="notgym"]', b => b.disabled && b.textContent.includes('no stand-in')));
     await ctx.close();
     await open({ me: 'tyson', time: at(SAT), init: local(seedDocs({ settings: full, tGym: HP, tSince: '2026-12-01' })) });
+    await go(page, 'program');
     const wk = await page.evaluate(() => document.getElementById('morningPlan').textContent);
     check('M on a weekend the plan notes the gym opens at 7; after the first week the banner is gone', wk.includes('Weekend: the Healthplex opens at 7') && !(await has(page, '#gymBanner')), wk.slice(-160));
   });
@@ -450,7 +455,7 @@ const MON = '2026-12-07', TUE = '2026-12-08', WED = '2026-12-09', THU = '2026-12
     check('W a finished lift gets lift-day credit exactly as a normal save would', rec.kind === 'strength' && rec.qualifies === true && rec.day === 'fba' && sc1.lifts === sc0.lifts + 1 && sc1.total > sc0.total && !(await page.evaluate(() => (JSON.parse(localStorage.getItem('ml.drafts') || '{}'))['2026-12-09'])), JSON.stringify([rec.qualifies, sc0.lifts, sc1.lifts]));
     check('W then the week\'s points before and after, and the sauna chip', pts.includes(sc0.total + ' → ' + sc1.total) && (await txt(page, '#wmHeat')).includes('Sauna, steam or whirlpool after?'), pts);
     await page.click('#wmDoneBtn'); await page.waitForSelector('#wm', { state: 'hidden' });
-    check('W closing workout mode redraws the page, with the saved day', (await txt(page, '#ciDone')) === 'Feeling strong · Full Body A' && (await txt(page, '#whyLine')).includes('Counted Full Body A day. Next: Full Body B.'), await txt(page, '#whyLine'));
+    check('W closing workout mode redraws the page, with the saved day as one row', (await txt(page, '[data-row="prog"]')).includes('Full Body A') && (await txt(page, '#dayLine')).includes('Counted Full Body A day. Next: Full Body B.'), await txt(page, '#dayLine'));
     const viaWm = rec; await ctx.close();
     // the same inputs through the normal log
     await open({ me: 'tyson', time: at(WED), init: seed() });

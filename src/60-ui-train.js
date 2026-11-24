@@ -39,8 +39,11 @@ function statusText(date) {
 }
 
 /* ---------- Train: lifting program ---------- */
-function renderTrain() {
-  const date = state.selDate; const rec = state.sessions[date]; const n = rec ? normalize(rec) : null;
+function renderTrain() { return todayHTML(); }
+// The typed-in lift log: kind buttons, warm-up, exercises, notes, session options. It is drawn in the lift sheet
+// (OV.lift), never on the page. Returns the body and what the sheet needs for its head and its Save bar.
+function liftLogHTML(date) {
+  const rec = state.sessions[date]; const n = rec ? normalize(rec) : null;
   const m = model(date); const d = state.drafts[date];
   const kind = kindFor(date, m); const isLift = !!DAYS[kind];
   const phase = phaseOf(date);
@@ -51,23 +54,20 @@ function renderTrain() {
   else if (isLift && kind !== nextK) why += ' You picked ' + DAYS[kind].name + '.';
 
   const rot = rotation(), segDays = !DAYS[kind] || rot.includes(kind) ? rot : rot.concat([kind]), full = !!(DAYS[kind] ? DAYS[kind].full : splitOf() === 'full'); // an old day from the other split keeps its own button
-  let h = checkinHTML() + coachHTML() + '<h2 class="loghead" id="logHead">Log your workout</h2><section class="card sess">' + dateHead('Logging for') +
-    '<div class="seg" id="kindSeg" aria-label="Workout type">' + segDays.map(k => '<button type="button" data-kind="' + k + '" class="' + (kind === k ? 'on' : '') + '" aria-pressed="' + (kind === k) + '">' + DAYS[k].name + '</button>').join('') +
+  let h = '<div class="sess"><div class="seg" id="kindSeg" aria-label="Workout type">' + segDays.map(k => '<button type="button" data-kind="' + k + '" class="' + (kind === k ? 'on' : '') + '" aria-pressed="' + (kind === k) + '">' + DAYS[k].name + '</button>').join('') +
     '<button type="button" data-kind="cardio" class="' + (kind === 'cardio' ? 'on' : '') + '" aria-pressed="' + (kind === 'cardio') + '">Treadmill</button><button type="button" data-kind="rest" class="' + (kind === 'rest' ? 'on' : '') + '" aria-pressed="' + (kind === 'rest') + '">Rest</button></div>' +
-    '<div class="status"><span id="statusLine">' + esc(statusText(date)) + '</span>' + (full ? '' : '<span>·</span><span>Phase ' + phase + '</span>') + healthButton() + '</div>' +
-    '<p class="tiny muted" id="whyLine" style="margin-top:-4px">' + esc(why) + '</p>' + hkLineHTML(date) +
-    (isLift && date <= todayIso() ? '<div class="row"><button type="button" class="small" id="wmStart" data-a="wm-lift">' + (wmDraftOn(date) ? 'Resume workout' : 'Go live') + '</button></div>' : '');
+    '<div class="status"><span id="statusLine">' + esc(statusText(date)) + '</span>' + (full ? '' : '<span>·</span><span>Phase ' + phase + '</span>') + '</div>' +
+    '<p class="tiny muted" id="whyLine" style="margin-top:-4px">' + esc(why) + '</p>';
   if (d && d.recovered && draftHasContent(d)) h += '<div class="banner"><span>Unsaved draft from ' + tzTime.format(new Date(d.updatedAt)) + ' restored. Not saved until you tap Save.</span><div class="row"><button type="button" class="small" id="discardDraft">Discard draft</button></div></div>';
   if (n && n.ambiguous) h += '<div class="banner">Saved as a ' + (DAYS[rec.day] ? DAYS[rec.day].name : 'lift') + ' day by the earlier version but has no lifting sets. It counts as ' + (n.kind === 'cardio' ? 'treadmill only' : 'no activity') + '. Add sets or re-save to confirm.</div>';
-  h += '</section>';
+  h += '</div>';
   const saved = lifted(rec) ? rec : null; // the save bar speaks for the lift, treadmill or rest part of the day only
+  const title = isLift ? DAYS[kind].name : kind === 'rest' ? 'Rest day' : 'Treadmill';
 
   if (kind === 'rest') {
     h += '<section class="sheet"><div class="blk"><div class="bhead"><h3>Rest day</h3></div><p class="tiny muted">Doesn\'t count as activity and doesn\'t move the rotation.</p>' +
       '<label class="f">Notes<input type="text" id="notes" data-field="notes" value="' + esc(m.notes) + '" placeholder="Optional"></label></div></section>';
-    h += extrasHTML(date) + renderSaveBar(date, m, saved);
-    h += renderMorning(phase, kind);
-    return h;
+    return { html: h, title, isLift, m, saved };
   }
 
   h += '<form id="logForm" autocomplete="off" class="sheet"><div class="blk"><div class="bhead"><h3>' + (full && isLift ? 'Warm-up (track, treadmill or bike)' : 'Treadmill · Apple Fitness+') + '</h3><span class="tiny muted">target ' + (full && isLift ? '5–10' : TREAD_MIN[phase]) + ' min</span></div>' +
@@ -91,27 +91,14 @@ function renderTrain() {
       '<p class="tiny muted" style="margin-top:6px">A counted lift day advances the rotation and earns lift credit. Full rules on the Program tab.</p></details>';
   }
   h += '</form>';
-  h += extrasHTML(date) + heatChipHTML(date) + renderSaveBar(date, m, saved);
-  h += renderMorning(phase, kind);
-  return h;
-}
-// Activities logged on a day: tap one to change it. The Watch top-up is worked out, so it opens an explanation instead.
-const actRowsHTML = acts => acts.map(a => '<button type="button" data-a="' + (isHk(a) ? 'hk-info' : 'act-edit') + '" data-id="' + esc(a.id) + '"><span>' + actIcon(a) + ' ' + esc(actName(a)) + (a.hurt ? ' <span class="chip warn">pain noted</span>' : '') + (a.mv === false ? ' <span class="chip">recovery</span>' : '') + '</span><span class="muted num">' + a.min + ' min' + (a.feel && FEELS[a.feel] ? ' · ' + FEELS[a.feel] : '') + '</span></button>').join('');
-// On the lifting log: a walk, a hike or a travel day goes on the same date as the lift, or stands on its own.
-function extrasHTML(date) {
-  const rec = state.sessions[date], n = rec ? normalize(rec) : null, acts = n ? n.acts : [], mm = weekGoals(me(), weekStart(date)).minMin;
-  let h = '<section class="card stack" id="extras">';
-  if (acts.length) h += '<div class="row between"><h3>Also ' + (rel(date) === nice(date) ? 'on ' + nice(date) : rel(date).toLowerCase()) + '</h3><span class="tiny muted num">' + n.actMin + ' min</span></div><div class="done-list">' + actRowsHTML(acts) + '</div>';
-  h += '<div class="row"><button type="button" class="small" data-a="act-pick">+ Add a walk or other activity</button></div>' +
-    '<p class="tiny muted">' + (n && n.program ? 'Saved on the same day as your ' + (n.kind === 'strength' ? 'lift' : 'treadmill entry') + '. The minutes count; the day is already an activity day.' : 'On a day with no lift or treadmill, ' + mm + ' minutes of anything makes it an activity day.') + '</p></section>';
-  return h;
+  return { html: h, title, isLift, m, saved };
 }
 /* ---------- Progression after Phase 3: deload weeks, stalled lifts, the goal nudge ---------- */
 // What sits above the lifting log: the deload offer (or the reminder that one is on), a swap whose four weeks are up,
 // and the goal nudge. Each is a choice saved to settings or the profile by its button, never by drawing it.
 // Coach: the deload offer, a swap that is due for review and the goal nudge, one line each in one card under the
 // check-in. A tap opens a line. Each is a choice saved by its own button, never by drawing it.
-const coachRow = (attrs, line, body) => '<details class="plain coachrow" ' + attrs + '><summary>' + line + '</summary><div class="coachbody">' + body + '</div></details>';
+const coachRow = (attrs, line, body) => '<details class="plain coachrow" ' + attrs + '><summary><span class="eyebrow">Coach</span> ' + line + '</summary><div class="coachbody">' + body + '</div></details>';
 function coachHTML() {
   const pid = me(), rows = [], t = todayIso();
   if (P(pid).plan === 'program') {
@@ -125,7 +112,7 @@ function coachHTML() {
   if (n) rows.push(coachRow('id="nudgeCard" data-dk="coach-nudge-' + pid + '"', n.kind === 'lift' ? 'Three weeks with 3 lifts · raise your lift goal?' : 'Three full weeks in a row · raise your goal?',
     '<p>' + (n.kind === 'lift' ? '<b>Three weeks with 3 lifts.</b> Raise your lift goal to 3 lift days starting Monday?' : '<b>Three full weeks in a row.</b> Raise your goal to ' + n.to + ' days starting Monday?') + '</p><div class="row"><button type="button" class="small" data-a="nudge-yes">Raise it</button><button type="button" class="quiet" data-a="nudge-no">Not now</button></div>' +
     '<p class="tiny muted">This week stays at ' + n.from + '. A raised goal locks in next Monday, like any goal change.</p>'));
-  return rows.length ? '<section class="card coach" id="coach"><div class="eyebrow">Coach</div>' + rows.join('') + '</section>' : '';
+  return rows.length ? '<section class="card coach" id="coach" aria-label="Coach">' + rows.join('') + '</section>' : '';
 }
 // where a stalled slot can go for four weeks: another alternate that is free in every phase, else back to its planned exercise
 const stallSwapTarget = p => { const taken = defaultSwapTaken(p.base); return alts(p.base).concat(p.key !== p.base ? [p.base] : []).find(k => k !== p.key && (k === p.base || !taken[k])) || null; };
@@ -281,55 +268,18 @@ function renderMorning(phase, kind) {
 }
 
 /* ---------- Train: pick-your-own ---------- */
-function actGridHTML(pid) { // the activity menu: filters and the grid, shared by the Train screen and the picker sheet
+function actGridHTML(pid) { // the whole activity menu: filters and the grid, in the "Something else" sheet
   const f = state.filter, list = actList(pid, f);
   const chip = (on, a, extra, label) => '<button type="button" data-a="' + a + '" ' + extra + ' class="' + (on ? 'on' : '') + '" aria-pressed="' + on + '">' + label + '</button>';
   return '<div class="chips" aria-label="Filter activities">' + chip(f.cat === 'all', 'filter', 'data-cat="all"', 'All') + ACT_CATS.filter(c => c[0] !== 'healthplex' || atHealthplex(pid)).map(c => chip(f.cat === c[0], 'filter', 'data-cat="' + c[0] + '"', c[1])).join('') + '</div>' +
     '<div class="chips">' + chip(f.quick, 'filter-quick', '', '10 min or less') + chip(f.fav, 'filter-fav', '', 'Favorites') + '</div>' +
-    '<div class="acts">' + list.map(k => {
-      const a = ACTS[k], caution = actCaution(pid, k), fav = P(pid).favorites.includes(k);
-      if (a.cat === 'healthplex') return hpCardHTML(pid, k); // a Healthplex card flips to show its details
-      return '<button type="button" class="act' + (fav ? ' fav' : '') + '" data-a="act" data-k="' + k + '"><span class="ai" aria-hidden="true">' + a.icon + '</span><span class="an">' + esc(a.name) + '</span><span class="am">' + a.min + ' min · ' + (a.mv === false ? 'recovery' : IMPACT[a.impact]) + '</span>' + (caution.length ? '<span class="aw">Go easy: ' + caution.map(x => AREAS[x].toLowerCase()).join(', ') + '</span>' : '') + (painFlag(pid, k) ? '<span class="aw" data-pain="' + k + '">Pain noted ' + painCount(pid, k) + '× recently</span>' : '') + '</button>';
-    }).join('') + '</div>' + (list.length ? '' : '<p class="muted tiny">Nothing matches those filters.</p>');
+    '<div class="acts">' + list.map(k => actBtnHTML(pid, k)).join('') + '</div>' + (list.length ? '' : '<p class="muted tiny">Nothing matches those filters.</p>');
 }
-function renderMove() {
-  const pid = me(), date = state.selDate, rec = state.sessions[date], n = rec ? normalize(rec) : null, di = dayInfo(pid, date), mm = weekGoals(pid, weekStart(date)).minMin;
-  const acts = n ? n.acts : [], program = !!(n && n.program), rest = !!(n && n.kind === 'rest');
-  const progText = program ? (n.kind === 'strength' ? (n.day ? DAYS[n.day].name + ' lift' : 'Lift') : 'Treadmill') + ' · ' + n.progMin + ' min' : '';
-  let status = 'Nothing logged for this day';
-  if (rest) status = 'Rest day logged';
-  else if (program) status = progText + (acts.length ? ' + ' + n.actMin + ' min of activities' : '') + ' · counts as an active day';
-  else if (acts.length) status = n.allMin + ' min logged · ' + (di.active ? 'counts as an active day' : (mm - di.minutes) + ' more min of movement to count');
-  let h = checkinHTML() + coachHTML() + '<h2 class="loghead" id="logHead">Log your workout</h2><section class="card sess">' + dateHead('Logging for') + '<div class="status"><span id="statusLine">' + esc(status) + '</span>' + healthButton() + '</div>' + hkLineHTML(date) + '</section>' + heatChipHTML(date);
-  if (acts.length || rest || program) {
-    h += '<section class="card"><div class="row between"><h3>Logged ' + (rel(date) === nice(date) ? nice(date) : rel(date).toLowerCase()) + '</h3>' + (rest ? '<span class="chip">rest</span>' : di.active ? '<span class="chip good">active day</span>' : '<span class="chip warn">' + di.minutes + ' of ' + mm + ' min</span>') + '</div><div class="done-list" style="margin-top:4px">';
-    if (rest) h += '<button type="button" data-a="rest-undo"><span>🛌 Rest day</span><span class="muted">tap to remove</span></button>';
-    if (program) h += '<button type="button" data-a="go-history"><span>🏋️ ' + esc(progText.split(' · ')[0]) + ' <span class="chip">lifting log</span></span><span class="muted num">' + n.progMin + ' min</span></button>';
-    h += actRowsHTML(acts) + '</div>' + (program ? '<p class="tiny muted" style="margin-top:6px">The lift or treadmill entry is edited from History. Anything you add below is saved on the same day.</p>' : '') + '</section>';
-  }
-  h += '<section class="card stack"><div class="row between"><h3>Pick your move</h3><button type="button" class="small" data-a="surprise">Surprise me</button></div>' + actGridHTML(pid) +
-    (!acts.length && !rest && !program ? '<div class="row"><button type="button" class="small" data-a="rest">Log a rest day instead</button></div>' : '') + '</section>';
-  h += renderWeekDots(pid);
-  return h;
-}
-function renderWeekDots(pid) {
-  const t = todayIso(), ws = weekStart(t), f = weekFacts(pid, ws), sc = scoreFacts(f), c = coach(pid), rival = P(otherPid(pid)).name;
-  const race = sc.total > c.other ? 'You lead ' + rival + ' ' + sc.total + ' to ' + c.other + '.'
-    : c.plan ? rival + ' has ' + c.other + ', you have ' + sc.total + '. To pass today: ' + c.plan.used.map(x => x.text.charAt(0).toLowerCase() + x.text.slice(1)).join(', then ') + '.'
-    : sc.total === c.other ? 'Level with ' + rival + ' at ' + sc.total + '.' : rival + ' leads ' + c.other + ' to ' + sc.total + '.' + (c.outOfReach ? ' ' + teamPointer(c) : '');
-  return '<section class="card stack"><div class="row between"><h3>This week</h3><span class="tiny muted num">' + sc.active + ' of ' + f.goal + ' active days · ' + sc.minutes + ' min</span></div><div class="weekdots">' +
-    f.days.map(d => '<span class="' + (d.active ? 'on' : d.rest ? 'rest' : '') + (d.date === t ? ' today' : '') + '">' + DOW[dow(d.date)] + '<i></i></span>').join('') + '</div>' +
-    '<p class="tiny muted">' + (sc.active >= f.goal ? 'Weekly goal met. Extra days still add minutes toward your personal best.' : (f.goal - sc.active) + ' more active day' + (f.goal - sc.active === 1 ? '' : 's') + ' fills your Move score. A day counts at ' + minMin(pid) + ' minutes.') + '</p>' +
-    '<p class="tiny" id="raceLine"><a href="#compete">' + esc(race) + '</a></p></section>';
-}
+function renderMove() { return todayHTML(); }
 // when the points race is out of reach this week, the team week is the thing still worth chasing
 const teamPointer = c => c.team.locked === 2 ? 'The team week is locked in: you both filled your Move score.' : !c.team.can ? 'The team week is out of reach this week as well.' : 'The team week is still on: ' + (c.team.mine ? 'your Move score is full' : c.team.need + ' fills your Move score') + (c.team.theirs ? '.' : c.team.mine ? ', and it needs theirs too.' : '.');
-OV.actpick = { // the same menu, from the lifting log
-  html: o => '<div class="ov tall" role="dialog" aria-modal="true" aria-label="Add an activity">' + ovHead('Add an activity', rel(o.date) + ' · saved on the same day as your lift') + '<div class="stack">' + actGridHTML(me()) + '</div></div>'
-};
-ACT['act-pick'] = () => openOv({ type: 'actpick', date: state.selDate });
 ACT['go-history'] = () => { location.hash = 'history'; };
-const redrawPicker = () => { render(); if (state.ov && state.ov.type === 'actpick') renderOv(); };
+const redrawPicker = () => { if (state.ov && state.ov.type === 'more') renderOv(); else render(); };
 const lapLine = laps => { const n = Math.round(Number(laps)); return n > 0 ? n + ' lap' + (n === 1 ? '' : 's') + ' = ' + milesText(n) : 'Each lap is 1/8 mile.'; };
 OV.act = {
   html: o => {
@@ -352,7 +302,8 @@ OV.act = {
 ACT.act = el => { const a = ACTS[el.dataset.k]; if (a) openOv({ type: 'act', k: el.dataset.k, date: state.selDate, min: String(a.min), feel: null, hurt: false, note: '', name: '' }); };
 ACT['act-edit'] = el => {
   const rec = state.sessions[state.selDate], a = rec && (rec.acts || []).find(x => x.id === el.dataset.id); if (!a) return;
-  openOv({ type: 'act', id: a.id, k: ACTS[a.a] ? a.a : 'other', date: state.selDate, min: String(a.min), feel: a.feel || null, hurt: !!a.hurt, note: a.note || '', name: a.a === 'other' ? a.name : '', at: a.at });
+  const lp = ACTS[a.a] && ACTS[a.a].wm === 'laps' ? /^(\d+) laps? \([\d.]+ mi\)(?: · )?/.exec(a.note || '') : null; // laps logged with it go back in the laps field
+  openOv({ type: 'act', id: a.id, k: ACTS[a.a] ? a.a : 'other', date: state.selDate, min: String(a.min), feel: a.feel || null, hurt: !!a.hurt, note: lp ? a.note.slice(lp[0].length) : a.note || '', laps: lp ? lp[1] : '', name: a.a === 'other' ? a.name : '', at: a.at });
 };
 ACT['act-min'] = el => { const o = state.ov; o.min = String(clamp((Number(o.min) || 0) + Number(el.dataset.d), 1, (ACTS[o.k] && ACTS[o.k].max) || 300)); renderOv(); };
 ACT['act-feel'] = el => { const o = state.ov; o.feel = o.feel === el.dataset.v ? null : el.dataset.v; renderOv(); };
@@ -369,18 +320,18 @@ ACT['act-log'] = async () => {
   const entry = { id: o.id || uid(), a: o.k, name, min, feel: o.feel || null, hurt: !!o.hurt, note: [laps > 0 && !/\blaps?\b/.test(String(o.note || '')) ? laps + ' lap' + (laps === 1 ? '' : 's') + ' (' + milesText(laps) + ')' : '', String(o.note || '').trim()].filter(Boolean).join(' · '), mv: a.mv !== false, at: o.at || new Date().toISOString() };
   const before = scoreSnapshot();
   const ok = await logActivity(o.date, entry, o.felt); if (!ok) return;
-  closeOv(); render();
+  markRow(o.date, entry.id); closeOv(); render();
   if (a.heat) { celebrate('', { before }); state.waterDate = o.date; toastAction(min + ' min of ' + name.toLowerCase() + ' logged', '+' + BOTTLE_OZ + ' oz water', 'water-bottle', 8000); return; }
   const di = dayInfo(me(), o.date);
   celebrate(min + ' min of ' + name.toLowerCase() + ' logged. ' + (a.mv === false ? 'Recovery counts for you, not for points.' : di.active ? 'That is an active day.' : (weekGoals(me(), weekStart(o.date)).minMin - di.minutes) + ' more min makes it count.'), { force: di.active, before });
 };
 ACT['act-del'] = async () => { const o = state.ov, path = PATH.session(me(), o.date), before = getDoc(path); const ok = await removeActivity(o.date, o.id); if (!ok) return; closeOv(); settle(); render(); offerUndo('Removed', path, before); };
 ACT.surprise = () => { const k = surpriseActivity(me()); const a = ACTS[k]; openOv({ type: 'act', k, date: state.selDate, min: String(a.min), feel: null, hurt: false, note: '', name: '' }); burst({ count: 24, y: 0.35 }); };
-ACT.filter = el => { state.filter.cat = el.dataset.cat; redrawPicker(); };
+ACT.filter = el => { state.filter.cat = el.dataset.cat; if (state.ov && state.ov.type === 'more') state.ov.all = true; redrawPicker(); };
 ACT['filter-quick'] = () => { state.filter.quick = !state.filter.quick; redrawPicker(); };
 ACT['filter-fav'] = () => { state.filter.fav = !state.filter.fav; redrawPicker(); };
-ACT.rest = async () => { const before = scoreSnapshot(); const ok = await logRest(state.selDate); if (!ok) return; render(); celebrate('Rest day logged. Recovery is part of the plan.', { before }); };
-ACT['rest-undo'] = async () => { const path = PATH.session(me(), state.selDate), before = getDoc(path); if (!(await write(path, null))) return; settle(); render(); offerUndo('Removed', path, before); };
+ACT.rest = async () => { const before = scoreSnapshot(); const ok = await logRest(state.selDate); if (!ok) return; markRow(state.selDate, 'prog'); render(); celebrate('Rest day logged. Recovery is part of the plan.', { before }); };
+ACT['rest-undo'] = async () => { const path = PATH.session(me(), state.selDate), before = getDoc(path); if (!(await write(path, null))) return; if (state.ov) closeOv(); settle(); render(); offerUndo('Removed', path, before); };
 
 /* ---------- Program tab ---------- */
 function renderProgram() {
@@ -388,7 +339,7 @@ function renderProgram() {
   const fullSplit = splitOf() === 'full', rot = rotation(), lg = liveGoals(me()).liftGoal;
   let h = gymBannerHTML() + '<section class="card stack" id="splitCard"><div class="row between"><h3>Split</h3><span class="tiny muted">changes the next lift, never your history</span></div>' +
     '<div class="seg" aria-label="Split"><button type="button" data-a="split-set" data-v="full" class="' + (fullSplit ? 'on' : '') + '" aria-pressed="' + fullSplit + '">Full body A/B</button><button type="button" data-a="split-set" data-v="ppl" class="' + (fullSplit ? '' : 'on') + '" aria-pressed="' + !fullSplit + '">Push / Pull / Legs</button></div>' +
-    '<p class="tiny muted">' + (fullSplit ? 'Two sessions train everything, so a week with only two lifts still covers the whole body. A and B alternate after each counted lift day.' : 'Three sessions train everything. Each day repeats once the other two are done.') + '</p></section>' + gymCardHTML() +
+    '<p class="tiny muted">' + (fullSplit ? 'Two sessions train everything, so a week with only two lifts still covers the whole body. A and B alternate after each counted lift day.' : 'Three sessions train everything. Each day repeats once the other two are done.') + '</p></section>' + renderMorning(phase, liftKindFor(t)) + gymCardHTML() +
     '<section class="card"><div class="eyebrow">How the rotation works</div><h2>' + (fullSplit ? 'Full Body A → B, repeat' : 'Push → Pull → Legs, repeat') + '</h2>' +
     '<p style="margin-top:8px">Days aren\'t tied to weekdays. The next lift is the one after your last <b>counted</b> lift day. Skip a morning and nothing goes out of sync. ' + (fullSplit ? 'Every session opens with a 5 to 10 minute warm-up on the track, treadmill or bike.' : 'Every session opens with a Fitness+ treadmill workout.') + ' Aim for ' + ws.goal + ' activity days a week: ' + ws.liftGoal + ' lifts, the rest treadmill-only or any ' + minMin(me()) + '-minute activity.</p></section>';
   const upcoming = nextDayKey(addDays(t, 1)); const lastL = lastLift(addDays(t, 1));

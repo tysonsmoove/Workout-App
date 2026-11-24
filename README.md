@@ -18,9 +18,10 @@ A phone-first fitness tracker for two people, Tyson and Jacquie: workouts, nutri
 | `src/40-nutrition.js` | Calorie and water targets, food log, food search, Nutrition Facts label |
 | `src/45-health.js`, `src/72-ui-health.js` | Apple Health import: parser for text pasted from a Shortcut, and the paste box |
 | `src/50-fx.js` | Overlays, confetti, celebrations |
-| `src/55-rest.js` | Rest timer: its own bar outside the page, never part of the render loop |
+| `src/55-rest.js` | Rest timer: a bar in the foot of the lift sheet, patched in place, never part of the render loop |
 | `src/60…80-ui-*.js` | Screens: Train, Fuel, Compete, Me |
 | `src/57-moves.js` | Workout-mode content: one line-figure demo per movement pattern, form cues for every exercise, the stretch sequence |
+| `src/61-ui-today.js` | Train: the Today card, the date sheet, the Add sheet, "Something else", the lift sheet |
 | `src/62-ui-checkin.js` | Daily check-in, Healthplex cards and gym info, split and lift-goal settings, "Not at my gym" |
 | `src/65-workout.js` | Workout mode: the full-screen guided session (`#wm`, outside `#main`) |
 | `src/74-ui-scan.js` | Scan a barcode, read a Nutrition Facts label, describe a restaurant meal |
@@ -210,6 +211,44 @@ Scoring, the season, `results/` and `iou/` are untouched. Two fields are new, bo
 
 The check-in comes first. The deload offer, a swap-back offer and the goal nudge are one-line rows in a single `#coach` card (`coachHTML`), each a `<details>` that opens to the same text and buttons as before. Then `#logHead`, "Log your workout".
 
+## Version 18: Train is one Today card
+
+A layout change. Data shapes, saving rules and scoring are exactly as they were: every sheet ends in the same `save()`, `logActivity()` or `logRest()` as before, and `tests/v18.test.js` compares what the new sheets save against what version 17's screens saved for the same inputs.
+
+### The Today card (`todayHTML` in `src/61-ui-today.js`)
+
+Train is the same for both profiles and for every date: the subnav, one card, then the Coach rows.
+
+- **Head.** The date chip (`#dateChip`) opens `OV.day`: the 7-day strip and the date picker. The Log it / Go live switch sits on its right. The title is "Today", or the date for a past day.
+- **Check-in.** While nothing is logged for today, the check-in (`checkinHTML`) sits inside the card. Once the day has a row it is gone.
+- **Rows.** `todayRows` draws one row per logged thing: the lift, treadmill or rest entry (`data-row="prog"`), each activity, and a row for sets typed but not saved (`data-row="draft"`). A tap opens that item's editor: the lift sheet, or the activity sheet with its saved values.
+- **Add.** One full-width button, "Add to today" or "Add to <date>".
+- **Gone from Train:** the lift form, the date card with its week strip, the "Log your workout" header, the activity grid, the "This week" card, the page-level sauna chip. The morning plan is on the Program tab. The Apple Health import button is in the Add sheet (and still on Fuel).
+
+### The Add sheet (`OV.add`)
+
+Four choices. With Go live selected, Lift, Cardio and Recovery start live mode instead.
+
+- **Lift** names the next day and opens the lift sheet. For a pick-your-own profile it is "Machine circuit", logged as minutes.
+- **Cardio** and **Recovery** open the same short sheet the check-in's "Log it" opens (`OV.cilog`, through `openCilog`).
+- **Something else** (`OV.more`) is the activity menu: search, six recent and favorite activities (`quickActs`), the categories, and "Show all" for the whole grid. Classes keep their tag.
+- A rest day and the Apple Health import are at the foot of the sheet.
+
+Saving from any sheet closes it and marks the new row (`markRow`) for one 250 ms fade and slide.
+
+### The lift sheet (`OV.lift`)
+
+The typed-in lift log (`liftLogHTML` in `src/60-ui-train.js`) is drawn in a full-height sheet, never on the page. It opens from Add, from a lift check-in choice with "Log it", from a lift row, and from History's Edit.
+
+- Three parts: a head (title, "Go live" or "Resume workout", close), a body that scrolls (`.ls-body`), and a foot that does not (`.ls-foot`): the rest timer, then the Save bar with "Remove".
+- It uses the same draft, the same field ids and the same `save()`. `bind(root)` attaches the form's listeners to whichever root holds it; `render()` redraws the sheet with the page while it is open, keeping its scroll position and open sections; the typing guard covers its text fields.
+- Saving closes the sheet. Closing it any way (`liftClosed`) stops the rest timer and redraws the page. A draft that was typed and not saved stays on the phone and shows as a row.
+- **Rest timer fix.** The bar is part of the sheet's foot, so nothing scrolls underneath it and it cannot cover a button. It stops when the lift is saved or the sheet closes.
+
+### Tests
+
+Suites written before version 18 set `legacyDefault` in `tests/helpers.js`: a call that names a control which now lives in a sheet opens that sheet first. The version 18 suite runs without it and goes through the real buttons.
+
 ## Apple Health and Apple Watch
 
 A web page cannot read Apple Health. A Shortcut on the iPhone copies the day's Exercise Minutes, steps, active calories, water and weight as text, and the user pastes it into the app. The steps to build the Shortcut are in `docs/apple-health-shortcut.md` and inside the app under Me. Imports are idempotent: Exercise Minutes become one entry holding only the minutes not already logged by hand.
@@ -255,6 +294,7 @@ node tests/account.test.js # account memory: profile choice, weekly result and b
 node tests/v12.test.js     # version 12: swaps, weekly locks, provisional/final results, Watch top-up, combined days, gym, stakes, custom foods, team, set shortcuts, rest timer, protein scoring, smoke of every tab (135 checks)
 node tests/v13.test.js     # version 13: saved meals, stalled lifts, deload weeks, reminders, weekly recap, IOUs, goal nudge, pain notes, smoke of every tab (98 checks)
 node tests/v16.test.js     # version 16: check-in rules, Full Body A/B, Healthplex activities, lift goal, gym info, Not at my gym, Jacquie's check-in, workout mode, animations, smoke of every tab and workout-mode screen
+node tests/v18.test.js     # version 18: the Today card at 390 x 844, the lift sheet and its rest timer, the Add sheet in both modes, Jacquie's Train, past days, records identical to version 17's, smoke of every tab, sheet and live screen
 node tests/v17.test.js     # version 17: the top of Train at 390 x 844, the Log it / Go live switch, logging every kind of session without live mode, live finish edits, Subtle / Full / Off animations, smoke of every tab, live screen and Log it sheet
 ML_ZXING=/path/to/zxing/umd/index.min.js node tests/v15.test.js   # version 15: Health paste box, reset plus deload, stuck-lift lines, barcode scanning, meal estimates, undo, backup, smoke of every tab
 ```

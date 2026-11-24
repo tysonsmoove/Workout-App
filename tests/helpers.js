@@ -8,7 +8,59 @@ const T = iso => new Date(iso);
 
 // me: profile preselected on this "phone" (null = show the chooser). Celebration pop-ups are closed automatically
 // and their titles collected in window.__seen, unless window.__keepOv is set.
-async function newPage(browser, { time, width = 390, height = 844, init, me = 'tyson', scheme = 'light', reducedMotion = 'no-preference' } = {}) {
+// Version 18 moved the typed-in lift log into a sheet, the 7-day strip into the date sheet and the activity menu into
+// "Something else". Suites written before that reach for those controls as if they were on the page. With `legacy`
+// on (those suites set module.exports.legacyDefault), a call that names one of them opens the sheet it lives in
+// first, and a call that names something on the page behind an open lift sheet closes the sheet first. The version
+// 18 suite runs with it off and goes through the real buttons.
+const LIFT_SEL = /#(w-|r-|tmMin|tmTitle|notes\b|saveBtn|delBtn|kindSeg|statusLine|whyLine|savenote|saveStatus|savebar|countAs|discardDraft|logForm|wmStart|moreLifts|liftSheet|details-|rest\b|restTime|restLabel)|\[data-(menu|usew|same|repeat|collapse|expand|field|prog|sum|last|hold|kind|act=|menufor|optional|ex[=\]])|\.ex\b|\.menu\b|\.menubtn|\.exrx|\.sessopts|\.exlast|\.exhold|\.exprog|\.logrow|\.savebar|\.collapsed-sum|data-a="(stall|timer)|\.sess \.status|#liftDate|\.stall|data-stall/;
+const DAY_SEL = /\.datebar|#datePick/;
+const ADD_SEL = /data-a="health"|#add(Rest|Lift|Cardio|Recovery|More|Grid)\b/;
+const MENU_SEL = /\.act\b|\.acts\b|data-a="(act|surprise|filter|filter-quick|filter-fav|hp-flip|hp-start)"|data-hpback|data-pain|data-tag/;
+async function ensure(page, sel, opts) {
+  if (!page.__legacy || typeof sel !== 'string' || (opts && (opts.state === 'detached' || opts.state === 'hidden'))) return;
+  const lift = LIFT_SEL.test(sel), day = DAY_SEL.test(sel), menu = MENU_SEL.test(sel), add = ADD_SEL.test(sel);
+  // a tab change is drawn a moment after the tap that asked for it
+  await page.__raw.waitForFunction(() => { const M = window.MorningLaps, h = (location.hash || '#train').slice(1); return !M || M.state.tab === (['train', 'program', 'history', 'fuel', 'compete', 'me'].includes(h) ? h : 'train'); }, null, { timeout: 2000 }).catch(() => {});
+  const st = await page.evaluate(q => { const M = window.MorningLaps; if (!M || !M.state.pid || !M.state.ready && !document.getElementById('today')) return null; const el = (() => { try { return document.querySelector(q); } catch (e) { return null; } })(), ov = document.getElementById('ov');
+    return { tab: M.state.tab, ov: M.state.ov ? M.state.ov.type : '', wm: !!M.wmState(), plan: M.P(M.state.pid).plan, behind: !!(el && !ov.contains(el) && !document.getElementById('toast').contains(el) && !document.getElementById('wm').contains(el)) }; }, sel).catch(() => null);
+  if (!st || st.wm) return;
+  // the sheets this adapter opens (and the Add sheet on the way to one): any of them can be closed to reach another
+  const mine = ['lift', 'day', 'more', 'add'].includes(st.ov), want = lift && st.plan === 'program' ? 'lift' : day ? 'day' : menu ? 'more' : add ? 'add' : '';
+  const close = async () => { await page.__raw.evaluate(() => { const b = document.querySelector('#ov [data-a="ov-close"]'); if (b) b.click(); }); await page.__raw.waitForFunction(() => !window.MorningLaps.state.ov); };
+  if (st.tab !== 'train') return;
+  if (!want) { if (mine && st.behind) await close(); return; }
+  if (st.ov === want || (st.ov && !mine)) return;
+  if (st.ov) await close();
+  if (want === 'lift') { await page.__raw.evaluate(() => window.MorningLaps.openLift()); await page.__raw.waitForSelector('#liftSheet'); }
+  else if (want === 'day') { await page.__raw.click('#dateChip'); await page.__raw.waitForSelector('#ov .datebar'); }
+  else if (want === 'add') { await page.__raw.click('#addBtn'); await page.__raw.waitForSelector('#addGrid'); }
+  else { await page.__raw.click('#addBtn'); await page.__raw.click('#addMore'); await page.__raw.click('#moreAll'); await page.__raw.waitForSelector('#moreList .acts'); }
+}
+function adapt(page) { // wrap the calls that take a selector first
+  const raw = {}; page.__raw = raw;
+  ['click', 'fill', 'focus', 'press', 'type', 'tap', 'hover', 'check', 'uncheck', 'selectOption', 'dispatchEvent', 'textContent', 'inputValue', 'getAttribute', 'isVisible', '$', '$$', '$eval', '$$eval', 'waitForSelector', 'evaluate', 'waitForFunction', 'reload', 'waitForTimeout'].forEach(k => { raw[k] = page[k].bind(page); });
+  ['click', 'fill', 'focus', 'press', 'type', 'tap', 'hover', 'check', 'uncheck', 'selectOption', 'dispatchEvent', 'textContent', 'inputValue', 'getAttribute', 'isVisible', '$', '$$', '$eval', '$$eval'].forEach(k => { page[k] = async (sel, ...a) => { await ensure(page, sel); return raw[k](sel, ...a); }; });
+  page.waitForSelector = async (sel, o) => { await ensure(page, sel, o); return raw.waitForSelector(sel, o); };
+}
+// Open the lift sheet (if it is not open) the way a person does: the day's row, or Add, then Lift.
+async function liftSheet(page) {
+  const p = page.__raw || page;
+  if (await p.$('#liftSheet')) return;
+  if (await p.$('#today [data-a="lift-open"]')) await p.click('#today [data-a="lift-open"]'); else { await p.click('#addBtn'); await p.click('#addLift'); }
+  await p.waitForSelector('#liftSheet');
+}
+// A lift, treadmill or rest entry has been saved for the selected day (and its sheet has closed). how: 'synced' or 'local'.
+const savedWait = (page, how) => (page.__raw || page).waitForFunction(h => { const M = window.MorningLaps, st = M.state.status[M.state.selDate]; return !M.state.ov && !!st && (h ? st.s === h : st.s === 'synced' || st.s === 'local'); }, how || null);
+// Switch Train to another day through the date chip.
+async function pickDay(page, iso) {
+  const p = page.__raw || page;
+  if (await p.$('#liftSheet')) { await p.click('#liftClose'); await p.waitForSelector('#liftSheet', { state: 'detached' }); }
+  await p.click('#dateChip'); await p.waitForSelector('#ov .datebar');
+  if (await p.$('#ov [data-date="' + iso + '"]')) await p.click('#ov [data-date="' + iso + '"]'); else await p.fill('#datePick', iso); // filling a date field fires its change event
+  await p.waitForFunction(d => window.MorningLaps.state.selDate === d && !window.MorningLaps.state.ov, iso);
+}
+async function newPage(browser, { time, width = 390, height = 844, init, me = 'tyson', scheme = 'light', reducedMotion = 'no-preference', legacy = module.exports.legacyDefault } = {}) {
   const ctx = await browser.newContext({ viewport: { width, height }, isMobile: width < 900, hasTouch: width < 900, deviceScaleFactor: 2, colorScheme: scheme, reducedMotion });
   const page = await ctx.newPage();
   if (process.env.ML_TIMEOUT) page.setDefaultTimeout(Number(process.env.ML_TIMEOUT));
@@ -29,6 +81,7 @@ async function newPage(browser, { time, width = 390, height = 844, init, me = 't
   }, me);
   if (init) await page.addInitScript(init);
   page.on('pageerror', e => check('no page error', false, e.message));
+  page.__legacy = !!legacy; if (legacy) adapt(page);
   await page.goto(URL);
   // with no profile on this phone the page stays hidden until one is picked, so wait for the chooser instead
   await page.waitForSelector(me ? '#main .card' : '#ov:not([hidden]) [data-a="who-pick"], html:not(.nopid) #main .card');
@@ -110,4 +163,4 @@ function finish(label) {
   fails.forEach(f => console.log(' - ' + f.name + ' ' + f.detail));
   return fails.length;
 }
-module.exports = { chromium, URL, results, check, T, newPage, val, txt, has, fill, toastText, go, cssVar, score, overflow, fakeDb, capStub, finish };
+module.exports = { chromium, URL, results, check, T, newPage, val, txt, has, fill, toastText, go, cssVar, score, overflow, fakeDb, capStub, finish, liftSheet, pickDay, savedWait, legacyDefault: false };

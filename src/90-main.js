@@ -1,7 +1,8 @@
 /* ---------- Page chrome and the render loop ---------- */
-const main = $('#main');
+const main = $('#main'), ovRoot = $('#ov');
 let typing = false, pendingRender = false;
-const isTextField = el => !!(el && el.matches && el.matches('input[type=number], input[type=text], input[type=search], textarea') && main.contains(el));
+// a text field in the page, or in the lift sheet (the one sheet that is redrawn with the page)
+const isTextField = el => !!(el && el.matches && el.matches('input[type=number], input[type=text], input[type=search], textarea') && (main.contains(el) || (liftOpen() && ovRoot.contains(el))));
 function stripHTML() {
   const pid = me(), t = todayIso(), ws = weekStart(t), g = weekGoals(pid, ws), sc = weekScore(pid, ws), o = otherPid(pid), os = weekScore(o, ws);
   const pips = (n, of, cls) => '<span class="pips">' + Array.from({ length: of }, (_, i) => '<span class="pip ' + cls + (i < n ? ' on' : '') + '"></span>').join('') + '</span>';
@@ -50,7 +51,8 @@ function render(focusSel) {
   if (drawnTab === tab) main.querySelectorAll('details[open]').forEach(d => { const k = detKey(d); if (k) open[k] = true; });
   main.innerHTML = html; drawnTab = tab;
   main.querySelectorAll('details').forEach(d => { if (open[detKey(d)]) d.open = true; });
-  bind();
+  bind(main);
+  if (liftOpen()) renderOv(); // the lift sheet shows the same day as the page under it: it is redrawn with it
   if (focusSel) { const el = $(focusSel); if (el) el.focus({ preventScroll: true }); }
   if (Math.abs(window.scrollY - y) > 2) window.scrollTo(0, y);
   if (state.scrollTo) { const el = document.getElementById(state.scrollTo); state.scrollTo = null; if (el) el.scrollIntoView({ block: 'start' }); }
@@ -77,7 +79,7 @@ function refreshLive(date) {
 }
 
 /* ---------- Events ---------- */
-main.addEventListener('input', e => {
+function onLogInput(e) {
   const el = e.target; const f = el.dataset.field; if (!f) return;
   const date = state.selDate; const d = draft(date);
   if (f === 'tmMin') d.tm.minutes = el.value;
@@ -89,12 +91,13 @@ main.addEventListener('input', e => {
     else { const i = Number(el.dataset.i); while (d.ex[key].reps.length <= i) d.ex[key].reps.push(''); d.ex[key].reps[i] = el.value; }
   }
   d.recovered = false; delete state.formError[date]; persistDrafts(); refreshLive(date);
-});
+}
 // a set logged for today starts the rest timer: on change (leaving the field), never on each keystroke
-main.addEventListener('change', e => {
+function onLogChange(e) {
   const el = e.target; if (!el.dataset || el.dataset.field !== 'rep' || el.value === '' || state.selDate !== todayIso() || !EX[el.dataset.ex]) return;
   restStart(restFor(el.dataset.ex), EX[el.dataset.ex].name);
-});
+}
+[main, ovRoot].forEach(r => { r.addEventListener('input', onLogInput); r.addEventListener('change', onLogChange); });
 // One-tap fills for an exercise. Both write only into fields that are still empty, in the draft and on screen, without a re-render.
 function fillSets(key, how) {
   const date = state.selDate, d = draft(date), ex = EX[key], sg = suggest(key, date), e = d.ex[key] = d.ex[key] || { w: '', reps: [] };
@@ -113,23 +116,25 @@ function onFormInput(e) { const el = e.target; if (!el.dataset || !el.dataset.fo
 document.addEventListener('input', onFormInput);
 document.addEventListener('change', onFormInput);
 // while a text field in the page has focus, re-renders wait (so the keyboard and caret stay put)
-main.addEventListener('focusin', e => { if (isTextField(e.target)) typing = true; });
-main.addEventListener('focusout', e => {
-  if (!isTextField(e.target) || isTextField(e.relatedTarget)) return;
-  typing = false;
-  // a waiting re-render runs after the tap that took focus away has finished, so it cannot swallow that tap
-  if (pendingRender) setTimeout(() => { if (pendingRender && !typing) render(); }, 300);
+[main, ovRoot].forEach(r => {
+  r.addEventListener('focusin', e => { if (isTextField(e.target)) typing = true; });
+  r.addEventListener('focusout', e => {
+    if (!isTextField(e.target) || isTextField(e.relatedTarget)) return;
+    typing = false;
+    // a waiting re-render runs after the tap that took focus away has finished, so it cannot swallow that tap
+    if (pendingRender) setTimeout(() => { if (pendingRender && !typing) render(); }, 300);
+  });
 });
 // one click handler for every data-a action, in the page and in overlays
 // Actions that save one thing per tap. A second tap while the first is still saving is dropped, so a slow
 // connection cannot log the same food or activity twice. Water is left out on purpose: tapping it twice means two glasses.
-const ONE_AT_A_TIME = ['act-log', 'act-del', 'rest', 'food-save', 'food-again', 'food-del', 'quick-save', 'custom-save', 'custom-del', 'hk-import', 'hk-off', 'body-save', 'weigh-save', 'name-save', 'gym-save', 'stakes-save', 'cd-save', 'cd-clear', 'meal-copy', 'meal-save', 'meal-add', 'meal-rename', 'meal-del', 'iou-toggle', 'undo', 'scan-digits', 'scan-link-pick', 'describe-go', 'describe-log', 'backup-all', 'backup-workouts', 'backup-food', 'backup-copy', 'wm-save', 'wm-stagelog', 'wm-water', 'wm-notgym', 'water-bottle', 'ci-rest', 'gym-hp', 'split-set', 'lift-goal', 'mode-set', 'motion-set', 'cilog-save', 'rem-save', 'nudge-yes', 'nudge-no', 'stall-reset', 'stall-swap', 'deload-take'];
+const ONE_AT_A_TIME = ['act-log', 'act-del', 'rest', 'food-save', 'food-again', 'food-del', 'quick-save', 'custom-save', 'custom-del', 'hk-import', 'hk-off', 'body-save', 'weigh-save', 'name-save', 'gym-save', 'stakes-save', 'cd-save', 'cd-clear', 'meal-copy', 'meal-save', 'meal-add', 'meal-rename', 'meal-del', 'iou-toggle', 'undo', 'scan-digits', 'scan-link-pick', 'describe-go', 'describe-log', 'backup-all', 'backup-workouts', 'backup-food', 'backup-copy', 'wm-save', 'wm-stagelog', 'wm-water', 'wm-notgym', 'water-bottle', 'ci-rest', 'gym-hp', 'split-set', 'lift-goal', 'mode-set', 'motion-set', 'cilog-save', 'add-rest', 'rem-save', 'nudge-yes', 'nudge-no', 'stall-reset', 'stall-swap', 'deload-take'];
 const busy = {};
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-a]'); if (!el || el.disabled) return;
   const a = el.dataset.a, fn = ACT[a]; if (!fn) return;
   if (el.tagName === 'A') e.preventDefault();
-  if (main.contains(el)) typing = false;
+  if (main.contains(el) || ovRoot.contains(el)) typing = false;
   if (!ONE_AT_A_TIME.includes(a)) { fn(el, e); return; }
   if (busy[a]) return;
   busy[a] = true;
@@ -138,7 +143,6 @@ document.addEventListener('click', e => {
   Promise.resolve(r).then(free, err => { free(); throw err; });
 });
 // overlay fields write straight into the overlay's state
-const ovRoot = $('#ov');
 function onOvInput(e) {
   const el = e.target, o = state.ov; if (!o || !el.dataset) return;
   if (o.type === 'describe' && el.dataset.di != null) { const it = (o.items || [])[Number(el.dataset.di)]; if (it) { it[el.dataset.dk] = el.value; refreshDescribe(); } return; } // one row of the estimate
@@ -151,6 +155,7 @@ function onOvInput(e) {
   else if (o.type === 'health') { if (typed) refreshHealthPreview(); }
   else if (o.type === 'fooditem') refreshFoodItem(); // patches the label and button text in place
   else if (o.type === 'cilog') refreshCilog(); // labels follow the typing
+  else if (o.type === 'more' && key === 'q') { if (typed) refreshMore(); }
   else if (o.type === 'act' && key === 'laps') { const l = $('#lapMiles'); if (l) l.textContent = lapLine(el.value); }
   else if (o.type === 'act' && key === 'min') { const b = $('#actLog'), min = Math.round(Number(el.value)); if (b) { b.disabled = !(min > 0); b.textContent = (o.id ? 'Update ' : 'Log ') + (min > 0 ? min + ' min' : ''); } }
 }
@@ -167,7 +172,7 @@ document.addEventListener('input', e => { // live preview while dragging in the 
 // exercise menus: close on outside tap or Escape; arrow keys move between items
 document.addEventListener('click', e => { if (state.menu && !e.target.closest('.menu') && !e.target.closest('.menubtn')) { const k = state.menu.key; state.menu = null; render('[data-menu="' + k + '"]'); } });
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && state.ov) { const def = OV[state.ov.type]; if (!(def.locked && def.locked(state.ov))) { closeOv(); e.preventDefault(); } return; }
+  if (e.key === 'Escape' && state.ov && !(state.menu && liftOpen())) { const def = OV[state.ov.type]; if (!(def.locked && def.locked(state.ov))) { closeOv(); e.preventDefault(); } return; } // in the lift sheet, Escape closes an open exercise menu first
   if (!state.menu) return;
   const items = Array.from(document.querySelectorAll('.menu [role="menuitem"]:not(:disabled)'));
   if (e.key === 'Escape') { const k = state.menu.key; state.menu = null; render('[data-menu="' + k + '"]'); e.preventDefault(); }
@@ -186,33 +191,42 @@ function menuAction(act, b) {
   if (act === 'collapse') { const d = draft(date); d.closed[key] = true; state.menu = null; persistDrafts(); render('[data-menu="' + key + '"]'); return; }
   if (act === 'expand') { const d = draft(date); delete d.closed[key]; state.menu = null; persistDrafts(); render('[data-menu="' + key + '"]'); return; }
 }
-function bind() {
-  const dp = $('#datePick'); if (dp) dp.addEventListener('change', e => { const v = e.target.value; if (validIso(v) && v <= todayIso()) { state.selDate = v; state.confirmRemove = null; state.menu = null; persistDrafts(); render(); } else if (v) toast('Pick today or an earlier day.'); });
-  document.querySelectorAll('[data-date]').forEach(b => b.addEventListener('click', () => { state.selDate = b.dataset.date; state.confirmRemove = null; state.menu = null; persistDrafts(); render(); }));
-  document.querySelectorAll('#kindSeg [data-kind]').forEach(b => b.addEventListener('click', () => { const d = draft(state.selDate); d.kindSel = b.dataset.kind; d.recovered = false; state.menu = null; persistDrafts(); render(); }));
-  document.querySelectorAll('[data-menu]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); const key = b.dataset.menu; if (state.menu && state.menu.key === key) { state.menu = null; render('[data-menu="' + key + '"]'); } else { state.menu = { key, view: 'main' }; render('.menu [role="menuitem"]'); } }));
-  document.querySelectorAll('.menu [data-act]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); menuAction(b.dataset.act, b); }));
-  document.querySelectorAll('[data-gswap]').forEach(b => b.addEventListener('click', () => { const sw = Object.assign({}, state.settings.swaps || {}); if (b.dataset.to === b.dataset.gswap) delete sw[b.dataset.gswap]; else sw[b.dataset.gswap] = b.dataset.to; saveSettings({ swaps: sw }); }));
-  document.querySelectorAll('[data-usew]').forEach(b => b.addEventListener('click', () => { const key = b.dataset.usew; const d = draft(state.selDate); d.ex[key] = d.ex[key] || { w: '', reps: [] }; d.ex[key].w = b.dataset.val; const inp = document.getElementById('w-' + key); if (inp) inp.value = b.dataset.val; d.recovered = false; persistDrafts(); refreshLive(state.selDate); const first = document.getElementById('r-' + key + '-0'); if (first && first.value === '') first.focus({ preventScroll: true }); }));
-  document.querySelectorAll('[data-same]').forEach(b => b.addEventListener('click', () => fillSets(b.dataset.same, 'same')));
-  document.querySelectorAll('[data-repeat]').forEach(b => b.addEventListener('click', () => fillSets(b.dataset.repeat, 'repeat')));
-  document.querySelectorAll('[data-collapse]').forEach(b => b.addEventListener('click', onCollapse));
-  document.querySelectorAll('[data-expand]').forEach(b => b.addEventListener('click', () => { const key = b.dataset.expand; const d = draft(state.selDate); delete d.closed[key]; persistDrafts(); render('[data-menu="' + key + '"]'); }));
-  document.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => { state.selDate = b.dataset.edit; state.confirmRemove = null; persistDrafts(); location.hash = 'train'; if (state.tab === 'train') render(); }));
-  document.querySelectorAll('[data-remove]').forEach(b => b.addEventListener('click', () => { const d = b.dataset.remove; if (state.confirmRemove === d) removeRecord(d); else { state.confirmRemove = d; render(); const det = document.querySelector('details[data-hdate="' + d + '"]'); if (det) det.open = true; } }));
+function pickDay(v) { // from the 7-day strip or the date picker, on Fuel's card or in the date sheet
+  const sheet = !!(state.ov && state.ov.type === 'day');
+  state.selDate = v; state.confirmRemove = null; state.menu = null; state.ci = null; persistDrafts();
+  if (sheet) closeOv();
+  render(sheet ? '#dateChip' : undefined);
+}
+function bind(root) {
+  const all = sel => root.querySelectorAll(sel), one = sel => root.querySelector(sel);
+  const dp = one('#datePick'); if (dp) dp.addEventListener('change', e => { const v = e.target.value; if (validIso(v) && v <= todayIso()) pickDay(v); else if (v) toast('Pick today or an earlier day.'); });
+  all('[data-date]').forEach(b => b.addEventListener('click', () => pickDay(b.dataset.date)));
+  all('#kindSeg [data-kind]').forEach(b => b.addEventListener('click', () => { const d = draft(state.selDate); d.kindSel = b.dataset.kind; d.recovered = false; state.menu = null; persistDrafts(); render(); }));
+  all('[data-menu]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); const key = b.dataset.menu; if (state.menu && state.menu.key === key) { state.menu = null; render('[data-menu="' + key + '"]'); } else { state.menu = { key, view: 'main' }; render('.menu [role="menuitem"]'); } }));
+  all('.menu [data-act]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); menuAction(b.dataset.act, b); }));
+  all('[data-gswap]').forEach(b => b.addEventListener('click', () => { const sw = Object.assign({}, state.settings.swaps || {}); if (b.dataset.to === b.dataset.gswap) delete sw[b.dataset.gswap]; else sw[b.dataset.gswap] = b.dataset.to; saveSettings({ swaps: sw }); }));
+  all('[data-usew]').forEach(b => b.addEventListener('click', () => { const key = b.dataset.usew; const d = draft(state.selDate); d.ex[key] = d.ex[key] || { w: '', reps: [] }; d.ex[key].w = b.dataset.val; const inp = document.getElementById('w-' + key); if (inp) inp.value = b.dataset.val; d.recovered = false; persistDrafts(); refreshLive(state.selDate); const first = document.getElementById('r-' + key + '-0'); if (first && first.value === '') first.focus({ preventScroll: true }); }));
+  all('[data-same]').forEach(b => b.addEventListener('click', () => fillSets(b.dataset.same, 'same')));
+  all('[data-repeat]').forEach(b => b.addEventListener('click', () => fillSets(b.dataset.repeat, 'repeat')));
+  all('[data-collapse]').forEach(b => b.addEventListener('click', onCollapse));
+  all('[data-expand]').forEach(b => b.addEventListener('click', () => { const key = b.dataset.expand; const d = draft(state.selDate); delete d.closed[key]; persistDrafts(); render('[data-menu="' + key + '"]'); }));
+  // History's Edit: the day's lift, treadmill or rest entry opens in the lift sheet
+  all('[data-edit]').forEach(b => b.addEventListener('click', () => { state.selDate = b.dataset.edit; state.confirmRemove = null; state.afterRoute = 'lift'; persistDrafts(); location.hash = 'train'; if (state.tab === 'train') route(); }));
+  all('[data-remove]').forEach(b => b.addEventListener('click', () => { const d = b.dataset.remove; if (state.confirmRemove === d) removeRecord(d); else { state.confirmRemove = d; render(); const det = document.querySelector('details[data-hdate="' + d + '"]'); if (det) det.open = true; } }));
+  if (root !== main && !liftOpen()) return; // what follows belongs to the page and to the lift sheet
   bindSaveBar();
-  const goal = $('#goalIn'); if (goal) goal.addEventListener('change', e => { const v = Math.max(3, Math.min(7, Number(e.target.value) || GOAL)); typing = false; saveSettings({ goal: v }).then(settle); });
-  const form = $('#logForm'); if (form) form.addEventListener('submit', e => { e.preventDefault(); save(); });
-  const ca = $('#countAs'); if (ca) ca.addEventListener('change', () => { const d = draft(state.selDate); d.countAs = ca.checked; persistDrafts(); refreshLive(state.selDate); });
-  const dd = $('#discardDraft'); if (dd) dd.addEventListener('click', () => { delete state.drafts[state.selDate]; delete state.formError[state.selDate]; persistDrafts(); render(); toast('Draft discarded'); });
-  const eh = $('#exHist'); if (eh) eh.addEventListener('change', e => { state.exHist = e.target.value; render(); });
-  const ib = $('#importBtn'); if (ib) ib.addEventListener('click', importLocal);
-  const idm = $('#importDismiss'); if (idm) idm.addEventListener('click', () => { state.localOnly = null; render(); });
-  const iok = $('#importOk'); if (iok) iok.addEventListener('click', () => { state.importNote = null; render(); });
+  const goal = one('#goalIn'); if (goal) goal.addEventListener('change', e => { const v = Math.max(3, Math.min(7, Number(e.target.value) || GOAL)); typing = false; saveSettings({ goal: v }).then(settle); });
+  const form = one('#logForm'); if (form) form.addEventListener('submit', e => { e.preventDefault(); save(); });
+  const ca = one('#countAs'); if (ca) ca.addEventListener('change', () => { const d = draft(state.selDate); d.countAs = ca.checked; persistDrafts(); refreshLive(state.selDate); });
+  const dd = one('#discardDraft'); if (dd) dd.addEventListener('click', () => { delete state.drafts[state.selDate]; delete state.formError[state.selDate]; persistDrafts(); render(); toast('Draft discarded'); });
+  const eh = one('#exHist'); if (eh) eh.addEventListener('change', e => { state.exHist = e.target.value; render(); });
+  const ib = one('#importBtn'); if (ib) ib.addEventListener('click', importLocal);
+  const idm = one('#importDismiss'); if (idm) idm.addEventListener('click', () => { state.localOnly = null; render(); });
+  const iok = one('#importOk'); if (iok) iok.addEventListener('click', () => { state.importNote = null; render(); });
 }
 function bindSaveBar() {
   const sb = $('#saveBtn'); if (sb) sb.addEventListener('click', save);
-  const del = $('#delBtn'); if (del) del.addEventListener('click', () => { if (state.confirmRemove === state.selDate) removeRecord(state.selDate); else { state.confirmRemove = state.selDate; refreshLive(state.selDate); } });
+  const del = $('#delBtn'); if (del) del.addEventListener('click', () => { const d = state.selDate; if (state.confirmRemove === d) { if (liftOpen()) closeOv(); removeRecord(d); } else { state.confirmRemove = d; refreshLive(d); } });
 }
 function save() {
   const date = state.selDate;
@@ -233,6 +247,8 @@ function save() {
     const msg = r.kind === 'cardio' && r.fromLift ? r.doc.treadmill.minutes + ' treadmill minutes saved. No lifting sets recorded; ' + DAYS[nextDayKey(date)].name + ' remains next.'
       : r.kind === 'strength' ? (note ? note.text : DAYS[r.doc.day].name + ' day saved · counts as lift day · next: ' + DAYS[nextAfter(r.doc.day)].name)
       : r.kind === 'rest' ? 'Rest day saved.' : 'Treadmill saved.';
+    markRow(date, 'prog');
+    if (liftOpen()) closeOv(); else render(); // a saved lift never stays open as a form: its sheet closes, and the timer with it
     if (up) milestone();
     celebrate(msg + (st && st.s === 'synced' ? ' Synced.' : st && st.s === 'local' ? ' Saved in this browser.' : ''), { ms: 3800, before });
     return true;
@@ -246,14 +262,16 @@ const TABS = ['train', 'program', 'history', 'fuel', 'compete', 'me'];
 function route() {
   const h = (location.hash || '#train').slice(1), tab = TABS.includes(h) ? h : 'train', changed = tab !== state.tab;
   state.tab = tab; state.confirmRemove = null; state.menu = null; typing = false;
-  const jump = state.scrollTo;
+  const jump = state.scrollTo, then = state.afterRoute; state.afterRoute = null;
+  if (changed && liftOpen()) closeOv(); // the lift sheet belongs to Train
   render();
   if (changed && !jump) window.scrollTo(0, 0);
+  if (then === 'lift' && tab === 'train' && P(me()).plan === 'program' && lifted(state.sessions[state.selDate])) openLift();
 }
 window.MorningLaps = { state, P, weekScore, coach, goalsFor, badgesFor, searchFoods, loadFoods, dayTotals, compWeeks, parseHealthPaste, foodCount: () => foodDb.list ? foodDb.list.length : 0,
   EX, DAYS, normalize, dayInfo, weekFacts, scoreFacts, weekGoals, liveGoals, fuelParts, plannedFor, planSlots, swapOptions, defaultSwapOption, alts, teamStats, stakesFor, phaseFor, restT,
   caps, normBarcode, backupDocs, workoutsCsv, foodCsv, canon,
-  ACTS, specFor, splitOf, rotation, nextDayKey, deloadWeeks, checkinSuggest, ciPreview, atHealthplex, lapMiles, wmState: () => wm, wmResumable, motionOf, milestone, modeOf, plannedFor, MOVE_OF, HOWTO, STRETCHES, demoSVG,
+  ACTS, specFor, splitOf, rotation, nextDayKey, deloadWeeks, checkinSuggest, ciPreview, atHealthplex, lapMiles, wmState: () => wm, wmResumable, motionOf, milestone, modeOf, plannedFor, liftOpen, openLift, todayRows, quickActs, addCardioOptions, MOVE_OF, HOWTO, STRETCHES, demoSVG,
   suggest, stallFor, deloadOn, deloadState, completedWeeks, easier, weekRecap, lastWeek, ious, goalNudge, painNotes, painFlag, actList, surpriseActivity, savedMeals, mealItems };
 (function boot() {
   const saved = lsGet('ml.me', null);

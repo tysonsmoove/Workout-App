@@ -3,6 +3,7 @@
 // the Healthplex, Tyson on Full Body A/B with a deload offer and a goal nudge both active.
 // Run: node tests/v17.test.js   (ML_ONLY=L,A runs just those sections)
 const { chromium, check, results, T, newPage, val, txt, has, fill, go, score, finish } = require('./helpers');
+require('./helpers').legacyDefault = true; // written before version 18: the lift log, the 7-day strip and the activity menu open in their sheets on demand
 const kv = (page, path) => page.evaluate(p => (JSON.parse(localStorage.getItem('ml.kv') || '{}'))[p] || null, path);
 const ses = (page, d) => page.evaluate(x => (JSON.parse(localStorage.getItem('ml.sessions') || '{}'))[x] || null, d);
 const ML = (page, fn, arg) => page.evaluate(fn, arg);
@@ -88,19 +89,19 @@ const FULLA = [['squat', 3], ['dbbench', 3], ['latpull', 3], ['dbshoulder', 2], 
   await section('L', async () => {
     await open({ me: 'tyson', init: local(seedDocs()) });
     const lay = async () => page.evaluate(() => { const r = id => { const e = document.getElementById(id); if (!e) return null; const b = e.getBoundingClientRect(); return [Math.round(b.top), Math.round(b.bottom)]; };
-      return { vh: innerHeight, vw: innerWidth, y: scrollY, sw: r('modeSwitch'), ci: r('checkin'), coach: r('coach'), log: r('logHead'), rows: Array.from(document.querySelectorAll('#coach .coachrow')).map(d => [d.id, d.open, Math.round(d.getBoundingClientRect().height), d.querySelector('summary').textContent]), cards: document.querySelectorAll('#checkin .cic').length, banners: document.querySelectorAll('#main > .banner').length }; });
+      return { vh: innerHeight, vw: innerWidth, y: scrollY, sw: r('modeSwitch'), ci: r('checkin'), coach: r('coach'), today: r('today'), rows: Array.from(document.querySelectorAll('#coach .coachrow')).map(d => [d.id, d.open, Math.round(d.getBoundingClientRect().height), d.querySelector('summary').textContent]), cards: document.querySelectorAll('#checkin .cic').length, banners: document.querySelectorAll('#main > .banner').length }; });
     const t = await lay();
     check('L on a 390 × 844 screen the switch and the whole check-in show without scrolling (Tyson)', t.vw === 390 && t.vh === 844 && t.y === 0 && t.sw[0] >= 0 && t.ci[1] <= 844 && t.sw[1] <= t.ci[0] && t.cards === 5, JSON.stringify(t));
-    check('L the check-in comes first, then one Coach card, then "Log your workout"', t.ci[1] <= t.coach[0] && t.coach[1] <= t.log[0] && (await txt(page, '#logHead')) === 'Log your workout' && (await txt(page, '#coach .eyebrow')) === 'Coach');
-    check('L the deload offer and the goal nudge are one closed line each', t.rows.length === 2 && t.rows[0][0] === 'deloadBanner' && t.rows[1][0] === 'nudgeCard' && t.rows.every(r => r[1] === false && r[2] <= 44) && t.rows[0][3].startsWith('Deload week on offer') && t.rows[1][3].startsWith('Three full weeks in a row'), JSON.stringify(t.rows));
-    check('L nothing sits above the check-in but the switch', !(await has(page, '#main > #deloadBanner')) && (await page.evaluate(() => { const m = document.getElementById('main'), kids = Array.from(m.children).filter(e => !e.classList.contains('banner') && !e.classList.contains('subnav')); return kids[0].id + ',' + kids[1].id + ',' + kids[2].id + ',' + kids[3].id; })) === 'modeSwitch,checkin,coach,logHead');
+    check('L the switch and the check-in sit in the Today card, then one Coach card (version 18: no log on the page)', t.today[0] <= t.sw[0] && t.ci[1] <= t.today[1] && t.today[1] <= t.coach[0] && (await page.evaluate(() => !document.getElementById('logHead') && !document.getElementById('logForm'))) && (await txt(page, '#coach .eyebrow')) === 'Coach');
+    check('L the deload offer and the goal nudge are one closed line each', t.rows.length === 2 && t.rows[0][0] === 'deloadBanner' && t.rows[1][0] === 'nudgeCard' && t.rows.every(r => r[1] === false && r[2] <= 44) && t.rows[0][3].includes('Deload week on offer') && t.rows[1][3].includes('Three full weeks in a row'), JSON.stringify(t.rows));
+    check('L Train is the Today card and the Coach card, nothing else', !(await has(page, '#main > #deloadBanner')) && (await page.evaluate(() => { const m = document.getElementById('main'), kids = Array.from(m.children).filter(e => !e.classList.contains('banner') && !e.classList.contains('subnav')); return kids.map(k => k.id).join(','); })) === 'today,coach');
     await page.click('#nudgeCard summary');
     check('L a tap opens a Coach line, with its buttons', await page.evaluate(() => document.getElementById('nudgeCard').open && !!document.querySelector('#nudgeCard [data-a="nudge-yes"]') && document.querySelector('#nudgeCard [data-a="nudge-yes"]').getBoundingClientRect().height > 0) && (await txt(page, '#nudgeCard')).includes('Raise your goal to 6 days starting Monday?'));
     await page.click('#deloadBanner summary'); await page.click('[data-a="deload-take"]'); await page.waitForFunction(() => document.getElementById('deloadBanner').textContent.includes('Deload week is on'));
-    check('L the deload can be taken from its line', (await txt(page, '#deloadBanner summary')).startsWith('Deload week is on'));
+    check('L the deload can be taken from its line', (await txt(page, '#deloadBanner summary')).includes('Deload week is on'));
     await switchTo(page, 'jacquie'); await page.evaluate(() => window.scrollTo(0, 0));
     const j = await lay();
-    check('L the same for Jacquie: switch and whole check-in on the first screen, the nudge below as a Coach line', j.y === 0 && j.sw[0] >= 0 && j.ci[1] <= 844 && j.cards === 4 && j.ci[1] <= j.coach[0] && j.rows.length === 1 && j.rows[0][0] === 'nudgeCard' && j.rows[0][1] === false && j.rows[0][2] <= 44 && !!j.log && j.coach[1] <= j.log[0] && (await txt(page, '#logHead')) === 'Log your workout', JSON.stringify(j));
+    check('L the same for Jacquie: switch and whole check-in on the first screen, the nudge below as a Coach line', j.y === 0 && j.sw[0] >= 0 && j.ci[1] <= 844 && j.cards === 4 && j.today[1] <= j.coach[0] && j.rows.length === 1 && j.rows[0][0] === 'nudgeCard' && j.rows[0][1] === false && j.rows[0][2] <= 44, JSON.stringify(j));
   });
 
   // ---------- 1: Log it or go live ----------
@@ -128,11 +129,11 @@ const FULLA = [['squat', 3], ['dbbench', 3], ['latpull', 3], ['dbshoulder', 2], 
 
   await section('F', async () => { // a full lift, logged without going live
     await open({ me: 'tyson', init: local(seedDocs()) });
-    check('F the log has a clear header, and its live button is just "Go live"', (await txt(page, '#logHead')) === 'Log your workout' && (await txt(page, '#wmStart')) === 'Go live' && !(await txt(page, '#main')).includes('full screen, one lift at a time') && !(await txt(page, '#main')).includes('Start guided workout'));
+    check('F the lift log\'s live button is just "Go live" (version 18: in the head of the lift sheet)', (await txt(page, '#wmStart')) === 'Go live' && !(await txt(page, '#liftSheet')).includes('full screen, one lift at a time') && !(await txt(page, '#liftSheet')).includes('Start guided workout') && !(await txt(page, '#main')).includes('Start guided workout'));
     await pick('strong'); await page.click('#ciLog'); await page.waitForSelector('#ciPreview', { state: 'detached' });
-    const a = await page.evaluate(() => { const f = document.activeElement, r = f.getBoundingClientRect(), h = document.getElementById('logHead').getBoundingClientRect(); return { focus: f.id, inView: r.top >= 0 && r.bottom <= innerHeight, head: Math.round(h.top), line: document.getElementById('ciDone').textContent, change: document.getElementById('ciChange').textContent, cards: document.querySelectorAll('#checkin .cic').length, jumps: window.MorningLaps.state.logJumps, kind: document.querySelector('#kindSeg .on').textContent, ciH: Math.round(document.getElementById('checkin').getBoundingClientRect().height) }; });
-    check('F "Log it" collapses the check-in to one line: "Feeling strong · Full Body A", with Change', a.line === 'Feeling strong · Full Body A' && a.change === 'Change' && a.cards === 0 && a.ciH <= 60, JSON.stringify(a));
-    check('F it scrolls to the log with that day selected and puts the cursor in the first weight field', a.focus === 'w-squat' && a.inView && a.head >= 0 && a.head < 200 && a.kind === 'Full Body A' && a.jumps === 1, JSON.stringify(a));
+    const a = await page.evaluate(() => { const f = document.activeElement, r = f.getBoundingClientRect(), b = document.querySelector('.ls-body').getBoundingClientRect(); return { focus: f.id, inView: r.top >= b.top && r.bottom <= b.bottom, sheet: !!document.getElementById('liftSheet'), title: document.getElementById('liftTitle').textContent, jumps: window.MorningLaps.state.logJumps, kind: document.querySelector('#kindSeg .on').textContent, y: scrollY }; });
+    check('F "Log it" on a lift choice opens the lift sheet for that day (version 18)', a.sheet && a.title === 'Full Body A' && a.kind === 'Full Body A', JSON.stringify(a));
+    check('F with the cursor in the first weight field, in view inside the sheet', a.focus === 'w-squat' && a.inView && a.jumps === 1, JSON.stringify(a));
     check('F nothing is saved yet: the choice is only on the draft', (await ses(page, WED)) === null && (await page.evaluate(() => JSON.parse(localStorage.getItem('ml.drafts'))['2026-12-09'].checkin)) === 'strong');
     await fill(page, '#tmMin', 5);
     for (const [k, n] of FULLA) { if (k !== 'legraise') await page.click('[data-usew="' + k + '"]').catch(() => {}); for (let i = 0; i < n; i++) await fill(page, '#r-' + k + '-' + i, 10); }
@@ -140,18 +141,16 @@ const FULLA = [['squat', 3], ['dbbench', 3], ['latpull', 3], ['dbshoulder', 2], 
     await page.waitForFunction(d => { const r = JSON.parse(localStorage.getItem('ml.sessions'))[d]; return r && r.kind === 'strength'; }, WED);
     const rec = await ses(page, WED);
     check('F a full Full Body A is logged without live mode ever opening, after that one jump', rec.day === 'fba' && rec.complete === true && rec.qualifies === true && Object.keys(rec.ex).length === 6 && rec.checkin === 'strong' && (await opens()) === 0 && await page.evaluate(() => document.getElementById('wm').hidden) && (await page.evaluate(() => window.MorningLaps.state.logJumps)) === 1, JSON.stringify([rec.complete, Object.keys(rec.ex).length, await opens()]));
-    check('F once the day is logged the check-in stays one line with "Change"', (await txt(page, '#ciDone')) === 'Feeling strong · Full Body A' && (await txt(page, '#ciChange')) === 'Change' && (await page.$$('#checkin .cic')).length === 0);
-    await page.click('#ciChange');
-    check('F "Change" brings the choices back', (await page.$$('#checkin .cic')).length === 5 && await has(page, '#ciExtra'));
+    check('F once the day is logged it is one row on the Today card, and the check-in is gone (version 18)', (await txt(page, '[data-row="prog"]')).includes('Full Body A') && (await txt(page, '[data-row="prog"]')).includes('6 lifts · 15 sets · lift day') && !(await has(page, '#checkin')) && (await page.evaluate(() => !document.getElementById('liftSheet'))) && (await txt(page, '#addBtn')) === 'Add to today');
     // a past day shows no check-in and no switch, so the log comes first
     await page.click('.datebar [data-date="' + TUE + '"]'); await page.waitForFunction(() => !document.getElementById('checkin'));
-    check('F a past day shows no check-in, so the log comes first', !(await has(page, '#modeSwitch')) && !(await has(page, '#checkin')) && (await box('#logHead')).top < 420, JSON.stringify(await box('#logHead')));
+    check('F a past day shows no check-in: its card is titled with the date and still has the switch and Add', (await has(page, '#modeSwitch')) && !(await has(page, '#checkin')) && (await txt(page, '#todayTitle')) === 'Tue Dec 8' && (await txt(page, '#addBtn')) === 'Add to Tue Dec 8');
     await ctx.close();
     // short on time: three lifts, the rest under "More lifts"
     await open({ me: 'tyson', init: local(seedDocs()) });
     await pick('short'); await page.click('#ciLog'); await page.waitForSelector('#moreLifts');
-    const sh = await page.evaluate(() => ({ line: document.getElementById('ciDone').textContent, main: Array.from(document.querySelectorAll('#logForm > .ex[data-ex]')).map(e => e.dataset.ex), more: Array.from(document.querySelectorAll('#moreLifts .ex[data-ex]')).map(e => e.dataset.ex), sum: document.querySelector('#moreLifts summary').textContent, open: document.getElementById('moreLifts').open, focus: document.activeElement.id }));
-    check('F "short on time" shows the first 3 lifts and puts the rest under "More lifts"', sh.line === 'Short on time · Full Body A' && same(sh.main, ['squat', 'dbbench', 'latpull']) && same(sh.more, ['dbshoulder', 'legcurl', 'legraise']) && sh.sum === 'More lifts (3)' && sh.open === false && sh.focus === 'w-squat', JSON.stringify(sh));
+    const sh = await page.evaluate(() => ({ line: document.getElementById('liftTitle').textContent, main: Array.from(document.querySelectorAll('#logForm > .ex[data-ex]')).map(e => e.dataset.ex), more: Array.from(document.querySelectorAll('#moreLifts .ex[data-ex]')).map(e => e.dataset.ex), sum: document.querySelector('#moreLifts summary').textContent, open: document.getElementById('moreLifts').open, focus: document.activeElement.id }));
+    check('F "short on time" shows the first 3 lifts and puts the rest under "More lifts"', sh.line === 'Full Body A' && same(sh.main, ['squat', 'dbbench', 'latpull']) && same(sh.more, ['dbshoulder', 'legcurl', 'legraise']) && sh.sum === 'More lifts (3)' && sh.open === false && sh.focus === 'w-squat', JSON.stringify(sh));
     for (const k of ['squat', 'dbbench', 'latpull']) { await page.click('[data-usew="' + k + '"]'); await fill(page, '#r-' + k + '-0', 10); }
     await page.click('#moreLifts summary'); await page.click('[data-usew="legcurl"]'); await fill(page, '#r-legcurl-0', 12); await fill(page, '#r-legcurl-1', 12);
     await closeRest(); await page.click('h1'); await page.click('#saveBtn');
@@ -174,7 +173,7 @@ const FULLA = [['squat', 3], ['dbbench', 3], ['latpull', 3], ['dbshoulder', 2], 
     await open({ me: 'tyson', init: local(seedDocs()) });
     await page.click('#kindSeg [data-kind="cardio"]'); await fill(page, '#tmMin', 20); await page.click('h1'); await page.click('#saveBtn');
     await page.waitForFunction(d => { const r = JSON.parse(localStorage.getItem('ml.sessions'))[d]; return r && r.kind === 'cardio'; }, WED);
-    check('F a day logged straight from the log, with no check-in answered, also collapses the check-in to one line', (await txt(page, '#ciDone')) === 'Today is logged · Treadmill' && (await txt(page, '#ciChange')) === 'Change' && (await page.$$('#checkin .cic')).length === 0 && !(await ses(page, WED)).checkin, await txt(page, '#checkin'));
+    check('F a day logged straight from the lift sheet, with no check-in answered, is one row as well', (await txt(page, '[data-row="prog"]')).includes('Treadmill') && (await txt(page, '[data-row="prog"]')).includes('20 min') && !(await has(page, '#checkin')) && !(await ses(page, WED)).checkin, await txt(page, '#today'));
     await ctx.close();
     // the same draft both ways
     await open({ me: 'tyson', init: local(seedDocs()) });
@@ -197,9 +196,7 @@ const FULLA = [['squat', 3], ['dbbench', 3], ['latpull', 3], ['dbshoulder', 2], 
     await page.click('#cilogSave'); await page.waitForSelector('#ov', { state: 'hidden' });
     const c = await ses(page, WED);
     check('Q 16 laps and 32 minutes save a 32-minute track walk with "16 laps (2.0 mi)" in the note', c.kind === 'activity' && c.acts.length === 1 && c.acts[0].a === 'hptrack' && c.acts[0].name === 'Track walk' && c.acts[0].min === 32 && c.acts[0].note === '16 laps (2.0 mi)' && c.checkin === 'tired' && (await opens()) === 0, JSON.stringify(c));
-    check('Q then the check-in is one line', (await txt(page, '#ciDone')) === 'Tired, just want to move · Track walk');
-    await page.click('#ciChange'); await pick('strong'); await page.click('#ciLog'); await page.waitForSelector('#ciPreview', { state: 'detached' });
-    check('Q a new choice on a day that is already logged shows on the line at once', (await txt(page, '#ciDone')) === 'Feeling strong · Full Body A' && (await ses(page, WED)).checkin === 'tired');
+    check('Q then the walk is one row on the Today card (version 18)', (await txt(page, '#todayRows')).includes('Track walk') && (await txt(page, '#todayRows')).includes('32 min · 2.0 mi') && !(await has(page, '#checkin')));
     await ctx.close();
     await open({ me: 'tyson', init: local(seedDocs()) });
     await pick('tired'); await page.click('#ciLog'); await page.waitForSelector('#cilogSave'); await page.click('#cilogOpts0 [data-v="hpswim"]');
@@ -220,7 +217,7 @@ const FULLA = [['squat', 3], ['dbbench', 3], ['latpull', 3], ['dbshoulder', 2], 
     await open({ me: 'tyson', init: local(seedDocs()) });
     await pick('strong'); await page.click('#ciLog'); await page.waitForSelector('#w-squat'); await page.click('[data-usew="squat"]'); for (let i = 0; i < 3; i++) await fill(page, '#r-squat-' + i, 8);
     await closeRest(); await page.click('h1'); await page.click('#saveBtn'); await page.waitForFunction(d => { const r = JSON.parse(localStorage.getItem('ml.sessions'))[d]; return r && r.kind === 'strength'; }, WED);
-    await page.evaluate(() => window.scrollTo(0, 0)); await page.click('#ciChange'); await pick('tired'); await page.click('#ciLog'); await page.waitForSelector('#cilogSave'); await page.click('#cilogOpts0 [data-v="treadmill"]'); await fill(page, '#cilogMin0', 22); await page.click('#cilogSave');
+    await page.click('#addCardio'); await page.waitForSelector('#cilogSave'); await page.click('#cilogOpts0 [data-v="treadmill"]'); /* version 18: from Add, then Cardio */ await fill(page, '#cilogMin0', 22); await page.click('#cilogSave');
     await page.waitForFunction(d => { const r = JSON.parse(localStorage.getItem('ml.sessions'))[d]; return r && r.treadmill && r.treadmill.minutes === 22; }, WED);
     const keep = await ses(page, WED);
     check('Q a treadmill logged from the sheet on a day with a saved lift keeps the lift', keep.kind === 'strength' && keep.day === 'fba' && same(keep.ex.squat.reps, [8, 8, 8]) && keep.treadmill.minutes === 22 && keep.checkin === 'strong', JSON.stringify([keep.kind, keep.day, keep.ex, keep.treadmill, keep.checkin]));
@@ -253,7 +250,7 @@ const FULLA = [['squat', 3], ['dbbench', 3], ['latpull', 3], ['dbshoulder', 2], 
     await fill(page, '#cilogMin0', 8); await page.click('#cilogHeat [data-k="hpwhirl"]'); await fill(page, '#cilogHeatMin', 10); await page.click('#cilogSave'); await page.waitForSelector('#ov', { state: 'hidden' });
     const js = await kv(page, 'profiles/jacquie/sessions/' + WED);
     check('Q her recovery sheet saves the stretch and the whirlpool', js.acts.length === 2 && js.acts[0].a === 'stretchfull' && js.acts[0].min === 8 && js.acts[1].a === 'hpwhirl' && js.acts[1].mv === false && js.checkin === 'sore', JSON.stringify(js.acts));
-    await page.click('#ciChange'); await pick('rest');
+    await ctx.close(); await open({ me: 'jacquie', init: local(seedDocs()) }); await pick('rest');
     check('Q rest is unchanged: one "Log rest day" button', (await txt(page, '#ciRest')) === 'Log rest day' && !(await has(page, '#ciLog')) && !(await has(page, '#ciStart')));
   });
 

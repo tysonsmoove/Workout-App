@@ -8,6 +8,7 @@
 // Run: ML_ZXING=/path/to/zxing/umd/index.min.js node tests/v15.test.js   (without ML_ZXING the reader comes from the CDN)
 const fs = require('fs');
 const { chromium, check, results, T, newPage, val, txt, has, fill, go, score, fakeDb, capStub, finish } = require('./helpers');
+require('./helpers').legacyDefault = true; // written before version 18: the lift log, the 7-day strip and the activity menu open in their sheets on demand
 const ZX_URL = 'https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js';
 const kvAll = page => page.evaluate(() => JSON.parse(localStorage.getItem('ml.kv') || '{}'));
 const kv = (page, path) => page.evaluate(p => (JSON.parse(localStorage.getItem('ml.kv') || '{}'))[p] || null, path);
@@ -191,7 +192,8 @@ function drawPhoto(o) { // runs in the page: a package label on a table, photogr
     await page.click('#hkGo'); await page.waitForSelector('#ov', { state: 'hidden' });
     check('1 and the import still saves', ((await kv(page, 'profiles/jacquie/health/2026-12-09')) || {}).exercise === 31);
     await go(page, 'train');
-    const focus2 = await page.evaluate(() => { document.querySelector('.sess [data-a="health"]').click(); return document.activeElement && document.activeElement.id; });
+    await page.waitForSelector('[data-a="health"]'); // version 18: in the Add sheet
+    const focus2 = await page.evaluate(() => { document.querySelector('[data-a="health"]').click(); return document.activeElement && document.activeElement.id; });
     check('1 the same from the Train button', focus2 === 'hkText' && !(await has(page, '#hkPaste')));
   });
 
@@ -499,21 +501,21 @@ function drawPhoto(o) { // runs in the page: a package label on a table, photogr
     check('U after 6 seconds the offer is gone, and the removal stands', await ML(page, () => window.MorningLaps.state.undo === null) && (await kv(page, fpath)).items.length === 2);
     // an activity (two on the day)
     const apath = 'profiles/jacquie/sessions/2026-12-07', a0 = await kv(page, apath);
-    await go(page, 'train'); await pickDate(page, '2026-12-07'); await page.click('.done-list [data-a="act-edit"] >> nth=0'); await page.waitForSelector('[data-a="act-del"]'); await page.click('[data-a="act-del"]'); await page.waitForSelector('#ov', { state: 'hidden' });
+    await go(page, 'train'); await pickDate(page, '2026-12-07'); await page.click('#todayRows [data-a="act-edit"] >> nth=0'); await page.waitForSelector('[data-a="act-del"]'); await page.click('[data-a="act-del"]'); await page.waitForSelector('#ov', { state: 'hidden' });
     check('U removing an activity shows "Removed · Undo"', (await undoToast()) === 'Removed · Undo' && (await kv(page, apath)).acts.length === 1);
     await undo(); check('U Undo puts the activity day back exactly', same(await kv(page, apath), a0));
     // a day with a Watch top-up
     const wpath = 'profiles/jacquie/sessions/2026-12-08', w0 = await kv(page, wpath);
-    await pickDate(page, '2026-12-08'); await page.click('.done-list [data-a="act-edit"] >> nth=0'); await page.waitForSelector('[data-a="act-del"]'); await page.click('[data-a="act-del"]'); await page.waitForSelector('#ov', { state: 'hidden' }); await undoToast();
+    await pickDate(page, '2026-12-08'); await page.click('#todayRows [data-a="act-edit"] >> nth=0'); await page.waitForSelector('[data-a="act-del"]'); await page.click('[data-a="act-del"]'); await page.waitForSelector('#ov', { state: 'hidden' }); await undoToast();
     const w1 = await kv(page, wpath);
     check('U (removing the walk from a Watch day leaves the Watch\'s 35 minutes)', w1.acts.length === 1 && w1.acts[0].id === 'hk-exercise' && w1.acts[0].min === 35, JSON.stringify(w1.acts));
     await undo(); check('U Undo puts a day with a Watch top-up back exactly', same(await kv(page, wpath), w0) && (await kv(page, wpath)).acts[1].min === 15, JSON.stringify(await kv(page, wpath)));
     // a rest day
-    await pickDate(page, '2026-12-09'); await page.click('[data-a="rest"]'); await page.waitForSelector('[data-a="rest-undo"]');
+    await pickDate(page, '2026-12-09'); await page.click('#addRest'); await page.waitForSelector('[data-a="rest-open"]');
     const rpath = 'profiles/jacquie/sessions/2026-12-09', r0 = await kv(page, rpath);
-    await page.click('[data-a="rest-undo"]'); await undoToast();
+    await page.click('[data-a="rest-open"]'); await page.click('[data-a="rest-undo"]'); await undoToast();
     check('U removing a rest day shows "Removed · Undo"', (await txt(page, '#toast')).replace(/\s+/g, ' ') === 'Removed · Undo' && (await kv(page, rpath)) === null && r0.kind === 'rest');
-    await undo(); check('U Undo puts the rest day back exactly', same(await kv(page, rpath), r0) && await has(page, '[data-a="rest-undo"]'));
+    await undo(); check('U Undo puts the rest day back exactly', same(await kv(page, rpath), r0) && await has(page, '[data-a="rest-open"]'));
     // a saved meal
     const mpath = 'profiles/jacquie/meals/m1', m0 = await kv(page, mpath);
     await addFood('b'); await page.click('#myMeals [data-a="meal-edit"]'); await page.waitForSelector('[data-a="meal-del"]'); await page.click('[data-a="meal-del"]'); await page.click('[data-a="meal-del"]');
@@ -541,7 +543,7 @@ function drawPhoto(o) { // runs in the page: a package label on a table, photogr
     const t2 = await undoToast(), left = await ses(page, '2026-12-08');
     check('U removing the lift from a combined day keeps the walk and offers Undo', t2.includes('Your activities for') && t2.endsWith('· Undo') && left.kind === 'activity' && left.acts.length === 1 && !left.ex, t2);
     await undo(); check('U Undo puts the combined lift plus walk back exactly', same(await ses(page, '2026-12-08'), c1) && (await ses(page, '2026-12-08')).notes === 'felt strong');
-    await go(page, 'train'); await pickDate(page, '2026-12-08'); await page.click('.done-list [data-a="act-edit"]'); await page.waitForSelector('[data-a="act-del"]'); await page.click('[data-a="act-del"]'); await page.waitForSelector('#ov', { state: 'hidden' }); await undoToast();
+    await go(page, 'train'); await pickDate(page, '2026-12-08'); await page.click('#todayRows [data-a="act-edit"]'); await page.waitForSelector('[data-a="act-del"]'); await page.click('[data-a="act-del"]'); await page.waitForSelector('#ov', { state: 'hidden' }); await undoToast();
     check('U (the walk removed from the combined day)', !(await ses(page, '2026-12-08')).acts && !!(await ses(page, '2026-12-08')).ex);
     await undo(); check('U Undo puts the walk back on the combined day exactly', same(await ses(page, '2026-12-08'), c1));
   });
@@ -579,7 +581,7 @@ function drawPhoto(o) { // runs in the page: a package label on a table, photogr
   await section('K', async () => {
     await open({ me: 'tyson', time: WED, init: local(seedDocs({ thisWeek: [lift('2026-12-07', 'push', 3, SETS('push', 6), { deload: true }), COMBINED] })) });
     await ctx.grantPermissions(['clipboard-read', 'clipboard-write']);
-    await switchTo(page, 'jacquie'); await pickDate(page, '2026-12-09'); await page.click('[data-a="rest"]'); await page.waitForSelector('[data-a="rest-undo"]'); await switchTo(page, 'tyson'); // a rest day for the spreadsheet
+    await switchTo(page, 'jacquie'); await pickDate(page, '2026-12-09'); await page.click('#addRest'); await page.waitForSelector('[data-a="rest-open"]'); await switchTo(page, 'tyson'); // a rest day for the spreadsheet
     await go(page, 'me'); await watchWrites(page);
     check('K Me has "Download a backup"', (await txt(page, '#backupCard [data-a="backup-all"]')) === 'Download a backup' && !(await has(page, '[data-a="backup-copy"]')));
     await page.click('[data-a="backup-all"]'); await page.waitForFunction(() => window.__saved.length === 3);
@@ -656,7 +658,7 @@ function drawPhoto(o) { // runs in the page: a package label on a table, photogr
       await go(page, 'fuel'); await page.click('[data-a="food-add"][data-meal="b"]'); await page.waitForSelector('#foodQ');
       await page.click('[data-a="describe-open"]'); await waitOv('describe:ask'); await page.click('[data-a="food-back"]'); await page.waitForSelector('#foodQ');
       await scan(PH.fresh); await waitOv('scan:miss'); await page.click('[data-a="scan-link"]'); await waitOv('scan:link'); await page.click('[data-a="scan-prev"]'); await waitOv('scan:miss'); await page.click('[data-a="scan-blank"]'); await waitOv('custom'); await page.keyboard.press('Escape');
-      await go(page, 'train'); await page.click('.sess [data-a="health"]'); await page.waitForSelector('#hkText'); await page.keyboard.press('Escape');
+      await go(page, 'train'); await page.click('[data-a="health"]'); await page.waitForSelector('#hkText'); await page.keyboard.press('Escape');
       await go(page, 'me'); await page.waitForSelector('#backupCard'); }
     await page.waitForTimeout(400);
     check('G smoke: every tab draws for both profiles, with nothing broken in the text', bad.length === 0, bad.join(' '));

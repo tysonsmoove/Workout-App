@@ -190,7 +190,7 @@ details.sessopts { padding: 10px 0 2px; border-top: 1px solid var(--line); }
 .locknote { color: var(--muted); margin-top: 4px; }
 
 /* rest timer: its own bar, pinned just above the save bar */
-.restbar { --lift: 0px; position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(var(--lift) + 8px + env(safe-area-inset-bottom, 0px)); z-index: 20; width: min(528px, calc(100vw - 32px)); display: flex; align-items: center; gap: 8px; padding: 6px 8px 6px 12px; border-radius: 12px; background: var(--fg); color: var(--bg); overflow: hidden; box-shadow: 0 6px 18px rgba(0,0,0,.22); }
+.restbar { position: relative; display: flex; align-items: center; gap: 8px; padding: 6px 8px 6px 12px; border-radius: 12px; background: var(--fg); color: var(--bg); overflow: hidden; }
 .restbar[hidden] { display: none; }
 .restbar b { font-family: var(--display); font-size: 1.375rem; min-width: 2.6em; position: relative; }
 .restbar span { flex: 1; min-width: 0; font-size: .8125rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; position: relative; }
@@ -198,7 +198,6 @@ details.sessopts { padding: 10px 0 2px; border-top: 1px solid var(--line); }
 .restbar i { position: absolute; inset: 0 auto 0 0; width: 0; background: hsl(var(--ah) var(--as) 50% / .45); }
 .restbar.done { background: var(--good); color: #fff; }
 .restbar.done i { display: none; }
-.resting .toast { bottom: calc(140px + env(safe-area-inset-bottom, 0px)); }
 
 /* save bar */
 .savebar { position: sticky; bottom: 0; z-index: 4; background: var(--bg); padding-top: 6px; padding-bottom: calc(6px + env(safe-area-inset-bottom, 0px)); display: grid; gap: 4px; }
@@ -569,6 +568,49 @@ span.wm-pip { display: inline-grid; place-items: center; height: 48px; }
 /* Off: the same as the phone's reduce-motion setting. */
 :root[data-motion="off"] *, :root[data-motion="off"] *::before, :root[data-motion="off"] *::after { animation: none !important; transition: none !important; }
 
+/* ---------- Version 18: the Today card, the Add sheet, the lift sheet ---------- */
+.today { gap: 10px; }
+.today-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.datechip { display: inline-flex; align-items: baseline; gap: 6px; min-height: 40px; padding: 4px 12px; border-radius: 999px; background: var(--soft); border-color: transparent; min-width: 0; }
+.datechip b { font-family: var(--display); font-size: 1.25rem; font-weight: 700; text-transform: var(--caps); letter-spacing: var(--track); white-space: nowrap; }
+.datechip .muted { font-size: .8125rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.datechip .dc { font-size: .75rem; color: var(--muted); }
+.today-head .modesw { flex: none; }
+.today-head .modesw button { min-height: 34px; padding: 4px 10px; white-space: nowrap; }
+.trows { display: grid; }
+.trow { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; text-align: left; width: 100%; min-height: 52px; padding: 7px 2px; border: 0; border-top: 1px solid var(--line); border-radius: 0; background: transparent; }
+.trows .trow:first-child, .trow.going { border-top: 0; }
+.trow .tr-i { font-size: 1.375rem; line-height: 1; width: 1.6em; text-align: center; }
+.tr-t { display: grid; gap: 1px; min-width: 0; }
+.tr-t b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tr-t .tiny { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.trow .tr-c { color: var(--muted); font-size: 1.25rem; padding-right: 2px; }
+.addbtn { width: 100%; min-height: 50px; flex: none; }
+.today .ci { gap: 6px; }
+@keyframes rowIn { from { opacity: 0; transform: translateY(6px); background: var(--accent-soft); } }
+.trow.new { animation: rowIn .25s ease-out both; } /* the row that was just saved: one short fade and slide */
+.coach { padding: 2px 14px; }
+.coach .coachrow:first-child { border-top: 0; }
+.coach .coachrow > summary { min-height: 40px; }
+.coach .coachrow > summary .eyebrow { flex: none; }
+.addgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.addc { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: center; text-align: left; min-height: 88px; padding: 12px; border-radius: calc(var(--r) * .8); }
+.addc .ai { font-size: 1.75rem; line-height: 1; }
+.addc .tr-t b { white-space: normal; font-size: 1.0625rem; }
+.addc .tr-t .tiny { white-space: normal; }
+.addfoot { justify-content: space-between; }
+/* the lift sheet: a head, a body that scrolls, and a foot that does not */
+.ov.liftsheet { display: flex; flex-direction: column; gap: 0; padding: 0; overflow: hidden; }
+.ls-head { flex: none; display: flex; align-items: center; gap: 8px; padding: 12px max(16px, env(safe-area-inset-right, 0px)) 10px max(16px, env(safe-area-inset-left, 0px)); border-bottom: 1px solid var(--line); }
+.ls-head .ls-t { flex: 1; min-width: 0; }
+.ls-head h2 { font-size: 1.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ls-head #wmStart { flex: none; min-height: 40px; }
+.ls-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: grid; gap: 10px; align-content: start; padding: 12px max(16px, env(safe-area-inset-right, 0px)) 16px max(16px, env(safe-area-inset-left, 0px)); }
+.ls-body .sheet { border: 0; border-radius: 0; padding: 0; background: transparent; }
+.ls-foot { flex: none; display: grid; gap: 6px; border-top: 1px solid var(--line); background: var(--card); padding: 6px max(16px, env(safe-area-inset-right, 0px)) calc(8px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+.ls-foot .savebar { position: static; background: transparent; padding: 0; }
+.ov-root[data-type="lift"]:not([hidden]) ~ .toast { bottom: auto; top: calc(64px + env(safe-area-inset-top, 0px)); }
+
 </style>
 
 <div class="wrap">
@@ -590,7 +632,6 @@ span.wm-pip { display: inline-grid; place-items: center; height: 48px; }
 </div>
 <div id="ov" class="ov-root" hidden></div>
 <canvas id="fx" class="fx" aria-hidden="true"></canvas>
-<div id="rest" class="restbar" role="timer" aria-label="Rest timer" hidden><i id="restFill"></i><b class="num" id="restTime">1:30</b><span id="restLabel">Rest</span><button type="button" class="small" data-a="timer-add" aria-label="Add 15 seconds">+15 s</button><button type="button" class="small" data-a="timer-x" aria-label="Dismiss rest timer">×</button></div>
 <div id="sweep" class="sweep" aria-hidden="true" hidden><i></i><b>✓</b></div>
 <div id="wm" class="wm" role="dialog" aria-modal="true" aria-label="Workout" hidden></div>
 <div id="toast" class="toast" role="status" hidden></div>
@@ -2347,16 +2388,21 @@ async function applyHealthImport(pid, plan, parsed, use) {
 const ACT = {};   // data-a="name" on any element routes its click here
 const OV = {};    // overlay type -> { html(o), center, locked, after(o) }
 function renderOv() {
-  const root = $('#ov'), o = state.ov, act = document.activeElement;
+  const root = $('#ov'), o = state.ov, act = document.activeElement, was = root.dataset.type || '';
   // remember which control had focus so a redraw of the same overlay hands it back
-  const keep = act && root.contains(act) ? ['data-a', 'data-d', 'data-v', 'data-ovf'].map(k => act.getAttribute(k) != null ? '[' + k + '="' + act.getAttribute(k) + '"]' : '').join('') : '';
-  if (!o || !OV[o.type]) { state.ov = null; root.hidden = true; root.innerHTML = ''; delete root.dataset.type; document.body.style.overflow = ''; return; }
-  const def = OV[o.type], same = root.dataset.type === o.type;
+  const keep = act && root.contains(act) ? (act.id ? '#' + act.id : ['data-a', 'data-d', 'data-v', 'data-ovf'].map(k => act.getAttribute(k) != null ? '[' + k + '="' + act.getAttribute(k) + '"]' : '').join('')) : '';
+  if (!o || !OV[o.type]) { state.ov = null; root.hidden = true; root.innerHTML = ''; delete root.dataset.type; document.body.style.overflow = ''; if (was === 'lift') liftClosed(); return; }
+  const def = OV[o.type], same = was === o.type;
+  // a redraw of the same sheet keeps its scroll position and its open sections
+  const sc = same ? root.querySelector('[data-scroll]') || root.firstElementChild : null, top = sc ? sc.scrollTop : 0, open = {};
+  if (same) root.querySelectorAll('details[open][data-dk]').forEach(d => { open[d.dataset.dk] = true; });
   root.hidden = false; root.className = 'ov-root' + (def.center ? ' center' : ''); root.dataset.type = o.type;
   root.innerHTML = def.html(o);
+  if (same) { root.querySelectorAll('details[data-dk]').forEach(d => { if (open[d.dataset.dk]) d.open = true; }); const s2 = root.querySelector('[data-scroll]') || root.firstElementChild; if (s2 && top) s2.scrollTop = top; }
   document.body.style.overflow = 'hidden';
   if (def.after) def.after(o);
   if (!root.contains(document.activeElement)) { const f = (same && keep && root.querySelector(keep)) || root.querySelector('.primary:not(:disabled), .xbtn, button'); if (f) f.focus({ preventScroll: true }); }
+  if (was === 'lift' && o.type !== 'lift') liftClosed();
 }
 function openOv(o) { state.ov = o; if (OV[o.type] && !OV[o.type].center) $('#toast').hidden = true; renderOv(); } // a sheet replaces any message still showing
 function queueOv(o) { if (state.ov) state.ovQ.push(o); else openOv(o); }
@@ -2543,46 +2589,50 @@ OV.weekwin = {
 };
 
 /* ---- 55-rest.js ---- */
-/* ---------- Rest timer: its own bar outside the page, so it never touches the render loop ---------- */
-// Logging a set for today starts a countdown. Everything here writes straight to the #rest element (like the toast),
-// never through render(), so it cannot disturb typing or a pending re-render. No sound: a flash, and a buzz where
-// the browser supports vibration.
-const restT = { end: 0, total: 0, tick: 0, hide: 0, done: false };
+/* ---------- Rest timer: a bar in the foot of the lift sheet ---------- */
+// Logging a set for today starts a countdown. The bar is part of the lift sheet's foot, above the Save bar and outside
+// the part that scrolls, so it never sits on top of a button. It is patched in place by id (like the toast), never
+// through render(), so it cannot disturb typing; when the sheet is redrawn it is drawn again from restT. It stops
+// when the lift is saved or the sheet closes. No sound: a buzz where the browser supports vibration.
+const restT = { end: 0, total: 0, tick: 0, hide: 0, done: false, label: '' };
 const restSeconds = () => { const v = Number(state.settings.rest); return v === 60 || v === 120 ? v : 90; }; // main lifts; set on the Program tab
 const restFor = key => EX[key] && (EX[key].bw || CORE.includes(key)) ? 60 : restSeconds();                   // core and bodyweight moves rest 60 s
+const restClock = () => { const left = Math.max(0, Math.ceil((restT.end - Date.now()) / 1000)); return Math.floor(left / 60) + ':' + String(left % 60).padStart(2, '0'); };
+const restLabel = () => restT.done ? 'Rest over · next set' : 'Rest' + (restT.label ? ' · ' + restT.label : '');
+const restBarHTML = () => '<div id="rest" class="restbar' + (restT.done ? ' done' : '') + '" role="timer" aria-label="Rest timer"' + (restT.end ? '' : ' hidden') + '><i id="restFill"></i><b class="num" id="restTime">' + (restT.end ? restClock() : '1:30') + '</b><span id="restLabel">' + esc(restLabel()) + '</span>' +
+  '<button type="button" class="small" data-a="timer-add" aria-label="Add 15 seconds">+15 s</button><button type="button" class="small" data-a="timer-x" aria-label="Dismiss rest timer">×</button></div>';
 function restDraw() {
-  const bar = $('#rest'); if (!bar || bar.hidden) return;
-  const ms = restT.end - Date.now(), left = Math.max(0, Math.ceil(ms / 1000)), sb = $('#savebar');
-  $('#restTime').textContent = Math.floor(left / 60) + ':' + String(left % 60).padStart(2, '0');
+  const bar = $('#rest'); if (!bar) { if (restT.end) restStop(); return; } // the sheet is gone: so is the timer
+  if (bar.hidden) return;
+  const ms = restT.end - Date.now(), left = Math.max(0, Math.ceil(ms / 1000));
+  $('#restTime').textContent = restClock();
   $('#restFill').style.width = (restT.total ? clamp(1 - ms / (restT.total * 1000), 0, 1) * 100 : 0).toFixed(1) + '%';
-  // sit just above the save bar while it is pinned to the bottom of the screen; otherwise at the bottom edge
-  bar.style.setProperty('--lift', (sb && sb.getBoundingClientRect().bottom >= window.innerHeight - 2 ? sb.offsetHeight : 0) + 'px');
   if (left <= 0 && !restT.done) {
-    restT.done = true; bar.classList.add('done'); $('#restLabel').textContent = 'Rest over · next set';
+    restT.done = true; bar.classList.add('done'); $('#restLabel').textContent = restLabel();
     try { if (navigator.vibrate) navigator.vibrate([180, 90, 180]); } catch (e) { /* not supported */ }
     clearInterval(restT.tick); restT.tick = 0; restT.hide = setTimeout(restStop, 8000);
   }
 }
 function restStart(sec, label) {
-  const bar = $('#rest'); if (!bar) return;
+  const bar = $('#rest'); if (!bar) return; // only while the lift sheet is open
   clearInterval(restT.tick); clearTimeout(restT.hide);
-  restT.total = sec; restT.end = Date.now() + sec * 1000; restT.done = false;
-  bar.hidden = false; bar.classList.remove('done'); document.body.classList.add('resting'); $('#restLabel').textContent = 'Rest · ' + label;
+  restT.total = sec; restT.end = Date.now() + sec * 1000; restT.done = false; restT.label = label || '';
+  bar.hidden = false; bar.classList.remove('done'); $('#restLabel').textContent = restLabel();
   restDraw(); restT.tick = setInterval(restDraw, 250);
 }
 function restStop() {
-  const bar = $('#rest'); clearInterval(restT.tick); clearTimeout(restT.hide); restT.tick = 0; restT.end = 0;
-  if (bar) { bar.hidden = true; bar.classList.remove('done'); } document.body.classList.remove('resting');
+  const bar = $('#rest'); clearInterval(restT.tick); clearTimeout(restT.hide); restT.tick = 0; restT.end = 0; restT.done = false; restT.label = '';
+  if (bar) { bar.hidden = true; bar.classList.remove('done'); }
 }
 ACT['timer-add'] = () => {
   if (!restT.end) return;
   restT.end = Math.max(restT.end, Date.now()) + 15000; restT.total += 15;
-  if (restT.done) { restT.done = false; clearTimeout(restT.hide); $('#rest').classList.remove('done'); $('#restLabel').textContent = 'Rest'; restT.tick = setInterval(restDraw, 250); }
+  if (restT.done) { restT.done = false; clearTimeout(restT.hide); const bar = $('#rest'); if (bar) { bar.classList.remove('done'); $('#restLabel').textContent = restLabel(); } restT.tick = setInterval(restDraw, 250); }
   restDraw();
 };
 ACT['timer-x'] = () => restStop();
 // tapping the bar must not take focus from the set field being typed in (on a phone that would close the keyboard)
-(function () { const bar = $('#rest'); if (bar) bar.addEventListener('pointerdown', e => e.preventDefault()); })();
+document.addEventListener('pointerdown', e => { if (e.target.closest && e.target.closest('#rest')) e.preventDefault(); });
 
 /* ---- 57-moves.js ---- */
 // 57-moves.js: movement demos and how-to text for workout mode.
@@ -2909,8 +2959,11 @@ function statusText(date) {
 }
 
 /* ---------- Train: lifting program ---------- */
-function renderTrain() {
-  const date = state.selDate; const rec = state.sessions[date]; const n = rec ? normalize(rec) : null;
+function renderTrain() { return todayHTML(); }
+// The typed-in lift log: kind buttons, warm-up, exercises, notes, session options. It is drawn in the lift sheet
+// (OV.lift), never on the page. Returns the body and what the sheet needs for its head and its Save bar.
+function liftLogHTML(date) {
+  const rec = state.sessions[date]; const n = rec ? normalize(rec) : null;
   const m = model(date); const d = state.drafts[date];
   const kind = kindFor(date, m); const isLift = !!DAYS[kind];
   const phase = phaseOf(date);
@@ -2921,23 +2974,20 @@ function renderTrain() {
   else if (isLift && kind !== nextK) why += ' You picked ' + DAYS[kind].name + '.';
 
   const rot = rotation(), segDays = !DAYS[kind] || rot.includes(kind) ? rot : rot.concat([kind]), full = !!(DAYS[kind] ? DAYS[kind].full : splitOf() === 'full'); // an old day from the other split keeps its own button
-  let h = checkinHTML() + coachHTML() + '<h2 class="loghead" id="logHead">Log your workout</h2><section class="card sess">' + dateHead('Logging for') +
-    '<div class="seg" id="kindSeg" aria-label="Workout type">' + segDays.map(k => '<button type="button" data-kind="' + k + '" class="' + (kind === k ? 'on' : '') + '" aria-pressed="' + (kind === k) + '">' + DAYS[k].name + '</button>').join('') +
+  let h = '<div class="sess"><div class="seg" id="kindSeg" aria-label="Workout type">' + segDays.map(k => '<button type="button" data-kind="' + k + '" class="' + (kind === k ? 'on' : '') + '" aria-pressed="' + (kind === k) + '">' + DAYS[k].name + '</button>').join('') +
     '<button type="button" data-kind="cardio" class="' + (kind === 'cardio' ? 'on' : '') + '" aria-pressed="' + (kind === 'cardio') + '">Treadmill</button><button type="button" data-kind="rest" class="' + (kind === 'rest' ? 'on' : '') + '" aria-pressed="' + (kind === 'rest') + '">Rest</button></div>' +
-    '<div class="status"><span id="statusLine">' + esc(statusText(date)) + '</span>' + (full ? '' : '<span>·</span><span>Phase ' + phase + '</span>') + healthButton() + '</div>' +
-    '<p class="tiny muted" id="whyLine" style="margin-top:-4px">' + esc(why) + '</p>' + hkLineHTML(date) +
-    (isLift && date <= todayIso() ? '<div class="row"><button type="button" class="small" id="wmStart" data-a="wm-lift">' + (wmDraftOn(date) ? 'Resume workout' : 'Go live') + '</button></div>' : '');
+    '<div class="status"><span id="statusLine">' + esc(statusText(date)) + '</span>' + (full ? '' : '<span>·</span><span>Phase ' + phase + '</span>') + '</div>' +
+    '<p class="tiny muted" id="whyLine" style="margin-top:-4px">' + esc(why) + '</p>';
   if (d && d.recovered && draftHasContent(d)) h += '<div class="banner"><span>Unsaved draft from ' + tzTime.format(new Date(d.updatedAt)) + ' restored. Not saved until you tap Save.</span><div class="row"><button type="button" class="small" id="discardDraft">Discard draft</button></div></div>';
   if (n && n.ambiguous) h += '<div class="banner">Saved as a ' + (DAYS[rec.day] ? DAYS[rec.day].name : 'lift') + ' day by the earlier version but has no lifting sets. It counts as ' + (n.kind === 'cardio' ? 'treadmill only' : 'no activity') + '. Add sets or re-save to confirm.</div>';
-  h += '</section>';
+  h += '</div>';
   const saved = lifted(rec) ? rec : null; // the save bar speaks for the lift, treadmill or rest part of the day only
+  const title = isLift ? DAYS[kind].name : kind === 'rest' ? 'Rest day' : 'Treadmill';
 
   if (kind === 'rest') {
     h += '<section class="sheet"><div class="blk"><div class="bhead"><h3>Rest day</h3></div><p class="tiny muted">Doesn\'t count as activity and doesn\'t move the rotation.</p>' +
       '<label class="f">Notes<input type="text" id="notes" data-field="notes" value="' + esc(m.notes) + '" placeholder="Optional"></label></div></section>';
-    h += extrasHTML(date) + renderSaveBar(date, m, saved);
-    h += renderMorning(phase, kind);
-    return h;
+    return { html: h, title, isLift, m, saved };
   }
 
   h += '<form id="logForm" autocomplete="off" class="sheet"><div class="blk"><div class="bhead"><h3>' + (full && isLift ? 'Warm-up (track, treadmill or bike)' : 'Treadmill · Apple Fitness+') + '</h3><span class="tiny muted">target ' + (full && isLift ? '5–10' : TREAD_MIN[phase]) + ' min</span></div>' +
@@ -2961,27 +3011,14 @@ function renderTrain() {
       '<p class="tiny muted" style="margin-top:6px">A counted lift day advances the rotation and earns lift credit. Full rules on the Program tab.</p></details>';
   }
   h += '</form>';
-  h += extrasHTML(date) + heatChipHTML(date) + renderSaveBar(date, m, saved);
-  h += renderMorning(phase, kind);
-  return h;
-}
-// Activities logged on a day: tap one to change it. The Watch top-up is worked out, so it opens an explanation instead.
-const actRowsHTML = acts => acts.map(a => '<button type="button" data-a="' + (isHk(a) ? 'hk-info' : 'act-edit') + '" data-id="' + esc(a.id) + '"><span>' + actIcon(a) + ' ' + esc(actName(a)) + (a.hurt ? ' <span class="chip warn">pain noted</span>' : '') + (a.mv === false ? ' <span class="chip">recovery</span>' : '') + '</span><span class="muted num">' + a.min + ' min' + (a.feel && FEELS[a.feel] ? ' · ' + FEELS[a.feel] : '') + '</span></button>').join('');
-// On the lifting log: a walk, a hike or a travel day goes on the same date as the lift, or stands on its own.
-function extrasHTML(date) {
-  const rec = state.sessions[date], n = rec ? normalize(rec) : null, acts = n ? n.acts : [], mm = weekGoals(me(), weekStart(date)).minMin;
-  let h = '<section class="card stack" id="extras">';
-  if (acts.length) h += '<div class="row between"><h3>Also ' + (rel(date) === nice(date) ? 'on ' + nice(date) : rel(date).toLowerCase()) + '</h3><span class="tiny muted num">' + n.actMin + ' min</span></div><div class="done-list">' + actRowsHTML(acts) + '</div>';
-  h += '<div class="row"><button type="button" class="small" data-a="act-pick">+ Add a walk or other activity</button></div>' +
-    '<p class="tiny muted">' + (n && n.program ? 'Saved on the same day as your ' + (n.kind === 'strength' ? 'lift' : 'treadmill entry') + '. The minutes count; the day is already an activity day.' : 'On a day with no lift or treadmill, ' + mm + ' minutes of anything makes it an activity day.') + '</p></section>';
-  return h;
+  return { html: h, title, isLift, m, saved };
 }
 /* ---------- Progression after Phase 3: deload weeks, stalled lifts, the goal nudge ---------- */
 // What sits above the lifting log: the deload offer (or the reminder that one is on), a swap whose four weeks are up,
 // and the goal nudge. Each is a choice saved to settings or the profile by its button, never by drawing it.
 // Coach: the deload offer, a swap that is due for review and the goal nudge, one line each in one card under the
 // check-in. A tap opens a line. Each is a choice saved by its own button, never by drawing it.
-const coachRow = (attrs, line, body) => '<details class="plain coachrow" ' + attrs + '><summary>' + line + '</summary><div class="coachbody">' + body + '</div></details>';
+const coachRow = (attrs, line, body) => '<details class="plain coachrow" ' + attrs + '><summary><span class="eyebrow">Coach</span> ' + line + '</summary><div class="coachbody">' + body + '</div></details>';
 function coachHTML() {
   const pid = me(), rows = [], t = todayIso();
   if (P(pid).plan === 'program') {
@@ -2995,7 +3032,7 @@ function coachHTML() {
   if (n) rows.push(coachRow('id="nudgeCard" data-dk="coach-nudge-' + pid + '"', n.kind === 'lift' ? 'Three weeks with 3 lifts · raise your lift goal?' : 'Three full weeks in a row · raise your goal?',
     '<p>' + (n.kind === 'lift' ? '<b>Three weeks with 3 lifts.</b> Raise your lift goal to 3 lift days starting Monday?' : '<b>Three full weeks in a row.</b> Raise your goal to ' + n.to + ' days starting Monday?') + '</p><div class="row"><button type="button" class="small" data-a="nudge-yes">Raise it</button><button type="button" class="quiet" data-a="nudge-no">Not now</button></div>' +
     '<p class="tiny muted">This week stays at ' + n.from + '. A raised goal locks in next Monday, like any goal change.</p>'));
-  return rows.length ? '<section class="card coach" id="coach"><div class="eyebrow">Coach</div>' + rows.join('') + '</section>' : '';
+  return rows.length ? '<section class="card coach" id="coach" aria-label="Coach">' + rows.join('') + '</section>' : '';
 }
 // where a stalled slot can go for four weeks: another alternate that is free in every phase, else back to its planned exercise
 const stallSwapTarget = p => { const taken = defaultSwapTaken(p.base); return alts(p.base).concat(p.key !== p.base ? [p.base] : []).find(k => k !== p.key && (k === p.base || !taken[k])) || null; };
@@ -3151,55 +3188,18 @@ function renderMorning(phase, kind) {
 }
 
 /* ---------- Train: pick-your-own ---------- */
-function actGridHTML(pid) { // the activity menu: filters and the grid, shared by the Train screen and the picker sheet
+function actGridHTML(pid) { // the whole activity menu: filters and the grid, in the "Something else" sheet
   const f = state.filter, list = actList(pid, f);
   const chip = (on, a, extra, label) => '<button type="button" data-a="' + a + '" ' + extra + ' class="' + (on ? 'on' : '') + '" aria-pressed="' + on + '">' + label + '</button>';
   return '<div class="chips" aria-label="Filter activities">' + chip(f.cat === 'all', 'filter', 'data-cat="all"', 'All') + ACT_CATS.filter(c => c[0] !== 'healthplex' || atHealthplex(pid)).map(c => chip(f.cat === c[0], 'filter', 'data-cat="' + c[0] + '"', c[1])).join('') + '</div>' +
     '<div class="chips">' + chip(f.quick, 'filter-quick', '', '10 min or less') + chip(f.fav, 'filter-fav', '', 'Favorites') + '</div>' +
-    '<div class="acts">' + list.map(k => {
-      const a = ACTS[k], caution = actCaution(pid, k), fav = P(pid).favorites.includes(k);
-      if (a.cat === 'healthplex') return hpCardHTML(pid, k); // a Healthplex card flips to show its details
-      return '<button type="button" class="act' + (fav ? ' fav' : '') + '" data-a="act" data-k="' + k + '"><span class="ai" aria-hidden="true">' + a.icon + '</span><span class="an">' + esc(a.name) + '</span><span class="am">' + a.min + ' min · ' + (a.mv === false ? 'recovery' : IMPACT[a.impact]) + '</span>' + (caution.length ? '<span class="aw">Go easy: ' + caution.map(x => AREAS[x].toLowerCase()).join(', ') + '</span>' : '') + (painFlag(pid, k) ? '<span class="aw" data-pain="' + k + '">Pain noted ' + painCount(pid, k) + '× recently</span>' : '') + '</button>';
-    }).join('') + '</div>' + (list.length ? '' : '<p class="muted tiny">Nothing matches those filters.</p>');
+    '<div class="acts">' + list.map(k => actBtnHTML(pid, k)).join('') + '</div>' + (list.length ? '' : '<p class="muted tiny">Nothing matches those filters.</p>');
 }
-function renderMove() {
-  const pid = me(), date = state.selDate, rec = state.sessions[date], n = rec ? normalize(rec) : null, di = dayInfo(pid, date), mm = weekGoals(pid, weekStart(date)).minMin;
-  const acts = n ? n.acts : [], program = !!(n && n.program), rest = !!(n && n.kind === 'rest');
-  const progText = program ? (n.kind === 'strength' ? (n.day ? DAYS[n.day].name + ' lift' : 'Lift') : 'Treadmill') + ' · ' + n.progMin + ' min' : '';
-  let status = 'Nothing logged for this day';
-  if (rest) status = 'Rest day logged';
-  else if (program) status = progText + (acts.length ? ' + ' + n.actMin + ' min of activities' : '') + ' · counts as an active day';
-  else if (acts.length) status = n.allMin + ' min logged · ' + (di.active ? 'counts as an active day' : (mm - di.minutes) + ' more min of movement to count');
-  let h = checkinHTML() + coachHTML() + '<h2 class="loghead" id="logHead">Log your workout</h2><section class="card sess">' + dateHead('Logging for') + '<div class="status"><span id="statusLine">' + esc(status) + '</span>' + healthButton() + '</div>' + hkLineHTML(date) + '</section>' + heatChipHTML(date);
-  if (acts.length || rest || program) {
-    h += '<section class="card"><div class="row between"><h3>Logged ' + (rel(date) === nice(date) ? nice(date) : rel(date).toLowerCase()) + '</h3>' + (rest ? '<span class="chip">rest</span>' : di.active ? '<span class="chip good">active day</span>' : '<span class="chip warn">' + di.minutes + ' of ' + mm + ' min</span>') + '</div><div class="done-list" style="margin-top:4px">';
-    if (rest) h += '<button type="button" data-a="rest-undo"><span>🛌 Rest day</span><span class="muted">tap to remove</span></button>';
-    if (program) h += '<button type="button" data-a="go-history"><span>🏋️ ' + esc(progText.split(' · ')[0]) + ' <span class="chip">lifting log</span></span><span class="muted num">' + n.progMin + ' min</span></button>';
-    h += actRowsHTML(acts) + '</div>' + (program ? '<p class="tiny muted" style="margin-top:6px">The lift or treadmill entry is edited from History. Anything you add below is saved on the same day.</p>' : '') + '</section>';
-  }
-  h += '<section class="card stack"><div class="row between"><h3>Pick your move</h3><button type="button" class="small" data-a="surprise">Surprise me</button></div>' + actGridHTML(pid) +
-    (!acts.length && !rest && !program ? '<div class="row"><button type="button" class="small" data-a="rest">Log a rest day instead</button></div>' : '') + '</section>';
-  h += renderWeekDots(pid);
-  return h;
-}
-function renderWeekDots(pid) {
-  const t = todayIso(), ws = weekStart(t), f = weekFacts(pid, ws), sc = scoreFacts(f), c = coach(pid), rival = P(otherPid(pid)).name;
-  const race = sc.total > c.other ? 'You lead ' + rival + ' ' + sc.total + ' to ' + c.other + '.'
-    : c.plan ? rival + ' has ' + c.other + ', you have ' + sc.total + '. To pass today: ' + c.plan.used.map(x => x.text.charAt(0).toLowerCase() + x.text.slice(1)).join(', then ') + '.'
-    : sc.total === c.other ? 'Level with ' + rival + ' at ' + sc.total + '.' : rival + ' leads ' + c.other + ' to ' + sc.total + '.' + (c.outOfReach ? ' ' + teamPointer(c) : '');
-  return '<section class="card stack"><div class="row between"><h3>This week</h3><span class="tiny muted num">' + sc.active + ' of ' + f.goal + ' active days · ' + sc.minutes + ' min</span></div><div class="weekdots">' +
-    f.days.map(d => '<span class="' + (d.active ? 'on' : d.rest ? 'rest' : '') + (d.date === t ? ' today' : '') + '">' + DOW[dow(d.date)] + '<i></i></span>').join('') + '</div>' +
-    '<p class="tiny muted">' + (sc.active >= f.goal ? 'Weekly goal met. Extra days still add minutes toward your personal best.' : (f.goal - sc.active) + ' more active day' + (f.goal - sc.active === 1 ? '' : 's') + ' fills your Move score. A day counts at ' + minMin(pid) + ' minutes.') + '</p>' +
-    '<p class="tiny" id="raceLine"><a href="#compete">' + esc(race) + '</a></p></section>';
-}
+function renderMove() { return todayHTML(); }
 // when the points race is out of reach this week, the team week is the thing still worth chasing
 const teamPointer = c => c.team.locked === 2 ? 'The team week is locked in: you both filled your Move score.' : !c.team.can ? 'The team week is out of reach this week as well.' : 'The team week is still on: ' + (c.team.mine ? 'your Move score is full' : c.team.need + ' fills your Move score') + (c.team.theirs ? '.' : c.team.mine ? ', and it needs theirs too.' : '.');
-OV.actpick = { // the same menu, from the lifting log
-  html: o => '<div class="ov tall" role="dialog" aria-modal="true" aria-label="Add an activity">' + ovHead('Add an activity', rel(o.date) + ' · saved on the same day as your lift') + '<div class="stack">' + actGridHTML(me()) + '</div></div>'
-};
-ACT['act-pick'] = () => openOv({ type: 'actpick', date: state.selDate });
 ACT['go-history'] = () => { location.hash = 'history'; };
-const redrawPicker = () => { render(); if (state.ov && state.ov.type === 'actpick') renderOv(); };
+const redrawPicker = () => { if (state.ov && state.ov.type === 'more') renderOv(); else render(); };
 const lapLine = laps => { const n = Math.round(Number(laps)); return n > 0 ? n + ' lap' + (n === 1 ? '' : 's') + ' = ' + milesText(n) : 'Each lap is 1/8 mile.'; };
 OV.act = {
   html: o => {
@@ -3222,7 +3222,8 @@ OV.act = {
 ACT.act = el => { const a = ACTS[el.dataset.k]; if (a) openOv({ type: 'act', k: el.dataset.k, date: state.selDate, min: String(a.min), feel: null, hurt: false, note: '', name: '' }); };
 ACT['act-edit'] = el => {
   const rec = state.sessions[state.selDate], a = rec && (rec.acts || []).find(x => x.id === el.dataset.id); if (!a) return;
-  openOv({ type: 'act', id: a.id, k: ACTS[a.a] ? a.a : 'other', date: state.selDate, min: String(a.min), feel: a.feel || null, hurt: !!a.hurt, note: a.note || '', name: a.a === 'other' ? a.name : '', at: a.at });
+  const lp = ACTS[a.a] && ACTS[a.a].wm === 'laps' ? /^(\d+) laps? \([\d.]+ mi\)(?: · )?/.exec(a.note || '') : null; // laps logged with it go back in the laps field
+  openOv({ type: 'act', id: a.id, k: ACTS[a.a] ? a.a : 'other', date: state.selDate, min: String(a.min), feel: a.feel || null, hurt: !!a.hurt, note: lp ? a.note.slice(lp[0].length) : a.note || '', laps: lp ? lp[1] : '', name: a.a === 'other' ? a.name : '', at: a.at });
 };
 ACT['act-min'] = el => { const o = state.ov; o.min = String(clamp((Number(o.min) || 0) + Number(el.dataset.d), 1, (ACTS[o.k] && ACTS[o.k].max) || 300)); renderOv(); };
 ACT['act-feel'] = el => { const o = state.ov; o.feel = o.feel === el.dataset.v ? null : el.dataset.v; renderOv(); };
@@ -3239,18 +3240,18 @@ ACT['act-log'] = async () => {
   const entry = { id: o.id || uid(), a: o.k, name, min, feel: o.feel || null, hurt: !!o.hurt, note: [laps > 0 && !/\blaps?\b/.test(String(o.note || '')) ? laps + ' lap' + (laps === 1 ? '' : 's') + ' (' + milesText(laps) + ')' : '', String(o.note || '').trim()].filter(Boolean).join(' · '), mv: a.mv !== false, at: o.at || new Date().toISOString() };
   const before = scoreSnapshot();
   const ok = await logActivity(o.date, entry, o.felt); if (!ok) return;
-  closeOv(); render();
+  markRow(o.date, entry.id); closeOv(); render();
   if (a.heat) { celebrate('', { before }); state.waterDate = o.date; toastAction(min + ' min of ' + name.toLowerCase() + ' logged', '+' + BOTTLE_OZ + ' oz water', 'water-bottle', 8000); return; }
   const di = dayInfo(me(), o.date);
   celebrate(min + ' min of ' + name.toLowerCase() + ' logged. ' + (a.mv === false ? 'Recovery counts for you, not for points.' : di.active ? 'That is an active day.' : (weekGoals(me(), weekStart(o.date)).minMin - di.minutes) + ' more min makes it count.'), { force: di.active, before });
 };
 ACT['act-del'] = async () => { const o = state.ov, path = PATH.session(me(), o.date), before = getDoc(path); const ok = await removeActivity(o.date, o.id); if (!ok) return; closeOv(); settle(); render(); offerUndo('Removed', path, before); };
 ACT.surprise = () => { const k = surpriseActivity(me()); const a = ACTS[k]; openOv({ type: 'act', k, date: state.selDate, min: String(a.min), feel: null, hurt: false, note: '', name: '' }); burst({ count: 24, y: 0.35 }); };
-ACT.filter = el => { state.filter.cat = el.dataset.cat; redrawPicker(); };
+ACT.filter = el => { state.filter.cat = el.dataset.cat; if (state.ov && state.ov.type === 'more') state.ov.all = true; redrawPicker(); };
 ACT['filter-quick'] = () => { state.filter.quick = !state.filter.quick; redrawPicker(); };
 ACT['filter-fav'] = () => { state.filter.fav = !state.filter.fav; redrawPicker(); };
-ACT.rest = async () => { const before = scoreSnapshot(); const ok = await logRest(state.selDate); if (!ok) return; render(); celebrate('Rest day logged. Recovery is part of the plan.', { before }); };
-ACT['rest-undo'] = async () => { const path = PATH.session(me(), state.selDate), before = getDoc(path); if (!(await write(path, null))) return; settle(); render(); offerUndo('Removed', path, before); };
+ACT.rest = async () => { const before = scoreSnapshot(); const ok = await logRest(state.selDate); if (!ok) return; markRow(state.selDate, 'prog'); render(); celebrate('Rest day logged. Recovery is part of the plan.', { before }); };
+ACT['rest-undo'] = async () => { const path = PATH.session(me(), state.selDate), before = getDoc(path); if (!(await write(path, null))) return; if (state.ov) closeOv(); settle(); render(); offerUndo('Removed', path, before); };
 
 /* ---------- Program tab ---------- */
 function renderProgram() {
@@ -3258,7 +3259,7 @@ function renderProgram() {
   const fullSplit = splitOf() === 'full', rot = rotation(), lg = liveGoals(me()).liftGoal;
   let h = gymBannerHTML() + '<section class="card stack" id="splitCard"><div class="row between"><h3>Split</h3><span class="tiny muted">changes the next lift, never your history</span></div>' +
     '<div class="seg" aria-label="Split"><button type="button" data-a="split-set" data-v="full" class="' + (fullSplit ? 'on' : '') + '" aria-pressed="' + fullSplit + '">Full body A/B</button><button type="button" data-a="split-set" data-v="ppl" class="' + (fullSplit ? '' : 'on') + '" aria-pressed="' + !fullSplit + '">Push / Pull / Legs</button></div>' +
-    '<p class="tiny muted">' + (fullSplit ? 'Two sessions train everything, so a week with only two lifts still covers the whole body. A and B alternate after each counted lift day.' : 'Three sessions train everything. Each day repeats once the other two are done.') + '</p></section>' + gymCardHTML() +
+    '<p class="tiny muted">' + (fullSplit ? 'Two sessions train everything, so a week with only two lifts still covers the whole body. A and B alternate after each counted lift day.' : 'Three sessions train everything. Each day repeats once the other two are done.') + '</p></section>' + renderMorning(phase, liftKindFor(t)) + gymCardHTML() +
     '<section class="card"><div class="eyebrow">How the rotation works</div><h2>' + (fullSplit ? 'Full Body A → B, repeat' : 'Push → Pull → Legs, repeat') + '</h2>' +
     '<p style="margin-top:8px">Days aren\'t tied to weekdays. The next lift is the one after your last <b>counted</b> lift day. Skip a morning and nothing goes out of sync. ' + (fullSplit ? 'Every session opens with a 5 to 10 minute warm-up on the track, treadmill or bike.' : 'Every session opens with a Fitness+ treadmill workout.') + ' Aim for ' + ws.goal + ' activity days a week: ' + ws.liftGoal + ' lifts, the rest treadmill-only or any ' + minMin(me()) + '-minute activity.</p></section>';
   const upcoming = nextDayKey(addDays(t, 1)); const lastL = lastLift(addDays(t, 1));
@@ -3436,6 +3437,220 @@ function renderHistory() {
   return h;
 }
 
+/* ---- 61-ui-today.js ---- */
+/* ---------- Train: the Today card, the date sheet, the Add sheet, the lift sheet ---------- */
+// Train is one card for the selected day: the date chip and the Log it / Go live switch, the check-in while nothing is
+// logged, one row for each logged thing, and one "Add" button. Everything else opens in a sheet. Nothing here changes
+// what is saved or how: every sheet ends in the same save(), logActivity() or logRest() as before.
+
+/* --- one row per logged thing --- */
+const actDist = a => { const m = /^\d+ (?:laps?|lengths?) \(([\d.]+ (?:mi|yd))\)/.exec(a.note || ''); return m ? m[1] : ''; };
+const draftTyped = d => !!(d && (d.tm.minutes !== '' || d.tm.title || d.notes || Object.keys(d.ex).some(k => d.ex[k].w !== '' || d.ex[k].reps.some(r => r !== '' && r != null))));
+const rowHot = (date, id) => { const h = state.rowHot; return !!(h && h.date === date && h.id === id && Date.now() < h.until); };
+const markRow = (date, id) => { state.rowHot = { date, id, until: Date.now() + 1200 }; }; // the row that was just saved shows a short highlight
+const todayRow = (date, id, attrs, icon, name, sum) => '<button type="button" class="trow' + (rowHot(date, id) ? ' new' : '') + '" data-row="' + esc(id) + '" ' + attrs + '><span class="tr-i" aria-hidden="true">' + icon + '</span><span class="tr-t"><b>' + name + '</b><span class="tiny muted">' + sum + '</span></span><span class="tr-c" aria-hidden="true">›</span></button>';
+function liftRowSum(n) {
+  const sets = sum(n.keys, k => n.ex[k].reps.filter(r => r != null).length);
+  return n.keys.length + ' lift' + (n.keys.length === 1 ? '' : 's') + ' · ' + sets + ' set' + (sets === 1 ? '' : 's') + ' · ' + (n.qualifies ? 'lift day' : 'not a lift day yet');
+}
+function todayRows(pid, date) {
+  const rec = state.sessions[date], n = rec ? normalize(rec) : null, program = P(pid).plan === 'program', d = program ? state.drafts[date] : null, typed = draftTyped(d), rows = [];
+  if (n && (n.program || n.kind === 'rest' || n.ambiguous)) {
+    const open = program ? 'data-a="lift-open"' : n.kind === 'rest' ? 'data-a="rest-open"' : 'data-a="go-history"', more = typed ? ' · unsaved changes' : '';
+    if (n.kind === 'strength') rows.push(todayRow(date, 'prog', open, '🏋️', esc(n.day ? DAYS[n.day].name : 'Lift'), liftRowSum(n) + more));
+    else if (n.kind === 'cardio') rows.push(todayRow(date, 'prog', open, '🏃', 'Treadmill', n.tm.minutes + ' min' + (n.tm.title ? ' · ' + esc(n.tm.title) : '') + more));
+    else if (n.kind === 'rest') rows.push(todayRow(date, 'prog', open, '🛌', 'Rest day', (n.notes ? esc(n.notes) : 'Doesn\'t count as activity') + more));
+    else rows.push(todayRow(date, 'prog', open, '🏋️', esc(DAYS[rec.day] ? DAYS[rec.day].name : 'Lift'), 'No sets saved · tap to check' + more));
+  } else if (typed) { // sets typed but not saved yet: one row, so they are not lost from sight
+    const k = kindFor(date, d);
+    rows.push(todayRow(date, 'draft', 'data-a="lift-open"', '✏️', esc(DAYS[k] ? DAYS[k].name : k === 'rest' ? 'Rest day' : 'Treadmill'), (d.recovered ? 'Recovered draft' : 'Draft') + ' · not saved yet'));
+  }
+  (n ? n.acts : []).forEach(a => rows.push(todayRow(date, a.id, 'data-a="' + (isHk(a) ? 'hk-info' : 'act-edit') + '" data-id="' + esc(a.id) + '"', actIcon(a), esc(actName(a)) + (a.hurt ? ' <span class="chip warn">pain noted</span>' : ''),
+    a.min + ' min' + (actDist(a) ? ' · ' + actDist(a) : '') + (a.mv === false ? ' · recovery' : '') + (a.feel && FEELS[a.feel] ? ' · ' + FEELS[a.feel] : ''))));
+  return rows;
+}
+// one line under the rows: what the day counts as
+function dayLineText(pid, date) {
+  const rec = state.sessions[date], n = rec ? normalize(rec) : null, di = dayInfo(pid, date), mm = weekGoals(pid, weekStart(date)).minMin;
+  if (P(pid).plan === 'program') {
+    const last = lastLift(date), nextK = nextDayKey(date);
+    if (n && n.qualifies && n.day) return 'Counted ' + DAYS[n.day].name + ' day. Next: ' + DAYS[nextAfter(n.day)].name + '.';
+    if (n && n.kind === 'strength') return 'Partial lift, not counted. ' + DAYS[nextK].name + ' is still next.';
+    if (n && n.kind === 'rest') return 'Rest day. ' + DAYS[nextK].name + ' is still next.';
+    if (n && (n.program || n.acts.length)) return (di.active ? 'An activity day. ' : (mm - di.minutes) + ' more min makes it an activity day. ') + DAYS[nextK].name + ' is next.';
+    return last ? 'After ' + DAYS[last.n.day].name + ' on ' + nice(last.date) + ', ' + DAYS[nextK].name + ' is next.' : (splitOf() === 'full' ? 'Next lift: ' + DAYS[nextK].name + '.' : 'First lift of the program: Push.');
+  }
+  if (n && n.kind === 'rest') return 'Rest day logged';
+  if (n && n.program) return (n.kind === 'strength' ? (n.day ? DAYS[n.day].name + ' lift' : 'Lift') : 'Treadmill') + ' · ' + n.progMin + ' min' + (n.acts.length ? ' + ' + n.actMin + ' min of activities' : '') + ' · counts as an active day';
+  if (n && n.acts.length) return n.allMin + ' min logged · ' + (di.active ? 'counts as an active day' : (mm - di.minutes) + ' more min of movement to count');
+  return 'A day counts at ' + mm + ' minutes of movement.';
+}
+function todayHTML() {
+  const pid = me(), date = state.selDate, isToday = date === todayIso(), rows = todayRows(pid, date), going = wmResumable(pid, date);
+  let h = '<section class="card stack today" id="today"><div class="today-head"><button type="button" class="datechip" id="dateChip" data-a="day-open" aria-haspopup="dialog" aria-label="' + (isToday ? 'Today, ' : '') + nice(date) + '. Change the day">' +
+    '<b id="todayTitle">' + (isToday ? 'Today' : nice(date)) + '</b>' + (isToday ? '<span class="muted">' + nice(date) + '</span>' : '') + '<span class="dc" aria-hidden="true">▾</span></button>' + modeSwitchHTML(pid) + '</div>';
+  if (going) h += '<div class="trow going" id="wmGoing"><span class="tr-i" aria-hidden="true">⏱️</span><span class="tr-t"><b>Workout in progress</b><span class="tiny muted">' + esc(going.title) + '</span></span><button type="button" class="small on" id="wmResume" data-a="wm-resume">Resume workout</button></div>';
+  if (rows.length) h += '<div class="trows" id="todayRows">' + rows.join('') + '</div>';
+  else if (!going) h += (isToday && ciShown(pid) ? checkinHTML() : '<p class="muted" id="todayEmpty">Nothing logged ' + (isToday ? 'yet today' : 'for ' + nice(date)) + '.</p>');
+  h += '<button type="button" class="' + (rows.length || going || !(isToday && ciShown(pid)) ? 'primary' : 'second') + ' addbtn" id="addBtn" data-a="add-open">Add to ' + (isToday ? 'today' : nice(date)) + '</button>' +
+    '<p class="tiny muted" id="dayLine">' + esc(dayLineText(pid, date)) + '</p>' + hkLineHTML(date) + '</section>';
+  return h + coachHTML();
+}
+
+/* --- the date sheet: the last 7 days and the date picker --- */
+OV.day = {
+  html: () => '<div class="ov" role="dialog" aria-modal="true" aria-label="Pick a day">' + ovHead('Pick a day', 'Showing ' + rel(state.selDate).toLowerCase() + (rel(state.selDate) !== nice(state.selDate) ? ', ' + nice(state.selDate) : '')) + renderDatebar() +
+    '<label class="f">Another day<input type="date" id="datePick" aria-label="Pick another day" value="' + state.selDate + '" max="' + todayIso() + '"></label>' +
+    (state.selDate !== todayIso() ? '<div class="row"><button type="button" class="small" id="dayToday" data-date="' + todayIso() + '">Back to today</button></div>' : '') + '</div>',
+  after: () => bind(ovRoot)
+};
+ACT['day-open'] = () => openOv({ type: 'day' });
+
+/* --- the Add sheet: four choices --- */
+// Cardio for the picker. A lifting profile keeps its list; a pick-your-own profile gets the gentle equivalents, safest first.
+function addCardioOptions(pid) {
+  if (P(pid).plan === 'program') return cardioOptions(pid);
+  const keys = atHealthplex(pid) ? ['hptrack', 'hprun', 'walktread', 'hpbike', 'elliptical', 'hpswim'] : ['walktread', 'recbike', 'bike', 'elliptical', 'walkbrisk'];
+  const label = { hptrack: 'Track walk', hprun: 'Track run/walk', walktread: 'Treadmill walk', hpbike: 'Bike', recbike: 'Recumbent bike', bike: 'Stationary bike', elliptical: 'Elliptical', hpswim: 'Lap swim', walkbrisk: 'Brisk walk' };
+  return keys.map((k, i) => ({ k, i, safe: safeAct(pid, k) ? 0 : 1 })).sort((a, b) => (a.safe - b.safe) || (a.i - b.i)).map(x => [x.k, label[x.k]]);
+}
+const cardioStage = k => k === 'treadmill' ? { type: 'timer', act: 'treadmill', name: 'Treadmill (Fitness+)', min: 25 } : stageFor(k, 25);
+// Recovery as a live session, without a check-in behind it.
+function recoveryStages(pid) {
+  const hp = atHealthplex(pid), heat = hp ? [{ type: 'heat', act: 'hpsauna', name: 'Sauna, steam or whirlpool', min: 10 }] : [];
+  if (P(pid).plan !== 'program') return [{ type: 'stretch', act: 'stretchfull', name: 'Gentle stretch', min: 10, rounds: 2 }].concat(heat);
+  const k = hp ? 'hptrack' : 'walkeasy';
+  return [stageFor(k, 10), { type: 'stretch', act: k, name: 'Stretch', min: 5, rounds: 1 }].concat(heat);
+}
+const machineKey = pid => atHealthplex(pid) ? 'hpcircuit' : 'machines';
+OV.add = {
+  html: o => {
+    const pid = me(), date = o.date, program = P(pid).plan === 'program', live = modeOf(pid) === 'live', hp = atHealthplex(pid), isToday = date === todayIso();
+    const rec = state.sessions[date], n = rec ? normalize(rec) : null, logged = !!(n && (n.program || n.kind === 'rest' || n.acts.length));
+    const big = (id, a, icon, title, sub) => '<button type="button" class="addc" id="' + id + '" data-a="' + a + '"><span class="ai" aria-hidden="true">' + icon + '</span><span class="tr-t"><b>' + title + '</b><span class="tiny muted">' + sub + '</span></span></button>';
+    let h = '<div class="ov addsheet" role="dialog" aria-modal="true" aria-label="Add to ' + (isToday ? 'today' : nice(date)) + '">' + ovHead('Add to ' + (isToday ? 'today' : nice(date)), live ? 'Go live is on: Lift, Cardio and Recovery start a live session' : 'Log it is on: each one opens a short sheet');
+    if (o.step === 'cardio') // Go live: which cardio, then straight into the session
+      return h + '<div class="eyebrow">Cardio · start live</div><div class="results" id="addCardioList">' + addCardioOptions(pid).map(x => '<button type="button" class="fooditem" data-a="add-cardio-live" data-k="' + x[0] + '"><span class="fn">' + x[1] + '</span><span class="fk">' + (partKind(x[0]) === 'laps' ? 'tap each lap' : partKind(x[0]) === 'lengths' ? 'tap each length' : 'a timer') + '</span></button>').join('') + '</div>' +
+        '<div class="row"><button type="button" class="small" data-a="add-back">Back</button></div></div>';
+    const liftSub = n && n.kind === 'strength' ? 'Open the saved ' + (n.day ? DAYS[n.day].name : 'lift') : DAYS[liftKindFor(date)].name + ' next';
+    h += '<div class="addgrid" id="addGrid">' +
+      (program ? big('addLift', 'add-lift', '🏋️', 'Lift', esc(liftSub)) : big('addLift', 'add-lift', '🏢', 'Machine circuit', 'Logged as minutes')) +
+      big('addCardio', 'add-cardio', '🚶', 'Cardio', hp ? 'Track, treadmill, bike, elliptical, lap swim' : 'Treadmill, bike, elliptical, walk') +
+      big('addRecovery', 'add-recovery', '🧊', 'Recovery', hp ? 'Stretch, sauna, steam or whirlpool' : 'Stretch') +
+      big('addMore', 'add-more', '➕', 'Something else', hp ? 'Walks, stretches, everyday moves, classes' : 'Walks, stretches, everyday moves') + '</div>' +
+      '<div class="row addfoot">' + (logged ? '' : '<button type="button" class="quiet" id="addRest" data-a="add-rest">Log a rest day</button>') + healthButton() + '</div></div>';
+    return h;
+  }
+};
+ACT['add-open'] = () => openOv({ type: 'add', date: state.selDate });
+ACT['add-back'] = () => { state.ov.step = null; renderOv(); };
+ACT['cilog-back'] = () => { const o = state.ov; if (o && o.from === 'add') openOv({ type: 'add', date: o.date }); else closeOv(); }; // back to the four choices it came from
+function openCilog(date, felt, title, parts, heat, from) { // the short "Log it" sheet: the same one the check-in opens
+  const o = { type: 'cilog', date, felt, title, parts, heat: !!heat, room: 'hpsauna', heatMin: '', from: from || null };
+  parts.forEach((p, i) => { o['k' + i] = p.k; o['min' + i] = String(p.min); o['laps' + i] = ''; });
+  openOv(o);
+}
+ACT['add-lift'] = el => {
+  const pid = me(), date = state.selDate, live = modeOf(pid) === 'live';
+  if (P(pid).plan !== 'program') { // the machine circuit, logged as minutes
+    const k = machineKey(pid), a = ACTS[k];
+    if (live) wmOpen(stagePlan(a.name, null, [stageFor(k)]), el);
+    else openOv({ type: 'act', k, date, min: String(a.min), feel: null, hurt: false, note: '', name: '' });
+    return;
+  }
+  if (!live) { openLift(); return; }
+  if (wmDraftOn(date)) { ACT['wm-resume'](el); return; }
+  const m = model(date), kind = liftKindFor(date);
+  wmOpen({ kind: 'lift', title: DAYS[kind].name, felt: m.checkin || null, day: kind, express: m.checkin === 'short' }, el);
+};
+ACT['add-cardio'] = () => {
+  const pid = me(), opts = addCardioOptions(pid);
+  if (modeOf(pid) === 'live') { state.ov.step = 'cardio'; renderOv(); return; }
+  openCilog(state.selDate, null, 'Cardio', [{ opts, k: opts[0][0], min: 25 }], false, 'add');
+};
+ACT['add-cardio-live'] = el => { const k = el.dataset.k; if (k !== 'treadmill' && !ACTS[k]) return; wmOpen(stagePlan('Cardio', null, [cardioStage(k)]), el); };
+ACT['add-recovery'] = el => {
+  const pid = me();
+  if (modeOf(pid) === 'live') { wmOpen(stagePlan('Recovery', null, recoveryStages(pid)), el); return; }
+  openCilog(state.selDate, null, 'Recovery', STRETCH_PART, atHealthplex(pid), 'add');
+};
+ACT['add-rest'] = async () => {
+  const pid = me(), date = state.selDate, before = scoreSnapshot();
+  if (P(pid).plan === 'program') { const d = draft(date); d.kindSel = 'rest'; persistDrafts(); closeOv(); const ok = await save(); if (!ok) render(); return; }
+  const ok = await logRest(date); if (!ok) return;
+  markRow(date, 'prog'); closeOv(); render(); celebrate('Rest day logged. Recovery is part of the plan.', { before });
+};
+
+/* --- Something else: search, recent and favorites, then the whole menu --- */
+const actBtnHTML = (pid, k) => {
+  const a = ACTS[k], caution = actCaution(pid, k), fav = P(pid).favorites.includes(k);
+  if (a.cat === 'healthplex') return hpCardHTML(pid, k); // a Healthplex card flips to show its details
+  return '<button type="button" class="act' + (fav ? ' fav' : '') + '" data-a="act" data-k="' + k + '"><span class="ai" aria-hidden="true">' + a.icon + '</span><span class="an">' + esc(a.name) + '</span><span class="am">' + a.min + ' min · ' + (a.mv === false ? 'recovery' : IMPACT[a.impact]) + '</span>' + (caution.length ? '<span class="aw">Go easy: ' + caution.map(x => AREAS[x].toLowerCase()).join(', ') + '</span>' : '') + (painFlag(pid, k) ? '<span class="aw" data-pain="' + k + '">Pain noted ' + painCount(pid, k) + '× recently</span>' : '') + '</button>';
+};
+// Six to start from: favorites, then what was logged most recently, then the gentlest of the menu.
+function quickActs(pid) {
+  const ok = k => ACTS[k] && k !== 'other' && !ACTS[k].cls && (ACTS[k].cat !== 'healthplex' || atHealthplex(pid)), out = [];
+  const add = k => { if (ok(k) && !out.includes(k) && out.length < 6) out.push(k); };
+  P(pid).favorites.forEach(add);
+  recordsOf(pid).slice().reverse().forEach(r => r.n.acts.forEach(a => { if (!isHk(a)) add(a.a); }));
+  actList(pid, { cat: 'all', quick: false, fav: false }).forEach(add);
+  return out;
+}
+function moreListHTML(o) {
+  const pid = me(), q = String(o.q || '').trim().toLowerCase();
+  if (q) {
+    const hits = actList(pid, { cat: 'all', quick: false, fav: false }).filter(k => ACTS[k].name.toLowerCase().includes(q) || (ACT_CATS.find(c => c[0] === ACTS[k].cat) || ['', ''])[1].toLowerCase().includes(q));
+    return hits.length ? '<div class="acts" id="moreHits">' + hits.map(k => actBtnHTML(pid, k)).join('') + '</div>' : '<p class="muted tiny" id="moreNone">Nothing matches "' + esc(o.q.trim()) + '". Try "Other activity" under Everyday.</p>';
+  }
+  if (o.all) return actGridHTML(pid);
+  const cats = ACT_CATS.filter(c => c[0] !== 'healthplex' || atHealthplex(pid));
+  return '<div class="eyebrow">Recent and favorites</div><div class="acts" id="moreQuick">' + quickActs(pid).map(k => actBtnHTML(pid, k)).join('') + '</div>' +
+    '<div class="eyebrow">Categories</div><div class="chips wrapc" id="moreCats">' + cats.map(c => '<button type="button" data-a="filter" data-cat="' + c[0] + '">' + c[1] + '</button>').join('') + '</div>' +
+    '<div class="row"><button type="button" class="small" id="moreAll" data-a="more-all">Show all</button></div>';
+}
+OV.more = {
+  html: o => '<div class="ov tall" role="dialog" aria-modal="true" aria-label="Something else">' + ovHead('Something else', (o.date === todayIso() ? 'Today' : nice(o.date)) + ' · logged by minutes') +
+    '<div class="row" style="flex-wrap:nowrap"><input type="search" id="moreQ" data-ovf="q" value="' + esc(o.q || '') + '" placeholder="Search activities" aria-label="Search activities" autocomplete="off" style="flex:1;min-width:0"><button type="button" class="small" data-a="surprise" style="flex:none">Surprise me</button></div>' +
+    '<div class="stack" id="moreList">' + moreListHTML(o) + '</div></div>'
+};
+ACT['add-more'] = () => { state.filter = { cat: 'all', quick: false, fav: false }; state.hpFlip = null; openOv({ type: 'more', date: state.selDate, q: '', all: false }); };
+ACT['more-all'] = () => { state.ov.all = true; renderOv(); };
+const refreshMore = () => { const o = state.ov, el = $('#moreList'); if (o && o.type === 'more' && el) el.innerHTML = moreListHTML(o); }; // typing redraws the list only, so the keyboard stays up
+
+/* --- a pick-your-own rest day: nothing to edit, so the row offers to remove it --- */
+OV.restday = {
+  html: o => '<div class="ov" role="dialog" aria-modal="true" aria-label="Rest day">' + ovHead('🛌 Rest day', rel(o.date)) + '<p class="muted">Rest days are part of the plan and cost nothing. Logging something else on this day replaces it.</p>' +
+    '<div class="row"><button type="button" class="small danger" id="restRemove" data-a="rest-undo">Remove</button><button type="button" class="small" data-a="ov-close">Keep it</button></div></div>'
+};
+ACT['rest-open'] = () => openOv({ type: 'restday', date: state.selDate });
+
+/* --- the lift sheet: the typed-in lift log, full height --- */
+// The same draft, the same fields and the same save() as the log that used to sit on the page. Three parts: a head
+// with Go live, a body that scrolls, and a foot that does not: the rest timer and the Save bar. Nothing in the foot
+// can sit on top of a button, because nothing in the sheet scrolls underneath it.
+function liftSheetHTML() {
+  const date = state.selDate, f = liftLogHTML(date);
+  return '<div class="ov tall liftsheet" role="dialog" aria-modal="true" aria-label="Lift log" id="liftSheet"><div class="ls-head"><div class="ls-t"><h2 id="liftTitle">' + esc(f.title) + '</h2><div class="tiny muted" id="liftDate">' + rel(date) + (rel(date) !== nice(date) ? ' · ' + nice(date) : '') + '</div></div>' +
+    (f.isLift && date <= todayIso() ? '<button type="button" class="small" id="wmStart" data-a="wm-lift">' + (wmDraftOn(date) ? 'Resume workout' : 'Go live') + '</button>' : '') +
+    '<button type="button" class="xbtn" id="liftClose" data-a="ov-close" aria-label="Close">×</button></div>' +
+    '<div class="ls-body" data-scroll>' + f.html + '</div>' +
+    '<div class="ls-foot">' + restBarHTML() + renderSaveBar(date, f.m, f.saved) + '</div></div>';
+}
+OV.lift = { html: liftSheetHTML, after: () => bind(ovRoot) };
+const liftOpen = () => !!(state.ov && state.ov.type === 'lift');
+function openLift(focusSel) {
+  state.confirmRemove = null; state.menu = null;
+  openOv({ type: 'lift', date: state.selDate });
+  if (focusSel) { // the field comes into view inside the sheet's own scroll area: the page behind never moves
+    const el = $(focusSel), body = el && el.closest('.ls-body'); if (!el) return;
+    el.focus({ preventScroll: true });
+    if (body) { const r = el.getBoundingClientRect(), b = body.getBoundingClientRect(); if (r.bottom > b.bottom - 12) body.scrollTop += r.bottom - b.bottom + 12; else if (r.top < b.top) body.scrollTop -= b.top - r.top + 12; }
+  }
+}
+ACT['lift-open'] = () => openLift();
+// The sheet is gone, by Save, by ×, by going live or by a tap outside: the rest timer goes with it and the page catches up.
+function liftClosed() { restStop(); typing = false; state.menu = null; state.confirmRemove = null; render(); }
+
 /* ---- 62-ui-checkin.js ---- */
 /* ---------- The daily check-in, the Healthplex, and the settings that go with them ---------- */
 // "How are you feeling?" on Train, for today. Picking a choice only opens its preview: nothing is written until a
@@ -3487,8 +3702,8 @@ function gymBannerHTML() {
   if (p.plan !== 'program' || !atHealthplex(me()) || !validIso(since) || t < since || t >= addDays(since, 7)) return '';
   return '<div class="banner accent" id="gymBanner">First week at the Healthplex: if a machine isn\'t there, use ··· → Not at my gym.</div>';
 }
-function hpMorningHTML(kind) {
-  const t = state.selDate, wkend = isWeekend(t), pick = state.ci && state.ci.date === t ? state.ci.choice : (state.sessions[t] && state.sessions[t].checkin) || null, row = (a, b) => '<span class="t num">' + a + '</span><span>' + b + '</span>';
+function hpMorningHTML(kind) { // on the Program tab: today's plan
+  const t = todayIso(), wkend = isWeekend(t), pick = state.ci && state.ci.date === t ? state.ci.choice : (state.sessions[t] && state.sessions[t].checkin) || null, row = (a, b) => '<span class="t num">' + a + '</span><span>' + b + '</span>';
   let rows, title = 'Morning plan · at IMS by 9';
   if (pick === 'tired') rows = row('6:00', 'Up. Water, small bite.') + row('6:20', 'At the Healthplex. Easy cardio, 20 to 30 min: track, treadmill, bike, elliptical or the lap pool.') + row('7:00', 'Optional sauna or steam, 10 min. Drink water.') + row('7:20', 'Shower. Out the door by 8:15, at IMS by 9.');
   else if (pick === 'sore') rows = row('6:00', 'Up. Water, small bite.') + row('6:20', 'At the Healthplex. 10 easy minutes on the track or in the therapy pool, then stretch.') + row('6:40', 'Sauna, steam or whirlpool, 10 min. Drink water.') + row('7:00', 'Shower. Out the door by 8:15, at IMS by 9.');
@@ -3499,13 +3714,8 @@ function hpMorningHTML(kind) {
     '<p class="tiny muted" style="margin-top:8px" id="morningHours">' + (wkend ? 'Weekend: the Healthplex opens at 7, so everything starts later. Open ' + HP.weekend + '.' : 'Weekdays the Healthplex opens at 5:15. Open ' + HP.weekday + '.') + ' Missed a morning? Nothing shifts: the next lift is still the next one.</p></details>';
 }
 
-/* --- recovery rooms: the chip after a workout, the water offer --- */
+/* --- recovery rooms: the sheet a live finish screen opens, the water offer --- */
 const heatDone = (pid, date) => { const r = state.data[pid].sessions[date]; return !!(r && Array.isArray(r.acts) && r.acts.some(a => a && HEAT_KEYS.includes(a.a))); };
-function heatChipHTML(date) {
-  const pid = me(), di = dayInfo(pid, date);
-  if (!atHealthplex(pid) || date !== todayIso() || !di.logged || di.rest || heatDone(pid, date)) return '';
-  return '<div class="row" id="heatChip"><button type="button" class="chipbtn" data-a="heat-open">🔥 Sauna, steam or whirlpool after?</button></div>';
-}
 OV.heat = {
   html: o => '<div class="ov" role="dialog" aria-modal="true" aria-label="Recovery rooms">' + ovHead('After your workout', 'Recovery: it logs, but does not count toward active minutes') +
     '<p class="banner" id="heatNote">' + HEAT_NOTE + '</p><div class="results">' + HEAT_KEYS.map(k => '<button type="button" class="fooditem" data-a="heat-pick" data-k="' + k + '"><span class="fn">' + ACTS[k].icon + ' ' + ACTS[k].name + '</span><span class="fk">' + ACTS[k].min + ' min</span><span class="fq">locker room · towels provided</span></button>').join('') + '</div>' +
@@ -3624,24 +3834,12 @@ function dayWhat(pid, date) { // one or two words for what a logged day is
   const r = state.data[pid].sessions[date]; if (!r) return '';
   const n = normalize(r); return n.kind === 'strength' ? (n.day ? DAYS[n.day].name : 'Lift') : n.kind === 'cardio' ? 'Treadmill' : n.kind === 'rest' ? 'Rest day' : n.acts.length ? actName(n.acts.find(a => a.mv !== false) || n.acts[0]) : 'logged';
 }
-// The check-in sits first on Train, under the Log it / Go live switch, for today only. Once a choice is made or
-// anything is logged today it is one line with "Change", so the log is what the screen is about.
+// The check-in sits inside the Today card while nothing is logged for today. Picking a choice only opens its preview.
 function checkinHTML() {
-  const pid = me(), date = state.selDate;
-  if (date !== todayIso() || !ciShown(pid)) return '';
-  const sw = modeSwitchHTML(pid), going = wmResumable(pid, date), rec = state.data[pid].sessions[date], d = state.draftsBy[pid][date], open = !!(state.ci && state.ci.date === date && state.ci.pid === pid);
-  const line = (text, btn) => sw + '<section class="card ci line" id="checkin"><div class="row between" style="flex-wrap:nowrap"><span id="ciDone">' + text + '</span>' + btn + '</div></section>';
-  if (going) return line('<b>Workout in progress</b> · ' + esc(going.title), '<button type="button" class="small on" id="wmResume" data-a="wm-resume">Resume workout</button>');
-  if (!open) {
-    const dFelt = d && CHECKIN_WORDS[d.checkin] ? d.checkin : null, felt = dFelt || (rec && CHECKIN_WORDS[rec.checkin] && rec.checkin) || null; // the newest choice: the draft's, then the saved day's
-    if (rec || felt) {
-      const dk = d ? kindFor(date, d) : null, liftPick = (dFelt === 'strong' || dFelt === 'short') && DAYS[dk], what = liftPick ? DAYS[dk].name : rec ? dayWhat(pid, date) : '';
-      return line('<b>' + (felt ? ciLabel(pid, felt) : 'Today is logged') + '</b>' + (what ? ' · ' + esc(what) : ''), '<button type="button" class="quiet" id="ciChange" data-a="ci-again">Change</button>');
-    }
-  }
+  const pid = me(), date = state.selDate, open = !!(state.ci && state.ci.date === date && state.ci.pid === pid);
   const list = ciList(pid), sg = checkinSuggest(pid, date), sel = open ? state.ci.choice : null, anim = sel && state.ciAnim === sel, mode = modeOf(pid);
   if (anim) state.ciAnim = null; // the expand plays once, for the tap that caused it
-  let h = sw + '<section class="card stack ci" id="checkin"' + (sel ? ' data-open="' + sel + '"' : '') + (anim ? ' data-anim="1"' : '') + '><div class="row between"><h3>How are you feeling?</h3><span class="tiny muted">' + nice(date) + '</span></div>';
+  let h = '<div class="stack ci" id="checkin"' + (sel ? ' data-open="' + sel + '"' : '') + (anim ? ' data-anim="1"' : '') + '><h3>How are you feeling?</h3>';
   list.forEach(c => {
     const on = sel === c[0], sug = sg.choice === c[0];
     h += '<button type="button" class="cic' + (on ? ' sel' + (anim ? ' lift' : '') : sel ? ' fade' : '') + (sug ? ' sug' : '') + '" data-a="ci-pick" data-v="' + c[0] + '" aria-expanded="' + on + '"><span class="ci-i" aria-hidden="true">' + c[1] + '</span><span class="ci-t"><b>' + c[2] + '</b>' +
@@ -3657,7 +3855,7 @@ function checkinHTML() {
       '<div class="row"><button type="button" class="quiet" data-a="ci-back">Back</button></div></div>';
   });
   if (atHealthplex(pid)) h += '<div class="row"><button type="button" class="quiet" id="ciExtra" data-a="hp-extra">Class or game (optional)</button></div>';
-  return h + '</section>';
+  return h + '</div>';
 }
 ACT['ci-pick'] = (el, e) => {
   const v = el.dataset.v, r = el.getBoundingClientRect();
@@ -3667,7 +3865,6 @@ ACT['ci-pick'] = (el, e) => {
 };
 ACT['ci-opt'] = el => { if (state.ci) { state.ci.opt = el.dataset.v; render('[data-a="ci-opt"][data-v="' + el.dataset.v + '"]'); } };
 ACT['ci-back'] = () => { const v = state.ci && state.ci.choice; state.ci = null; render(v ? '[data-a="ci-pick"][data-v="' + v + '"]' : null); };
-ACT['ci-again'] = () => { state.ci = { pid: me(), date: state.selDate, choice: null, opt: null }; render('#checkin .cic'); };
 ACT['ci-start'] = el => {
   const c = state.ci; if (!c) return;
   const pv = ciPreview(c.pid, c.date, c.choice, c.opt);
@@ -3682,21 +3879,19 @@ ACT['ci-rest'] = async () => {
 };
 
 /* --- "Log it": the same session, typed in instead of done live --- */
-// A lift goes to the lifting log: the day is selected, the check-in is kept on the draft, and the first weight field
-// has the cursor. Everything else gets one short sheet: the activity, minutes, and laps or lengths where they apply.
+// A lift opens the lift sheet: the day is selected, the check-in is kept on the draft, and the first weight field has
+// the cursor. Everything else gets one short sheet: the activity, minutes, and laps or lengths where they apply.
 ACT['ci-log'] = () => {
   const c = state.ci; if (!c) return;
   const pv = ciPreview(c.pid, c.date, c.choice, c.opt);
   if (pv.lift) {
     const d = draft(c.date); d.kindSel = pv.lift.kind; d.checkin = c.choice; d.recovered = false; persistDrafts();
     const first = plannedFor(c.date, pv.lift.kind, d).find(p => !EX[p.key].bw);
-    state.ci = null; state.scrollTo = 'logHead'; state.logJumps = (state.logJumps || 0) + 1;
-    render(first ? '#w-' + first.key : '#tmMin'); return;
+    state.ci = null; state.logJumps = (state.logJumps || 0) + 1;
+    render(); openLift(first ? '#w-' + first.key : '#tmMin'); return;
   }
   if (!pv.sheet) return;
-  const o = { type: 'cilog', date: c.date, felt: c.choice, title: pv.title, parts: pv.sheet.parts, heat: !!pv.sheet.heat, room: 'hpsauna', heatMin: '' };
-  pv.sheet.parts.forEach((p, i) => { o['k' + i] = p.k; o['min' + i] = String(p.min); o['laps' + i] = ''; });
-  openOv(o);
+  openCilog(c.date, c.choice, pv.title, pv.sheet.parts, pv.sheet.heat);
 };
 const partKind = k => ACTS[k] && ACTS[k].wm === 'laps' ? 'laps' : ACTS[k] && ACTS[k].wm === 'lengths' ? 'lengths' : 'timer';
 const partName = k => k === 'treadmill' ? 'Treadmill (Fitness+)' : ACTS[k] ? ACTS[k].name : 'Activity';
@@ -3717,11 +3912,12 @@ OV.cilog = {
       const k = o['k' + i], kind = partKind(k);
       h += '<div class="stack" data-part="' + i + '">' + (p.opts.length > 1 ? '<div class="chips wrapc" id="cilogOpts' + i + '">' + p.opts.map(x => '<button type="button" data-a="cilog-opt" data-i="' + i + '" data-v="' + x[0] + '" class="' + (k === x[0] ? 'on' : '') + '" aria-pressed="' + (k === x[0]) + '">' + x[1] + '</button>').join('') + '</div>' : '<div class="eyebrow">' + p.opts[0][1] + '</div>') +
         '<div class="formgrid">' + num('cilogMin' + i, 'min' + i, 'Minutes', 300) + (kind === 'laps' ? num('cilogLaps' + i, 'laps' + i, 'Laps (8 = 1 mile)', 400) : kind === 'lengths' ? num('cilogLaps' + i, 'laps' + i, 'Lengths (25 yards each)', 400) : '') + '</div>' +
-        (kind !== 'timer' ? '<p class="tiny muted num" id="cilogDist' + i + '">' + distLine(kind, o['laps' + i]) + '</p>' : '') + '</div>';
+        (kind !== 'timer' ? '<p class="tiny muted num" id="cilogDist' + i + '">' + distLine(kind, o['laps' + i]) + '</p>' : '') +
+        (ACTS[k] && !safeAct(me(), k) ? '<p class="banner" data-caution="' + k + '">' + esc(whyNot(me(), k)) + ' Keep it short and easy, or pick something else.</p>' : '') + '</div>';
     });
     if (o.heat) h += '<div class="stack" id="cilogHeat"><div class="eyebrow">Sauna, steam or whirlpool (optional)</div><div class="seg">' + HEAT_KEYS.map(k => '<button type="button" data-a="cilog-room" data-k="' + k + '" class="' + (o.room === k ? 'on' : '') + '" aria-pressed="' + (o.room === k) + '">' + ACTS[k].name + '</button>').join('') + '</div>' +
       '<div class="formgrid">' + num('cilogHeatMin', 'heatMin', 'Minutes, up to 20', 20) + '</div><p class="tiny muted">Logs as recovery: it shows in History but does not count toward active minutes. ' + HEAT_NOTE + '</p></div>';
-    return h + '<div class="row"><button type="button" class="primary" id="cilogSave" data-a="cilog-save">' + cilogLabel(o) + '</button><button type="button" class="small" data-a="ov-close">Back</button></div></div>';
+    return h + '<div class="row"><button type="button" class="primary" id="cilogSave" data-a="cilog-save">' + cilogLabel(o) + '</button><button type="button" class="small" data-a="cilog-back">Back</button></div></div>';
   }
 };
 ACT['cilog-opt'] = el => { const o = state.ov; o['k' + el.dataset.i] = el.dataset.v; renderOv(); };
@@ -3754,10 +3950,11 @@ ACT['cilog-save'] = async () => {
     state.ci = null; closeOv(); if (state.selDate !== date) state.selDate = date;
     const ok = await save(); if (!ok) render(); return;
   }
-  const before = scoreSnapshot(); let ok = true;
-  if (min && !o.actDone) { const a = ACTS[first] || ACTS.other; ok = await logActivity(date, { id: uid(), a: ACTS[first] ? first : 'other', name: names.join(' + '), min, feel: null, hurt: false, note, mv: a.mv !== false, at: now }, felt); if (ok) o.actDone = true; } // a retry after a failed second write does not log the first again
-  if (ok && heat) ok = await logActivity(date, { id: uid(), a: heat.k, name: ACTS[heat.k].name, min: heat.min, feel: null, hurt: false, note: '', mv: false, at: now }, felt);
+  const before = scoreSnapshot(), id = uid(), hid = uid(); let ok = true;
+  if (min && !o.actDone) { const a = ACTS[first] || ACTS.other; ok = await logActivity(date, { id, a: ACTS[first] ? first : 'other', name: names.join(' + '), min, feel: null, hurt: false, note, mv: a.mv !== false, at: now }, felt); if (ok) o.actDone = true; } // a retry after a failed second write does not log the first again
+  if (ok && heat) ok = await logActivity(date, { id: hid, a: heat.k, name: ACTS[heat.k].name, min: heat.min, feel: null, hurt: false, note: '', mv: false, at: now }, felt);
   if (!ok) return;
+  markRow(date, min ? id : hid);
   state.ci = null; closeOv(); render();
   const di = dayInfo(me(), date);
   celebrate((min ? min + ' min logged. ' : '') + (heat ? heat.min + ' min of ' + ACTS[heat.k].name.toLowerCase() + ' as recovery. ' : '') + (min ? (di.active ? 'That is an active day.' : 'Not an active day yet.') : ''), { before, force: di.active && min > 0 });
@@ -5245,9 +5442,10 @@ function backupCardHTML() {
 
 /* ---- 90-main.js ---- */
 /* ---------- Page chrome and the render loop ---------- */
-const main = $('#main');
+const main = $('#main'), ovRoot = $('#ov');
 let typing = false, pendingRender = false;
-const isTextField = el => !!(el && el.matches && el.matches('input[type=number], input[type=text], input[type=search], textarea') && main.contains(el));
+// a text field in the page, or in the lift sheet (the one sheet that is redrawn with the page)
+const isTextField = el => !!(el && el.matches && el.matches('input[type=number], input[type=text], input[type=search], textarea') && (main.contains(el) || (liftOpen() && ovRoot.contains(el))));
 function stripHTML() {
   const pid = me(), t = todayIso(), ws = weekStart(t), g = weekGoals(pid, ws), sc = weekScore(pid, ws), o = otherPid(pid), os = weekScore(o, ws);
   const pips = (n, of, cls) => '<span class="pips">' + Array.from({ length: of }, (_, i) => '<span class="pip ' + cls + (i < n ? ' on' : '') + '"></span>').join('') + '</span>';
@@ -5296,7 +5494,8 @@ function render(focusSel) {
   if (drawnTab === tab) main.querySelectorAll('details[open]').forEach(d => { const k = detKey(d); if (k) open[k] = true; });
   main.innerHTML = html; drawnTab = tab;
   main.querySelectorAll('details').forEach(d => { if (open[detKey(d)]) d.open = true; });
-  bind();
+  bind(main);
+  if (liftOpen()) renderOv(); // the lift sheet shows the same day as the page under it: it is redrawn with it
   if (focusSel) { const el = $(focusSel); if (el) el.focus({ preventScroll: true }); }
   if (Math.abs(window.scrollY - y) > 2) window.scrollTo(0, y);
   if (state.scrollTo) { const el = document.getElementById(state.scrollTo); state.scrollTo = null; if (el) el.scrollIntoView({ block: 'start' }); }
@@ -5323,7 +5522,7 @@ function refreshLive(date) {
 }
 
 /* ---------- Events ---------- */
-main.addEventListener('input', e => {
+function onLogInput(e) {
   const el = e.target; const f = el.dataset.field; if (!f) return;
   const date = state.selDate; const d = draft(date);
   if (f === 'tmMin') d.tm.minutes = el.value;
@@ -5335,12 +5534,13 @@ main.addEventListener('input', e => {
     else { const i = Number(el.dataset.i); while (d.ex[key].reps.length <= i) d.ex[key].reps.push(''); d.ex[key].reps[i] = el.value; }
   }
   d.recovered = false; delete state.formError[date]; persistDrafts(); refreshLive(date);
-});
+}
 // a set logged for today starts the rest timer: on change (leaving the field), never on each keystroke
-main.addEventListener('change', e => {
+function onLogChange(e) {
   const el = e.target; if (!el.dataset || el.dataset.field !== 'rep' || el.value === '' || state.selDate !== todayIso() || !EX[el.dataset.ex]) return;
   restStart(restFor(el.dataset.ex), EX[el.dataset.ex].name);
-});
+}
+[main, ovRoot].forEach(r => { r.addEventListener('input', onLogInput); r.addEventListener('change', onLogChange); });
 // One-tap fills for an exercise. Both write only into fields that are still empty, in the draft and on screen, without a re-render.
 function fillSets(key, how) {
   const date = state.selDate, d = draft(date), ex = EX[key], sg = suggest(key, date), e = d.ex[key] = d.ex[key] || { w: '', reps: [] };
@@ -5359,23 +5559,25 @@ function onFormInput(e) { const el = e.target; if (!el.dataset || !el.dataset.fo
 document.addEventListener('input', onFormInput);
 document.addEventListener('change', onFormInput);
 // while a text field in the page has focus, re-renders wait (so the keyboard and caret stay put)
-main.addEventListener('focusin', e => { if (isTextField(e.target)) typing = true; });
-main.addEventListener('focusout', e => {
-  if (!isTextField(e.target) || isTextField(e.relatedTarget)) return;
-  typing = false;
-  // a waiting re-render runs after the tap that took focus away has finished, so it cannot swallow that tap
-  if (pendingRender) setTimeout(() => { if (pendingRender && !typing) render(); }, 300);
+[main, ovRoot].forEach(r => {
+  r.addEventListener('focusin', e => { if (isTextField(e.target)) typing = true; });
+  r.addEventListener('focusout', e => {
+    if (!isTextField(e.target) || isTextField(e.relatedTarget)) return;
+    typing = false;
+    // a waiting re-render runs after the tap that took focus away has finished, so it cannot swallow that tap
+    if (pendingRender) setTimeout(() => { if (pendingRender && !typing) render(); }, 300);
+  });
 });
 // one click handler for every data-a action, in the page and in overlays
 // Actions that save one thing per tap. A second tap while the first is still saving is dropped, so a slow
 // connection cannot log the same food or activity twice. Water is left out on purpose: tapping it twice means two glasses.
-const ONE_AT_A_TIME = ['act-log', 'act-del', 'rest', 'food-save', 'food-again', 'food-del', 'quick-save', 'custom-save', 'custom-del', 'hk-import', 'hk-off', 'body-save', 'weigh-save', 'name-save', 'gym-save', 'stakes-save', 'cd-save', 'cd-clear', 'meal-copy', 'meal-save', 'meal-add', 'meal-rename', 'meal-del', 'iou-toggle', 'undo', 'scan-digits', 'scan-link-pick', 'describe-go', 'describe-log', 'backup-all', 'backup-workouts', 'backup-food', 'backup-copy', 'wm-save', 'wm-stagelog', 'wm-water', 'wm-notgym', 'water-bottle', 'ci-rest', 'gym-hp', 'split-set', 'lift-goal', 'mode-set', 'motion-set', 'cilog-save', 'rem-save', 'nudge-yes', 'nudge-no', 'stall-reset', 'stall-swap', 'deload-take'];
+const ONE_AT_A_TIME = ['act-log', 'act-del', 'rest', 'food-save', 'food-again', 'food-del', 'quick-save', 'custom-save', 'custom-del', 'hk-import', 'hk-off', 'body-save', 'weigh-save', 'name-save', 'gym-save', 'stakes-save', 'cd-save', 'cd-clear', 'meal-copy', 'meal-save', 'meal-add', 'meal-rename', 'meal-del', 'iou-toggle', 'undo', 'scan-digits', 'scan-link-pick', 'describe-go', 'describe-log', 'backup-all', 'backup-workouts', 'backup-food', 'backup-copy', 'wm-save', 'wm-stagelog', 'wm-water', 'wm-notgym', 'water-bottle', 'ci-rest', 'gym-hp', 'split-set', 'lift-goal', 'mode-set', 'motion-set', 'cilog-save', 'add-rest', 'rem-save', 'nudge-yes', 'nudge-no', 'stall-reset', 'stall-swap', 'deload-take'];
 const busy = {};
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-a]'); if (!el || el.disabled) return;
   const a = el.dataset.a, fn = ACT[a]; if (!fn) return;
   if (el.tagName === 'A') e.preventDefault();
-  if (main.contains(el)) typing = false;
+  if (main.contains(el) || ovRoot.contains(el)) typing = false;
   if (!ONE_AT_A_TIME.includes(a)) { fn(el, e); return; }
   if (busy[a]) return;
   busy[a] = true;
@@ -5384,7 +5586,6 @@ document.addEventListener('click', e => {
   Promise.resolve(r).then(free, err => { free(); throw err; });
 });
 // overlay fields write straight into the overlay's state
-const ovRoot = $('#ov');
 function onOvInput(e) {
   const el = e.target, o = state.ov; if (!o || !el.dataset) return;
   if (o.type === 'describe' && el.dataset.di != null) { const it = (o.items || [])[Number(el.dataset.di)]; if (it) { it[el.dataset.dk] = el.value; refreshDescribe(); } return; } // one row of the estimate
@@ -5397,6 +5598,7 @@ function onOvInput(e) {
   else if (o.type === 'health') { if (typed) refreshHealthPreview(); }
   else if (o.type === 'fooditem') refreshFoodItem(); // patches the label and button text in place
   else if (o.type === 'cilog') refreshCilog(); // labels follow the typing
+  else if (o.type === 'more' && key === 'q') { if (typed) refreshMore(); }
   else if (o.type === 'act' && key === 'laps') { const l = $('#lapMiles'); if (l) l.textContent = lapLine(el.value); }
   else if (o.type === 'act' && key === 'min') { const b = $('#actLog'), min = Math.round(Number(el.value)); if (b) { b.disabled = !(min > 0); b.textContent = (o.id ? 'Update ' : 'Log ') + (min > 0 ? min + ' min' : ''); } }
 }
@@ -5413,7 +5615,7 @@ document.addEventListener('input', e => { // live preview while dragging in the 
 // exercise menus: close on outside tap or Escape; arrow keys move between items
 document.addEventListener('click', e => { if (state.menu && !e.target.closest('.menu') && !e.target.closest('.menubtn')) { const k = state.menu.key; state.menu = null; render('[data-menu="' + k + '"]'); } });
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && state.ov) { const def = OV[state.ov.type]; if (!(def.locked && def.locked(state.ov))) { closeOv(); e.preventDefault(); } return; }
+  if (e.key === 'Escape' && state.ov && !(state.menu && liftOpen())) { const def = OV[state.ov.type]; if (!(def.locked && def.locked(state.ov))) { closeOv(); e.preventDefault(); } return; } // in the lift sheet, Escape closes an open exercise menu first
   if (!state.menu) return;
   const items = Array.from(document.querySelectorAll('.menu [role="menuitem"]:not(:disabled)'));
   if (e.key === 'Escape') { const k = state.menu.key; state.menu = null; render('[data-menu="' + k + '"]'); e.preventDefault(); }
@@ -5432,33 +5634,42 @@ function menuAction(act, b) {
   if (act === 'collapse') { const d = draft(date); d.closed[key] = true; state.menu = null; persistDrafts(); render('[data-menu="' + key + '"]'); return; }
   if (act === 'expand') { const d = draft(date); delete d.closed[key]; state.menu = null; persistDrafts(); render('[data-menu="' + key + '"]'); return; }
 }
-function bind() {
-  const dp = $('#datePick'); if (dp) dp.addEventListener('change', e => { const v = e.target.value; if (validIso(v) && v <= todayIso()) { state.selDate = v; state.confirmRemove = null; state.menu = null; persistDrafts(); render(); } else if (v) toast('Pick today or an earlier day.'); });
-  document.querySelectorAll('[data-date]').forEach(b => b.addEventListener('click', () => { state.selDate = b.dataset.date; state.confirmRemove = null; state.menu = null; persistDrafts(); render(); }));
-  document.querySelectorAll('#kindSeg [data-kind]').forEach(b => b.addEventListener('click', () => { const d = draft(state.selDate); d.kindSel = b.dataset.kind; d.recovered = false; state.menu = null; persistDrafts(); render(); }));
-  document.querySelectorAll('[data-menu]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); const key = b.dataset.menu; if (state.menu && state.menu.key === key) { state.menu = null; render('[data-menu="' + key + '"]'); } else { state.menu = { key, view: 'main' }; render('.menu [role="menuitem"]'); } }));
-  document.querySelectorAll('.menu [data-act]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); menuAction(b.dataset.act, b); }));
-  document.querySelectorAll('[data-gswap]').forEach(b => b.addEventListener('click', () => { const sw = Object.assign({}, state.settings.swaps || {}); if (b.dataset.to === b.dataset.gswap) delete sw[b.dataset.gswap]; else sw[b.dataset.gswap] = b.dataset.to; saveSettings({ swaps: sw }); }));
-  document.querySelectorAll('[data-usew]').forEach(b => b.addEventListener('click', () => { const key = b.dataset.usew; const d = draft(state.selDate); d.ex[key] = d.ex[key] || { w: '', reps: [] }; d.ex[key].w = b.dataset.val; const inp = document.getElementById('w-' + key); if (inp) inp.value = b.dataset.val; d.recovered = false; persistDrafts(); refreshLive(state.selDate); const first = document.getElementById('r-' + key + '-0'); if (first && first.value === '') first.focus({ preventScroll: true }); }));
-  document.querySelectorAll('[data-same]').forEach(b => b.addEventListener('click', () => fillSets(b.dataset.same, 'same')));
-  document.querySelectorAll('[data-repeat]').forEach(b => b.addEventListener('click', () => fillSets(b.dataset.repeat, 'repeat')));
-  document.querySelectorAll('[data-collapse]').forEach(b => b.addEventListener('click', onCollapse));
-  document.querySelectorAll('[data-expand]').forEach(b => b.addEventListener('click', () => { const key = b.dataset.expand; const d = draft(state.selDate); delete d.closed[key]; persistDrafts(); render('[data-menu="' + key + '"]'); }));
-  document.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => { state.selDate = b.dataset.edit; state.confirmRemove = null; persistDrafts(); location.hash = 'train'; if (state.tab === 'train') render(); }));
-  document.querySelectorAll('[data-remove]').forEach(b => b.addEventListener('click', () => { const d = b.dataset.remove; if (state.confirmRemove === d) removeRecord(d); else { state.confirmRemove = d; render(); const det = document.querySelector('details[data-hdate="' + d + '"]'); if (det) det.open = true; } }));
+function pickDay(v) { // from the 7-day strip or the date picker, on Fuel's card or in the date sheet
+  const sheet = !!(state.ov && state.ov.type === 'day');
+  state.selDate = v; state.confirmRemove = null; state.menu = null; state.ci = null; persistDrafts();
+  if (sheet) closeOv();
+  render(sheet ? '#dateChip' : undefined);
+}
+function bind(root) {
+  const all = sel => root.querySelectorAll(sel), one = sel => root.querySelector(sel);
+  const dp = one('#datePick'); if (dp) dp.addEventListener('change', e => { const v = e.target.value; if (validIso(v) && v <= todayIso()) pickDay(v); else if (v) toast('Pick today or an earlier day.'); });
+  all('[data-date]').forEach(b => b.addEventListener('click', () => pickDay(b.dataset.date)));
+  all('#kindSeg [data-kind]').forEach(b => b.addEventListener('click', () => { const d = draft(state.selDate); d.kindSel = b.dataset.kind; d.recovered = false; state.menu = null; persistDrafts(); render(); }));
+  all('[data-menu]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); const key = b.dataset.menu; if (state.menu && state.menu.key === key) { state.menu = null; render('[data-menu="' + key + '"]'); } else { state.menu = { key, view: 'main' }; render('.menu [role="menuitem"]'); } }));
+  all('.menu [data-act]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); menuAction(b.dataset.act, b); }));
+  all('[data-gswap]').forEach(b => b.addEventListener('click', () => { const sw = Object.assign({}, state.settings.swaps || {}); if (b.dataset.to === b.dataset.gswap) delete sw[b.dataset.gswap]; else sw[b.dataset.gswap] = b.dataset.to; saveSettings({ swaps: sw }); }));
+  all('[data-usew]').forEach(b => b.addEventListener('click', () => { const key = b.dataset.usew; const d = draft(state.selDate); d.ex[key] = d.ex[key] || { w: '', reps: [] }; d.ex[key].w = b.dataset.val; const inp = document.getElementById('w-' + key); if (inp) inp.value = b.dataset.val; d.recovered = false; persistDrafts(); refreshLive(state.selDate); const first = document.getElementById('r-' + key + '-0'); if (first && first.value === '') first.focus({ preventScroll: true }); }));
+  all('[data-same]').forEach(b => b.addEventListener('click', () => fillSets(b.dataset.same, 'same')));
+  all('[data-repeat]').forEach(b => b.addEventListener('click', () => fillSets(b.dataset.repeat, 'repeat')));
+  all('[data-collapse]').forEach(b => b.addEventListener('click', onCollapse));
+  all('[data-expand]').forEach(b => b.addEventListener('click', () => { const key = b.dataset.expand; const d = draft(state.selDate); delete d.closed[key]; persistDrafts(); render('[data-menu="' + key + '"]'); }));
+  // History's Edit: the day's lift, treadmill or rest entry opens in the lift sheet
+  all('[data-edit]').forEach(b => b.addEventListener('click', () => { state.selDate = b.dataset.edit; state.confirmRemove = null; state.afterRoute = 'lift'; persistDrafts(); location.hash = 'train'; if (state.tab === 'train') route(); }));
+  all('[data-remove]').forEach(b => b.addEventListener('click', () => { const d = b.dataset.remove; if (state.confirmRemove === d) removeRecord(d); else { state.confirmRemove = d; render(); const det = document.querySelector('details[data-hdate="' + d + '"]'); if (det) det.open = true; } }));
+  if (root !== main && !liftOpen()) return; // what follows belongs to the page and to the lift sheet
   bindSaveBar();
-  const goal = $('#goalIn'); if (goal) goal.addEventListener('change', e => { const v = Math.max(3, Math.min(7, Number(e.target.value) || GOAL)); typing = false; saveSettings({ goal: v }).then(settle); });
-  const form = $('#logForm'); if (form) form.addEventListener('submit', e => { e.preventDefault(); save(); });
-  const ca = $('#countAs'); if (ca) ca.addEventListener('change', () => { const d = draft(state.selDate); d.countAs = ca.checked; persistDrafts(); refreshLive(state.selDate); });
-  const dd = $('#discardDraft'); if (dd) dd.addEventListener('click', () => { delete state.drafts[state.selDate]; delete state.formError[state.selDate]; persistDrafts(); render(); toast('Draft discarded'); });
-  const eh = $('#exHist'); if (eh) eh.addEventListener('change', e => { state.exHist = e.target.value; render(); });
-  const ib = $('#importBtn'); if (ib) ib.addEventListener('click', importLocal);
-  const idm = $('#importDismiss'); if (idm) idm.addEventListener('click', () => { state.localOnly = null; render(); });
-  const iok = $('#importOk'); if (iok) iok.addEventListener('click', () => { state.importNote = null; render(); });
+  const goal = one('#goalIn'); if (goal) goal.addEventListener('change', e => { const v = Math.max(3, Math.min(7, Number(e.target.value) || GOAL)); typing = false; saveSettings({ goal: v }).then(settle); });
+  const form = one('#logForm'); if (form) form.addEventListener('submit', e => { e.preventDefault(); save(); });
+  const ca = one('#countAs'); if (ca) ca.addEventListener('change', () => { const d = draft(state.selDate); d.countAs = ca.checked; persistDrafts(); refreshLive(state.selDate); });
+  const dd = one('#discardDraft'); if (dd) dd.addEventListener('click', () => { delete state.drafts[state.selDate]; delete state.formError[state.selDate]; persistDrafts(); render(); toast('Draft discarded'); });
+  const eh = one('#exHist'); if (eh) eh.addEventListener('change', e => { state.exHist = e.target.value; render(); });
+  const ib = one('#importBtn'); if (ib) ib.addEventListener('click', importLocal);
+  const idm = one('#importDismiss'); if (idm) idm.addEventListener('click', () => { state.localOnly = null; render(); });
+  const iok = one('#importOk'); if (iok) iok.addEventListener('click', () => { state.importNote = null; render(); });
 }
 function bindSaveBar() {
   const sb = $('#saveBtn'); if (sb) sb.addEventListener('click', save);
-  const del = $('#delBtn'); if (del) del.addEventListener('click', () => { if (state.confirmRemove === state.selDate) removeRecord(state.selDate); else { state.confirmRemove = state.selDate; refreshLive(state.selDate); } });
+  const del = $('#delBtn'); if (del) del.addEventListener('click', () => { const d = state.selDate; if (state.confirmRemove === d) { if (liftOpen()) closeOv(); removeRecord(d); } else { state.confirmRemove = d; refreshLive(d); } });
 }
 function save() {
   const date = state.selDate;
@@ -5479,6 +5690,8 @@ function save() {
     const msg = r.kind === 'cardio' && r.fromLift ? r.doc.treadmill.minutes + ' treadmill minutes saved. No lifting sets recorded; ' + DAYS[nextDayKey(date)].name + ' remains next.'
       : r.kind === 'strength' ? (note ? note.text : DAYS[r.doc.day].name + ' day saved · counts as lift day · next: ' + DAYS[nextAfter(r.doc.day)].name)
       : r.kind === 'rest' ? 'Rest day saved.' : 'Treadmill saved.';
+    markRow(date, 'prog');
+    if (liftOpen()) closeOv(); else render(); // a saved lift never stays open as a form: its sheet closes, and the timer with it
     if (up) milestone();
     celebrate(msg + (st && st.s === 'synced' ? ' Synced.' : st && st.s === 'local' ? ' Saved in this browser.' : ''), { ms: 3800, before });
     return true;
@@ -5492,14 +5705,16 @@ const TABS = ['train', 'program', 'history', 'fuel', 'compete', 'me'];
 function route() {
   const h = (location.hash || '#train').slice(1), tab = TABS.includes(h) ? h : 'train', changed = tab !== state.tab;
   state.tab = tab; state.confirmRemove = null; state.menu = null; typing = false;
-  const jump = state.scrollTo;
+  const jump = state.scrollTo, then = state.afterRoute; state.afterRoute = null;
+  if (changed && liftOpen()) closeOv(); // the lift sheet belongs to Train
   render();
   if (changed && !jump) window.scrollTo(0, 0);
+  if (then === 'lift' && tab === 'train' && P(me()).plan === 'program' && lifted(state.sessions[state.selDate])) openLift();
 }
 window.MorningLaps = { state, P, weekScore, coach, goalsFor, badgesFor, searchFoods, loadFoods, dayTotals, compWeeks, parseHealthPaste, foodCount: () => foodDb.list ? foodDb.list.length : 0,
   EX, DAYS, normalize, dayInfo, weekFacts, scoreFacts, weekGoals, liveGoals, fuelParts, plannedFor, planSlots, swapOptions, defaultSwapOption, alts, teamStats, stakesFor, phaseFor, restT,
   caps, normBarcode, backupDocs, workoutsCsv, foodCsv, canon,
-  ACTS, specFor, splitOf, rotation, nextDayKey, deloadWeeks, checkinSuggest, ciPreview, atHealthplex, lapMiles, wmState: () => wm, wmResumable, motionOf, milestone, modeOf, plannedFor, MOVE_OF, HOWTO, STRETCHES, demoSVG,
+  ACTS, specFor, splitOf, rotation, nextDayKey, deloadWeeks, checkinSuggest, ciPreview, atHealthplex, lapMiles, wmState: () => wm, wmResumable, motionOf, milestone, modeOf, plannedFor, liftOpen, openLift, todayRows, quickActs, addCardioOptions, MOVE_OF, HOWTO, STRETCHES, demoSVG,
   suggest, stallFor, deloadOn, deloadState, completedWeeks, easier, weekRecap, lastWeek, ious, goalNudge, painNotes, painFlag, actList, surpriseActivity, savedMeals, mealItems };
 (function boot() {
   const saved = lsGet('ml.me', null);

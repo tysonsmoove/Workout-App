@@ -48,8 +48,8 @@ function gymBannerHTML() {
   if (p.plan !== 'program' || !atHealthplex(me()) || !validIso(since) || t < since || t >= addDays(since, 7)) return '';
   return '<div class="banner accent" id="gymBanner">First week at the Healthplex: if a machine isn\'t there, use ··· → Not at my gym.</div>';
 }
-function hpMorningHTML(kind) {
-  const t = state.selDate, wkend = isWeekend(t), pick = state.ci && state.ci.date === t ? state.ci.choice : (state.sessions[t] && state.sessions[t].checkin) || null, row = (a, b) => '<span class="t num">' + a + '</span><span>' + b + '</span>';
+function hpMorningHTML(kind) { // on the Program tab: today's plan
+  const t = todayIso(), wkend = isWeekend(t), pick = state.ci && state.ci.date === t ? state.ci.choice : (state.sessions[t] && state.sessions[t].checkin) || null, row = (a, b) => '<span class="t num">' + a + '</span><span>' + b + '</span>';
   let rows, title = 'Morning plan · at IMS by 9';
   if (pick === 'tired') rows = row('6:00', 'Up. Water, small bite.') + row('6:20', 'At the Healthplex. Easy cardio, 20 to 30 min: track, treadmill, bike, elliptical or the lap pool.') + row('7:00', 'Optional sauna or steam, 10 min. Drink water.') + row('7:20', 'Shower. Out the door by 8:15, at IMS by 9.');
   else if (pick === 'sore') rows = row('6:00', 'Up. Water, small bite.') + row('6:20', 'At the Healthplex. 10 easy minutes on the track or in the therapy pool, then stretch.') + row('6:40', 'Sauna, steam or whirlpool, 10 min. Drink water.') + row('7:00', 'Shower. Out the door by 8:15, at IMS by 9.');
@@ -60,13 +60,8 @@ function hpMorningHTML(kind) {
     '<p class="tiny muted" style="margin-top:8px" id="morningHours">' + (wkend ? 'Weekend: the Healthplex opens at 7, so everything starts later. Open ' + HP.weekend + '.' : 'Weekdays the Healthplex opens at 5:15. Open ' + HP.weekday + '.') + ' Missed a morning? Nothing shifts: the next lift is still the next one.</p></details>';
 }
 
-/* --- recovery rooms: the chip after a workout, the water offer --- */
+/* --- recovery rooms: the sheet a live finish screen opens, the water offer --- */
 const heatDone = (pid, date) => { const r = state.data[pid].sessions[date]; return !!(r && Array.isArray(r.acts) && r.acts.some(a => a && HEAT_KEYS.includes(a.a))); };
-function heatChipHTML(date) {
-  const pid = me(), di = dayInfo(pid, date);
-  if (!atHealthplex(pid) || date !== todayIso() || !di.logged || di.rest || heatDone(pid, date)) return '';
-  return '<div class="row" id="heatChip"><button type="button" class="chipbtn" data-a="heat-open">🔥 Sauna, steam or whirlpool after?</button></div>';
-}
 OV.heat = {
   html: o => '<div class="ov" role="dialog" aria-modal="true" aria-label="Recovery rooms">' + ovHead('After your workout', 'Recovery: it logs, but does not count toward active minutes') +
     '<p class="banner" id="heatNote">' + HEAT_NOTE + '</p><div class="results">' + HEAT_KEYS.map(k => '<button type="button" class="fooditem" data-a="heat-pick" data-k="' + k + '"><span class="fn">' + ACTS[k].icon + ' ' + ACTS[k].name + '</span><span class="fk">' + ACTS[k].min + ' min</span><span class="fq">locker room · towels provided</span></button>').join('') + '</div>' +
@@ -185,24 +180,12 @@ function dayWhat(pid, date) { // one or two words for what a logged day is
   const r = state.data[pid].sessions[date]; if (!r) return '';
   const n = normalize(r); return n.kind === 'strength' ? (n.day ? DAYS[n.day].name : 'Lift') : n.kind === 'cardio' ? 'Treadmill' : n.kind === 'rest' ? 'Rest day' : n.acts.length ? actName(n.acts.find(a => a.mv !== false) || n.acts[0]) : 'logged';
 }
-// The check-in sits first on Train, under the Log it / Go live switch, for today only. Once a choice is made or
-// anything is logged today it is one line with "Change", so the log is what the screen is about.
+// The check-in sits inside the Today card while nothing is logged for today. Picking a choice only opens its preview.
 function checkinHTML() {
-  const pid = me(), date = state.selDate;
-  if (date !== todayIso() || !ciShown(pid)) return '';
-  const sw = modeSwitchHTML(pid), going = wmResumable(pid, date), rec = state.data[pid].sessions[date], d = state.draftsBy[pid][date], open = !!(state.ci && state.ci.date === date && state.ci.pid === pid);
-  const line = (text, btn) => sw + '<section class="card ci line" id="checkin"><div class="row between" style="flex-wrap:nowrap"><span id="ciDone">' + text + '</span>' + btn + '</div></section>';
-  if (going) return line('<b>Workout in progress</b> · ' + esc(going.title), '<button type="button" class="small on" id="wmResume" data-a="wm-resume">Resume workout</button>');
-  if (!open) {
-    const dFelt = d && CHECKIN_WORDS[d.checkin] ? d.checkin : null, felt = dFelt || (rec && CHECKIN_WORDS[rec.checkin] && rec.checkin) || null; // the newest choice: the draft's, then the saved day's
-    if (rec || felt) {
-      const dk = d ? kindFor(date, d) : null, liftPick = (dFelt === 'strong' || dFelt === 'short') && DAYS[dk], what = liftPick ? DAYS[dk].name : rec ? dayWhat(pid, date) : '';
-      return line('<b>' + (felt ? ciLabel(pid, felt) : 'Today is logged') + '</b>' + (what ? ' · ' + esc(what) : ''), '<button type="button" class="quiet" id="ciChange" data-a="ci-again">Change</button>');
-    }
-  }
+  const pid = me(), date = state.selDate, open = !!(state.ci && state.ci.date === date && state.ci.pid === pid);
   const list = ciList(pid), sg = checkinSuggest(pid, date), sel = open ? state.ci.choice : null, anim = sel && state.ciAnim === sel, mode = modeOf(pid);
   if (anim) state.ciAnim = null; // the expand plays once, for the tap that caused it
-  let h = sw + '<section class="card stack ci" id="checkin"' + (sel ? ' data-open="' + sel + '"' : '') + (anim ? ' data-anim="1"' : '') + '><div class="row between"><h3>How are you feeling?</h3><span class="tiny muted">' + nice(date) + '</span></div>';
+  let h = '<div class="stack ci" id="checkin"' + (sel ? ' data-open="' + sel + '"' : '') + (anim ? ' data-anim="1"' : '') + '><h3>How are you feeling?</h3>';
   list.forEach(c => {
     const on = sel === c[0], sug = sg.choice === c[0];
     h += '<button type="button" class="cic' + (on ? ' sel' + (anim ? ' lift' : '') : sel ? ' fade' : '') + (sug ? ' sug' : '') + '" data-a="ci-pick" data-v="' + c[0] + '" aria-expanded="' + on + '"><span class="ci-i" aria-hidden="true">' + c[1] + '</span><span class="ci-t"><b>' + c[2] + '</b>' +
@@ -218,7 +201,7 @@ function checkinHTML() {
       '<div class="row"><button type="button" class="quiet" data-a="ci-back">Back</button></div></div>';
   });
   if (atHealthplex(pid)) h += '<div class="row"><button type="button" class="quiet" id="ciExtra" data-a="hp-extra">Class or game (optional)</button></div>';
-  return h + '</section>';
+  return h + '</div>';
 }
 ACT['ci-pick'] = (el, e) => {
   const v = el.dataset.v, r = el.getBoundingClientRect();
@@ -228,7 +211,6 @@ ACT['ci-pick'] = (el, e) => {
 };
 ACT['ci-opt'] = el => { if (state.ci) { state.ci.opt = el.dataset.v; render('[data-a="ci-opt"][data-v="' + el.dataset.v + '"]'); } };
 ACT['ci-back'] = () => { const v = state.ci && state.ci.choice; state.ci = null; render(v ? '[data-a="ci-pick"][data-v="' + v + '"]' : null); };
-ACT['ci-again'] = () => { state.ci = { pid: me(), date: state.selDate, choice: null, opt: null }; render('#checkin .cic'); };
 ACT['ci-start'] = el => {
   const c = state.ci; if (!c) return;
   const pv = ciPreview(c.pid, c.date, c.choice, c.opt);
@@ -243,21 +225,19 @@ ACT['ci-rest'] = async () => {
 };
 
 /* --- "Log it": the same session, typed in instead of done live --- */
-// A lift goes to the lifting log: the day is selected, the check-in is kept on the draft, and the first weight field
-// has the cursor. Everything else gets one short sheet: the activity, minutes, and laps or lengths where they apply.
+// A lift opens the lift sheet: the day is selected, the check-in is kept on the draft, and the first weight field has
+// the cursor. Everything else gets one short sheet: the activity, minutes, and laps or lengths where they apply.
 ACT['ci-log'] = () => {
   const c = state.ci; if (!c) return;
   const pv = ciPreview(c.pid, c.date, c.choice, c.opt);
   if (pv.lift) {
     const d = draft(c.date); d.kindSel = pv.lift.kind; d.checkin = c.choice; d.recovered = false; persistDrafts();
     const first = plannedFor(c.date, pv.lift.kind, d).find(p => !EX[p.key].bw);
-    state.ci = null; state.scrollTo = 'logHead'; state.logJumps = (state.logJumps || 0) + 1;
-    render(first ? '#w-' + first.key : '#tmMin'); return;
+    state.ci = null; state.logJumps = (state.logJumps || 0) + 1;
+    render(); openLift(first ? '#w-' + first.key : '#tmMin'); return;
   }
   if (!pv.sheet) return;
-  const o = { type: 'cilog', date: c.date, felt: c.choice, title: pv.title, parts: pv.sheet.parts, heat: !!pv.sheet.heat, room: 'hpsauna', heatMin: '' };
-  pv.sheet.parts.forEach((p, i) => { o['k' + i] = p.k; o['min' + i] = String(p.min); o['laps' + i] = ''; });
-  openOv(o);
+  openCilog(c.date, c.choice, pv.title, pv.sheet.parts, pv.sheet.heat);
 };
 const partKind = k => ACTS[k] && ACTS[k].wm === 'laps' ? 'laps' : ACTS[k] && ACTS[k].wm === 'lengths' ? 'lengths' : 'timer';
 const partName = k => k === 'treadmill' ? 'Treadmill (Fitness+)' : ACTS[k] ? ACTS[k].name : 'Activity';
@@ -278,11 +258,12 @@ OV.cilog = {
       const k = o['k' + i], kind = partKind(k);
       h += '<div class="stack" data-part="' + i + '">' + (p.opts.length > 1 ? '<div class="chips wrapc" id="cilogOpts' + i + '">' + p.opts.map(x => '<button type="button" data-a="cilog-opt" data-i="' + i + '" data-v="' + x[0] + '" class="' + (k === x[0] ? 'on' : '') + '" aria-pressed="' + (k === x[0]) + '">' + x[1] + '</button>').join('') + '</div>' : '<div class="eyebrow">' + p.opts[0][1] + '</div>') +
         '<div class="formgrid">' + num('cilogMin' + i, 'min' + i, 'Minutes', 300) + (kind === 'laps' ? num('cilogLaps' + i, 'laps' + i, 'Laps (8 = 1 mile)', 400) : kind === 'lengths' ? num('cilogLaps' + i, 'laps' + i, 'Lengths (25 yards each)', 400) : '') + '</div>' +
-        (kind !== 'timer' ? '<p class="tiny muted num" id="cilogDist' + i + '">' + distLine(kind, o['laps' + i]) + '</p>' : '') + '</div>';
+        (kind !== 'timer' ? '<p class="tiny muted num" id="cilogDist' + i + '">' + distLine(kind, o['laps' + i]) + '</p>' : '') +
+        (ACTS[k] && !safeAct(me(), k) ? '<p class="banner" data-caution="' + k + '">' + esc(whyNot(me(), k)) + ' Keep it short and easy, or pick something else.</p>' : '') + '</div>';
     });
     if (o.heat) h += '<div class="stack" id="cilogHeat"><div class="eyebrow">Sauna, steam or whirlpool (optional)</div><div class="seg">' + HEAT_KEYS.map(k => '<button type="button" data-a="cilog-room" data-k="' + k + '" class="' + (o.room === k ? 'on' : '') + '" aria-pressed="' + (o.room === k) + '">' + ACTS[k].name + '</button>').join('') + '</div>' +
       '<div class="formgrid">' + num('cilogHeatMin', 'heatMin', 'Minutes, up to 20', 20) + '</div><p class="tiny muted">Logs as recovery: it shows in History but does not count toward active minutes. ' + HEAT_NOTE + '</p></div>';
-    return h + '<div class="row"><button type="button" class="primary" id="cilogSave" data-a="cilog-save">' + cilogLabel(o) + '</button><button type="button" class="small" data-a="ov-close">Back</button></div></div>';
+    return h + '<div class="row"><button type="button" class="primary" id="cilogSave" data-a="cilog-save">' + cilogLabel(o) + '</button><button type="button" class="small" data-a="cilog-back">Back</button></div></div>';
   }
 };
 ACT['cilog-opt'] = el => { const o = state.ov; o['k' + el.dataset.i] = el.dataset.v; renderOv(); };
@@ -315,10 +296,11 @@ ACT['cilog-save'] = async () => {
     state.ci = null; closeOv(); if (state.selDate !== date) state.selDate = date;
     const ok = await save(); if (!ok) render(); return;
   }
-  const before = scoreSnapshot(); let ok = true;
-  if (min && !o.actDone) { const a = ACTS[first] || ACTS.other; ok = await logActivity(date, { id: uid(), a: ACTS[first] ? first : 'other', name: names.join(' + '), min, feel: null, hurt: false, note, mv: a.mv !== false, at: now }, felt); if (ok) o.actDone = true; } // a retry after a failed second write does not log the first again
-  if (ok && heat) ok = await logActivity(date, { id: uid(), a: heat.k, name: ACTS[heat.k].name, min: heat.min, feel: null, hurt: false, note: '', mv: false, at: now }, felt);
+  const before = scoreSnapshot(), id = uid(), hid = uid(); let ok = true;
+  if (min && !o.actDone) { const a = ACTS[first] || ACTS.other; ok = await logActivity(date, { id, a: ACTS[first] ? first : 'other', name: names.join(' + '), min, feel: null, hurt: false, note, mv: a.mv !== false, at: now }, felt); if (ok) o.actDone = true; } // a retry after a failed second write does not log the first again
+  if (ok && heat) ok = await logActivity(date, { id: hid, a: heat.k, name: ACTS[heat.k].name, min: heat.min, feel: null, hurt: false, note: '', mv: false, at: now }, felt);
   if (!ok) return;
+  markRow(date, min ? id : hid);
   state.ci = null; closeOv(); render();
   const di = dayInfo(me(), date);
   celebrate((min ? min + ' min logged. ' : '') + (heat ? heat.min + ' min of ' + ACTS[heat.k].name.toLowerCase() + ' as recovery. ' : '') + (min ? (di.active ? 'That is an active day.' : 'Not an active day yet.') : ''), { before, force: di.active && min > 0 });

@@ -3,6 +3,7 @@
 // "Carry" below means a fresh browser context opened later in time with the same storage, as a phone would be.
 // Run: node tests/v12.test.js  (see tests/helpers.js for the local server it expects)
 const { chromium, check, T, newPage, val, txt, has, fill, go, score, finish } = require('./helpers');
+require('./helpers').legacyDefault = true; // written before version 18: the lift log, the 7-day strip and the activity menu open in their sheets on demand
 const seen = page => page.evaluate(() => window.__seen.slice());
 const kv = (page, path) => page.evaluate(p => (JSON.parse(localStorage.getItem('ml.kv') || '{}'))[p] || null, path);
 const ses = (page, d) => page.evaluate(x => (JSON.parse(localStorage.getItem('ml.sessions') || '{}'))[x] || null, d);
@@ -199,19 +200,19 @@ const SAT = T('2026-11-21T17:00:00Z'), SUN = T('2026-11-22T17:00:00Z'), MON = T(
     await open({ me: 'jacquie', time: SAT, init: seed() });
     const mins = () => ML(page, () => window.MorningLaps.dayInfo('jacquie', '2026-11-21').minutes);
     const acts = async () => ((await kv(page, 'profiles/jacquie/sessions/2026-11-21')) || { acts: [] }).acts;
-    await page.click('.sess [data-a="health"]'); await fill(page, '#hkText', 'date: 2026-11-21\nexercise: 30'); await page.click('#hkGo'); await page.waitForSelector('#ov', { state: 'hidden' });
+    await page.click('[data-a="health"]'); await fill(page, '#hkText', 'date: 2026-11-21\nexercise: 30'); await page.click('#hkGo'); await page.waitForSelector('#ov', { state: 'hidden' });
     check('B4 import 30 Watch minutes: the day shows 30', await mins() === 30 && (await acts()).length === 1 && (await acts())[0].id === 'hk-exercise', JSON.stringify(await acts()));
     const kinds0 = await ML(page, () => window.MorningLaps.dayInfo('jacquie', '2026-11-21').kinds.length);
     check('B4 the Watch entry is not a kind of activity (no variety, no Sampler credit)', kinds0 === 0);
     await page.click('.act[data-k="walkeasy"]'); await page.waitForSelector('#actLog'); await fill(page, '#actMin', 30); await page.click('#actLog'); await page.waitForSelector('#ov', { state: 'hidden' });
-    check('B4 then log the same 30-minute walk by hand: the day still shows 30', await mins() === 30 && (await acts()).length === 1 && (await acts())[0].a === 'walkeasy' && (await txt(page, '#statusLine')).includes('30 min logged'), (await mins()) + ' ' + JSON.stringify(await acts()));
-    await page.click('.done-list [data-a="act-edit"]'); await page.waitForSelector('#actLog'); await fill(page, '#actMin', 45); await page.click('#actLog'); await page.waitForSelector('#ov', { state: 'hidden' });
+    check('B4 then log the same 30-minute walk by hand: the day still shows 30', await mins() === 30 && (await acts()).length === 1 && (await acts())[0].a === 'walkeasy' && (await txt(page, '#dayLine')).includes('30 min logged'), (await mins()) + ' ' + JSON.stringify(await acts()));
+    await page.click('#todayRows [data-a="act-edit"]'); await page.waitForSelector('#actLog'); await fill(page, '#actMin', 45); await page.click('#actLog'); await page.waitForSelector('#ov', { state: 'hidden' });
     check('B4 change the walk to 45: the day shows 45 and the top-up is gone', await mins() === 45 && !(await acts()).some(a => a.id === 'hk-exercise'));
-    await page.click('.done-list [data-a="act-edit"]'); await page.waitForSelector('[data-a="act-del"]'); await page.click('[data-a="act-del"]'); await page.waitForSelector('#ov', { state: 'hidden' });
+    await page.click('#todayRows [data-a="act-edit"]'); await page.waitForSelector('[data-a="act-del"]'); await page.click('[data-a="act-del"]'); await page.waitForSelector('#ov', { state: 'hidden' });
     check('B4 delete the walk: back to 30 from the Watch', await mins() === 30 && (await acts()).length === 1 && (await acts())[0].id === 'hk-exercise' && (await acts())[0].min === 30, JSON.stringify(await acts()));
     await page.click('.act[data-k="walkeasy"]'); await page.waitForSelector('#actLog'); await fill(page, '#actMin', 20); await page.click('#actLog'); await page.waitForSelector('#ov', { state: 'hidden' });
     check('B4 a shorter hand-logged walk leaves only the difference as top-up', await mins() === 30 && (await acts()).find(a => a.id === 'hk-exercise').min === 10);
-    await page.click('.done-list [data-a="hk-info"]'); await page.waitForSelector('[data-a="hk-off"]');
+    await page.click('#todayRows [data-a="hk-info"]'); await page.waitForSelector('[data-a="hk-off"]');
     check('B4 the top-up explains itself', (await txt(page, '#ov')).includes('Your Watch counted 30 exercise minutes') && (await txt(page, '#ov')).includes('20 min'));
     await page.click('[data-a="hk-off"]'); await page.waitForSelector('#ov', { state: 'hidden' });
     check('B4 and can be turned off for the day', await mins() === 20 && !(await acts()).some(a => a.id === 'hk-exercise'));
@@ -220,9 +221,9 @@ const SAT = T('2026-11-21T17:00:00Z'), SUN = T('2026-11-22T17:00:00Z'), MON = T(
   // ---------- Bug 5: the lifting-program profile can log anything else too ----------
   await section('B5', async () => {
     await open({ me: 'tyson', time: SAT, init: seed() });
-    const addWalk = async min => { await page.click('[data-a="act-pick"]'); await page.waitForSelector('.ov .act[data-k="walkpair"]'); await page.click('.ov .act[data-k="walkpair"]'); await page.waitForSelector('#actLog'); await fill(page, '#actMin', min); await page.click('#actLog'); await page.waitForSelector('#ov', { state: 'hidden' }); };
+    const addWalk = async min => { await page.click('#addMore'); await page.click('#moreAll'); await page.waitForSelector('.ov .act[data-k="walkpair"]'); await page.click('.ov .act[data-k="walkpair"]'); await page.waitForSelector('#actLog'); await fill(page, '#actMin', min); await page.click('#actLog'); await page.waitForSelector('#ov', { state: 'hidden' }); };
     const saveLift = async () => { await page.click('#kindSeg [data-kind="push"]'); await page.waitForSelector('#w-shoulderpress'); await fill(page, '#tmMin', 30); await fill(page, '#w-shoulderpress', 50); await fill(page, '#r-shoulderpress-0', 10); await fill(page, '#w-pushdown', 40); await fill(page, '#r-pushdown-0', 12); await page.click('h1'); await page.click('#saveBtn'); };
-    check('B5 the lifting log offers "+ Add a walk or other activity"', (await txt(page, '[data-a="act-pick"]')) === '+ Add a walk or other activity');
+    check('B5 Train offers "Add to today", and its sheet has "Something else"', (await txt(page, '#addBtn')) === 'Add to today' && (await txt(page, '#addMore')).includes('Something else')); await page.click('[data-a="ov-close"]');
     // today: the walk first, then the lift. Saving the lift used to erase the walk.
     await addWalk(20);
     check('B5 a 20-minute walk alone counts as one of his activity days', (await ses(page, '2026-11-21')).kind === 'activity' && await txt(page, '#actCount') === '1/5' && (await score(page, 'tyson')).active === 1, await txt(page, '#actCount'));
@@ -231,7 +232,7 @@ const SAT = T('2026-11-21T17:00:00Z'), SUN = T('2026-11-22T17:00:00Z'), MON = T(
     check('B5 Push day and "Walk together" on the same date: both are saved', both.kind === 'strength' && both.day === 'push' && Object.keys(both.ex).length === 2 && both.acts.length === 1 && both.acts[0].name === 'Walk together' && both.acts[0].min === 20, JSON.stringify(both.acts));
     check('B5 the day\'s minutes include the walk', di.minutes === 30 + 2 * 3 + 20 && di.lift === true && di.kinds.includes('walkpair') && di.kinds.includes('push'), JSON.stringify(di));
     check('B5 the strip matches the score', await txt(page, '#actCount') === (await score(page, 'tyson')).active + '/5' && await txt(page, '#liftCount') === (await score(page, 'tyson')).lifts + '/3');
-    check('B5 the lifting log lists the walk under the lift', (await txt(page, '#extras')).includes('Walk together') && !(await txt(page, '#main')).includes('replaces them'));
+    check('B5 the lifting log lists the walk under the lift', (await txt(page, '#todayRows')).includes('Walk together') && !(await txt(page, '#main')).includes('replaces them'));
     // yesterday: the lift first, then the walk
     await pickDate(page, '2026-11-20'); await saveLift(); await page.waitForFunction(() => { const r = JSON.parse(localStorage.getItem('ml.sessions'))['2026-11-20']; return r && r.kind === 'strength'; });
     await addWalk(25);
@@ -250,10 +251,10 @@ const SAT = T('2026-11-21T17:00:00Z'), SUN = T('2026-11-22T17:00:00Z'), MON = T(
     check('B5 removing the lift keeps the walk', left.kind === 'activity' && left.acts.length === 1 && left.acts[0].name === 'Walk together' && !left.ex);
     // Watch minutes for the lifting-program profile
     await go(page, 'train'); await pickDate(page, '2026-11-17');
-    await page.click('.sess [data-a="health"]'); await fill(page, '#hkText', 'date: 2026-11-17\nexercise: 35'); await page.click('#hkGo'); await page.waitForSelector('#ov', { state: 'hidden' });
+    await page.click('[data-a="health"]'); await fill(page, '#hkText', 'date: 2026-11-17\nexercise: 35'); await page.click('#hkGo'); await page.waitForSelector('#ov', { state: 'hidden' });
     check('B5 on a day with no lift or treadmill, Watch minutes count as a top-up', (await ses(page, '2026-11-17')).acts[0].id === 'hk-exercise' && (await ML(page, () => window.MorningLaps.dayInfo('tyson', '2026-11-17'))).minutes === 35);
     await pickDate(page, '2026-11-20');
-    await page.click('.sess [data-a="health"]'); await fill(page, '#hkText', 'date: 2026-11-20\nexercise: 60');
+    await page.click('[data-a="health"]'); await fill(page, '#hkText', 'date: 2026-11-20\nexercise: 60');
     check('B5 on a lift day they are shown only', (await txt(page, '#hkPreview')).includes('shown with it, not added on top') && !(await has(page, '[data-a="hk-toggle"][data-k="move"]')));
     await page.click('#hkGo'); await page.waitForSelector('#ov', { state: 'hidden' });
     check('B5 and the lift day\'s minutes do not change', !(await ses(page, '2026-11-20')).acts.some(a => a.id === 'hk-exercise') && (await txt(page, '#hkLine')).includes('60 exercise min'));
@@ -281,8 +282,9 @@ const SAT = T('2026-11-21T17:00:00Z'), SUN = T('2026-11-22T17:00:00Z'), MON = T(
     check('B7 Tyson\'s default is still Avon Anytime Fitness', (await txt(page, '#todayLine')).includes('Avon Anytime Fitness'));
     await go(page, 'me'); await fill(page, '[data-form="gym"][data-k="place"]', 'Indianapolis Healthplex'); await page.click('[data-a="gym-save"]'); await toastWith(page, 'Gym set');
     check('B7 the header updates', (await txt(page, '#todayLine')).includes('Indianapolis Healthplex') && (await kv(page, 'profiles/tyson')).place === 'Indianapolis Healthplex');
+    await go(page, 'program');
+    check('B7 the morning plan updates', (await txt(page, 'details[data-dk="morning"]')).includes('At the Healthplex')); // version 16: the Healthplex has its own morning plan. Version 18: it lives on the Program tab
     await go(page, 'train');
-    check('B7 the morning plan updates', (await txt(page, 'details[data-dk="morning"]')).includes('At the Healthplex')); // version 16: the Healthplex has its own morning plan
     const where = [];
     for (const who of ['tyson', 'jacquie']) { if (who === 'jacquie') await switchTo(page, 'jacquie');
       for (const tab of ['train', 'program', 'history', 'fuel', 'compete', 'me']) { await go(page, tab); if (/Anytime Fitness|Avon/.test(await page.evaluate(() => document.body.innerText + ' ' + document.getElementById('main').textContent))) where.push(who + ':' + tab); } }

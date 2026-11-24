@@ -1,6 +1,7 @@
 // Profiles, looks, pick-your-own logging, nutrition, competition, badges, storage paths, layouts.
 // Run: node tests/app.test.js  (see tests/helpers.js for the local server it expects)
-const { chromium, check, T, newPage, val, txt, has, fill, toastText, go, cssVar, score, overflow, fakeDb, finish } = require('./helpers');
+const { chromium, check, T, newPage, val, txt, has, fill, toastText, go, cssVar, score, overflow, fakeDb, finish, savedWait, liftSheet, pickDay } = require('./helpers');
+require('./helpers').legacyDefault = true; // written before version 18: the lift log, the 7-day strip and the activity menu open in their sheets on demand
 const SHOTS = process.env.ML_SHOTS ? process.env.ML_SHOTS + '/' : null;
 const shot = (page, name, full) => SHOTS ? page.screenshot({ path: SHOTS + name, fullPage: !!full }) : Promise.resolve();
 const seen = page => page.evaluate(() => window.__seen.slice());
@@ -67,7 +68,7 @@ const logAct = async (page, k, opts = {}) => {
   await shot(page, 'act-sheet.png');
   await page.click('#actLog'); const t1 = await toastWith(page, 'easy walk logged');
   check('F toast names the activity and the points', t1.includes('15 min of easy walk logged') && t1.includes('+22 pts'), t1);
-  check('F counts as an active day', (await txt(page, '#statusLine')).includes('counts as an active day') && await txt(page, '#actCount') === '1/3' && await txt(page, '#minCount') === '15');
+  check('F counts as an active day', (await txt(page, '#dayLine')).includes('counts as an active day') && await txt(page, '#actCount') === '1/3' && await txt(page, '#minCount') === '15');
   check('F score is a third of Move plus personal best', (await score(page, 'jacquie')).total === 22);
   check('F first badge celebrated', (await seen(page)).includes('Green Flag'), JSON.stringify(await seen(page)));
   const rec1 = await kv(page, 'profiles/jacquie/sessions/2026-11-03');
@@ -75,14 +76,14 @@ const logAct = async (page, k, opts = {}) => {
   await page.click('[data-a="act-edit"]'); await page.waitForSelector('#actLog');
   await page.click('[data-a="act-min"][data-d="5"]'); check('F stepper adds five', await val(page, '#actMin') === '20');
   await page.click('[data-a="act-feel"][data-v="good"]'); await page.click('#actLog'); await page.waitForSelector('#ov', { state: 'hidden' });
-  check('F edit replaces the entry, no duplicate', (await kv(page, 'profiles/jacquie/sessions/2026-11-03')).acts.length === 1 && (await txt(page, '.done-list')).includes('20 min · Just right'));
+  check('F edit replaces the entry, no duplicate', (await kv(page, 'profiles/jacquie/sessions/2026-11-03')).acts.length === 1 && (await txt(page, '#todayRows')).includes('20 min · Just right'));
   await pickDate(page, '2026-11-02'); await logAct(page, 'stretchwake');
-  check('F five minutes is logged but not yet a day', (await txt(page, '#statusLine')).includes('5 more min of movement to count') && await txt(page, '#actCount') === '1/3');
+  check('F five minutes is logged but not yet a day', (await txt(page, '#dayLine')).includes('5 more min of movement to count') && await txt(page, '#actCount') === '1/3');
   await logAct(page, 'necksh');
-  check('F two short sessions add up to a day', (await txt(page, '#statusLine')).includes('counts as an active day') && await txt(page, '#actCount') === '2/3');
+  check('F two short sessions add up to a day', (await txt(page, '#dayLine')).includes('counts as an active day') && await txt(page, '#actCount') === '2/3');
   check('F three kinds earns variety', (await score(page, 'jacquie')).total === 43, JSON.stringify(await score(page, 'jacquie')));
   await pickDate(page, '2026-11-03'); await logAct(page, 'breathe');
-  check('F recovery logs without adding active minutes', await txt(page, '#minCount') === '30' && (await txt(page, '.done-list')).includes('recovery'));
+  check('F recovery logs without adding active minutes', await txt(page, '#minCount') === '30' && (await txt(page, '#todayRows')).includes('recovery'));
   await page.click('[data-a="filter-quick"]');
   check('F quick filter hides long activities', !(await has(page, '.act[data-k="walkpark"]')) && await has(page, '.act[data-k="walkdinner"]'));
   await page.click('[data-a="filter-quick"]');
@@ -99,7 +100,7 @@ const logAct = async (page, k, opts = {}) => {
   check('F protected area is flagged on activities that load it', (await txt(page, '.act[data-k="walkbrisk"] .aw')).includes('knees') && !(await has(page, '.act[data-k="walkeasy"] .aw')));
   const order = await page.$$eval('.act', els => els.map(e => e.dataset.k));
   check('F flagged activities sort below safe ones', order.indexOf('walkbrisk') > order.indexOf('recbike'), order.join(','));
-  await pickDate(page, '2026-11-01'); await page.click('[data-a="rest"]'); await page.waitForFunction(() => document.getElementById('statusLine').textContent.includes('Rest day logged'));
+  await pickDate(page, '2026-11-01'); await page.click('#addRest'); await page.waitForFunction(() => document.getElementById('dayLine').textContent.includes('Rest day logged'));
   check('F rest day logs, earns its badge, adds no active day', (await seen(page)).includes('Smart Rest') && await txt(page, '#actCount') === '2/3');
   await go(page, 'history'); await page.click('details.hi[data-hdate="2026-11-03"] summary');
   const h3 = await txt(page, 'details.hi[data-hdate="2026-11-03"]');
@@ -281,7 +282,7 @@ const logAct = async (page, k, opts = {}) => {
   await switchTo(page, 'tyson'); await go(page, 'train');
   await fill(page, '#tmMin', 20); await page.click('#saveBtn'); await page.waitForFunction(() => !!window.__store['sessions/2026-11-03']);
   check('J Tyson\'s log stays at its original path', await page.evaluate(() => window.__store['sessions/2026-11-03'].kind === 'cardio' && !window.__store['profiles/tyson/sessions/2026-11-03']));
-  await page.waitForFunction(() => document.getElementById('statusLine').textContent.includes('Saved · synced'));
+  await savedWait(page, 'synced');
   await go(page, 'fuel'); await page.evaluate(() => { window.__failSet = true; });
   await page.click('[data-a="water"][data-oz="12"]'); const tfail = await toastWith(page, 'Could not save');
   check('J a refused save says so and puts the old value back', tfail.includes('Could not save') && await txt(page, '#waterNow') === '0', tfail);
@@ -320,7 +321,7 @@ const logAct = async (page, k, opts = {}) => {
   const p4 = await parse('hello world\nweight:\nsteps: 100\nweight: 5');
   check('M parser skips blanks, noise and impossible values', p4.vals.steps === 100 && p4.vals.weight === undefined && p4.unknown.length === 2, JSON.stringify(p4));
   await logAct(page, 'walkeasy');
-  await page.click('.sess [data-a="health"]'); await page.waitForSelector('#hkText');
+  await page.click('[data-a="health"]'); await page.waitForSelector('#hkText');
   check('M import sheet names whose log it fills, and waits for a paste', (await txt(page, '.ov-head')).includes('Into Jacquie') && await page.$eval('#hkGo', b => b.disabled));
   await fill(page, '#hkText', PASTE);
   const prev = await txt(page, '#hkPreview');
@@ -333,27 +334,27 @@ const logAct = async (page, k, opts = {}) => {
   check('M movement lands as one Watch entry beside the manual one', hrec.acts.length === 2 && hrec.acts.find(a => a.id === 'hk-exercise').min === 27 && await txt(page, '#minCount') === '42');
   check('M water, weigh-in and totals are stored', (await kv(page, 'profiles/jacquie/food/2026-11-03')).water === 64 && (await kv(page, 'profiles/jacquie')).weighIns['2026-11-03'] === 148.5 && (await kv(page, 'profiles/jacquie/health/2026-11-03')).steps === 8421);
   check('M the day shows the Health totals', (await txt(page, '#hkLine')).includes('8,421 steps') && (await txt(page, '#hkLine')).includes('42 exercise min'));
-  await page.click('.sess [data-a="health"]'); await fill(page, '#hkText', PASTE);
+  await page.click('[data-a="health"]'); await fill(page, '#hkText', PASTE);
   check('M pasting the same day again changes nothing', (await txt(page, '#hkPreview')).includes('Already imported') && (await txt(page, '#hkPreview')).includes('Already logged'));
   await page.click('#hkGo'); await page.waitForSelector('#ov', { state: 'hidden' });
   check('M no duplicate after a second import', (await kv(page, 'profiles/jacquie/sessions/2026-11-03')).acts.length === 2 && await txt(page, '#minCount') === '42');
   await logAct(page, 'walkpark');
   check('M logging more by hand shrinks the Watch top-up in the same save', !(await kv(page, 'profiles/jacquie/sessions/2026-11-03')).acts.some(a => a.id === 'hk-exercise') && await txt(page, '#minCount') === '45');
-  await page.click('.sess [data-a="health"]'); await fill(page, '#hkText', PASTE.replace('water: 64 fl oz', 'water: 80 fl oz'));
+  await page.click('[data-a="health"]'); await fill(page, '#hkText', PASTE.replace('water: 64 fl oz', 'water: 80 fl oz'));
   check('M once hand-logged minutes cover the Watch total, the import adds nothing', (await txt(page, '#hkPreview')).includes('Already covered by the 45 min you logged by hand'));
   await page.click('[data-a="hk-toggle"][data-k="water"]');
   check('M a row can be switched off', await page.$eval('[data-a="hk-toggle"][data-k="water"]', b => b.getAttribute('aria-pressed') === 'false') && await val(page, '#hkText') !== '');
   await page.click('#hkGo'); await page.waitForSelector('#ov', { state: 'hidden' });
   const hrec2 = await kv(page, 'profiles/jacquie/sessions/2026-11-03');
   check('M imported minutes are removed, not double counted; skipped water is untouched', !hrec2.acts.some(a => a.id === 'hk-exercise') && await txt(page, '#minCount') === '45' && (await kv(page, 'profiles/jacquie/food/2026-11-03')).water === 64);
-  await page.click('.sess [data-a="health"]'); await fill(page, '#hkText', 'date: 2026-11-05\nsteps: 10');
+  await page.click('[data-a="health"]'); await fill(page, '#hkText', 'date: 2026-11-05\nsteps: 10');
   check('M a future date is refused', (await txt(page, '#hkPreview')).includes('has not happened yet') && await page.$eval('#hkGo', b => b.disabled));
   await fill(page, '#hkText', 'just some words');
   check('M unrecognizable text is refused with a reason', (await txt(page, '#hkPreview')).includes('Nothing here looks like Health numbers') && await page.$eval('#hkGo', b => b.disabled));
   await fill(page, '#hkText', 'date: 2026-11-02\nexercise: 12\nsteps: 3000'); await page.click('#hkGo'); await page.waitForSelector('#ov', { state: 'hidden' });
-  check('M a paste for another day goes to that day and shows it', (await txt(page, '.sess h2')).startsWith('Yesterday') && (await kv(page, 'profiles/jacquie/sessions/2026-11-02')).acts[0].min === 12 && await txt(page, '#actCount') === '2/3');
+  check('M a paste for another day goes to that day and shows it', (await txt(page, '#todayTitle')).startsWith('Mon Nov 2') && (await kv(page, 'profiles/jacquie/sessions/2026-11-02')).acts[0].min === 12 && await txt(page, '#actCount') === '2/3');
   await switchTo(page, 'tyson'); await go(page, 'train'); await pickDate(page, '2026-11-03');
-  await page.click('.sess [data-a="health"]'); await fill(page, '#hkText', 'date: 2026-11-03\nexercise: 50\nsteps: 9000\nweight: 199');
+  await page.click('[data-a="health"]'); await fill(page, '#hkText', 'date: 2026-11-03\nexercise: 50\nsteps: 9000\nweight: 199');
   check('M on the lifting program a day with no lift takes Watch minutes as a top-up', (await txt(page, '#hkPreview')).includes('Adds 50 min of movement to the day') && await has(page, '[data-a="hk-toggle"][data-k="move"]'));
   await page.click('#hkGo'); await page.waitForSelector('#ov', { state: 'hidden' });
   check('M Tyson gets totals, a weigh-in and the top-up as an activity day', (await txt(page, '#hkLine')).includes('9,000 steps') && (await kv(page, 'profiles/tyson')).weighIns['2026-11-03'] === 199 && await page.evaluate(() => { const r = JSON.parse(localStorage.getItem('ml.sessions'))['2026-11-03']; return r.kind === 'activity' && r.acts.length === 1 && r.acts[0].id === 'hk-exercise' && r.acts[0].min === 50; }) && await txt(page, '#actCount') === '1/5');
@@ -362,10 +363,10 @@ const logAct = async (page, k, opts = {}) => {
   check('M saving a lift that day shows the Watch minutes instead of adding them', await page.evaluate(() => { const r = JSON.parse(localStorage.getItem('ml.sessions'))['2026-11-03']; return !r.acts && r.treadmill.minutes === 20; }) && (await txt(page, '#hkLine')).includes('50 exercise min'));
   await go(page, 'me');
   check('M shortcut steps are in the app', (await txt(page, '#healthCard')).includes('Find Health Samples') && (await txt(page, '#healthCard')).includes('yyyy-MM-dd'));
-  await go(page, 'fuel'); check('M Fuel tab has the import button too', await has(page, '.sess [data-a="health"]'));
+  await go(page, 'fuel'); check('M Fuel tab has the import button too', await has(page, '[data-a="health"]'));
   await ctx.close();
   ({ ctx, page } = await newPage(browser, { me: 'jacquie', width: 375, height: 667 }));
-  await page.click('.sess [data-a="health"]'); await fill(page, '#hkText', PASTE);
+  await page.click('[data-a="health"]'); await fill(page, '#hkText', PASTE);
   check('M import sheet fits a small phone', await page.evaluate(() => { const r = document.querySelector('.ov').getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth + 1 && r.bottom <= innerHeight + 1 && document.documentElement.scrollWidth <= document.documentElement.clientWidth; }));
   await ctx.close();
 

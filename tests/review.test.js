@@ -3,6 +3,7 @@
 // open sections surviving a redraw, forms surviving a refused save, a dead connection, and odd stored values.
 // Run: node tests/review.test.js  (see tests/helpers.js for the local server it expects)
 const { chromium, check, T, newPage, val, txt, has, fill, go, score, fakeDb, finish } = require('./helpers');
+require('./helpers').legacyDefault = true; // written before version 18: the lift log, the 7-day strip and the activity menu open in their sheets on demand
 const seen = page => page.evaluate(() => window.__seen.slice());
 const kv = (page, path) => page.evaluate(p => (JSON.parse(localStorage.getItem('ml.kv') || '{}'))[p] || null, path);
 const ML = (page, fn, arg) => page.evaluate(fn, arg);

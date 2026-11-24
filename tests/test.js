@@ -1,7 +1,8 @@
 // Lifting-program flows: drafts, classification, blank sets, progression, history, dates, layouts, sync.
 // Run: node tests/test.js  (see tests/helpers.js for the local server it expects)
 const path = require('path');
-const { chromium, check, T, newPage, val, txt, has, fill, toastText, fakeDb, finish } = require('./helpers');
+const { chromium, check, T, newPage, val, txt, has, fill, toastText, fakeDb, finish, savedWait, liftSheet, pickDay } = require('./helpers');
+require('./helpers').legacyDefault = true; // written before version 18: the lift log, the 7-day strip and the activity menu open in their sheets on demand
 const SHOTS = process.env.ML_SHOTS ? process.env.ML_SHOTS + '/' : null;
 const shot = (page, name) => SHOTS ? page.screenshot({ path: SHOTS + name }) : Promise.resolve();
 async function menu(page, key, act) { await page.click('[data-menu="' + key + '"]'); await page.waitForSelector('.menu[data-menufor="' + key + '"]'); await page.click('.menu [data-act="' + act + '"]'); }
@@ -13,7 +14,7 @@ async function details(page, key) { await menu(page, key, 'details'); await page
   // ---------- Scenario A: drafts, classification, blanks, progression ----------
   let { ctx, page } = await newPage(browser);
   check('today line Nov 3', (await txt(page, '#todayLine')).startsWith('Tue Nov 3'), await txt(page, '#todayLine'));
-  check('date header Today', (await txt(page, '.sess h2')).startsWith('Today'));
+  check('date header Today', (await txt(page, '#todayTitle')) === 'Today' && (await txt(page, '#liftDate')).startsWith('Today'));
   check('save button labelled Today and disabled when empty', (await txt(page, '#saveBtn')) === 'Save Today' && await page.$eval('#saveBtn', b => b.disabled));
   check('no save note when empty', !(await has(page, '#savenote')));
   check('default kind Push', await page.$eval('#kindSeg button.on', b => b.dataset.kind) === 'push');
@@ -75,8 +76,8 @@ async function details(page, key) { await menu(page, key, 'details'); await page
   await page.click('a[href="#history"]'); await page.waitForSelector('text=History');
   await page.click('#tabs a[data-tab="train"]'); await page.waitForSelector('#w-chestpress');
   check('T4 draft survives tab switch', await val(page, '#w-chestpress') === '75' && await val(page, '#tmMin') === '18');
-  await page.click('.datebar [data-date="2026-11-02"]'); await page.waitForSelector('.sess h2');
-  check('T4 yesterday header', (await txt(page, '.sess h2')).startsWith('Yesterday'));
+  await page.click('.datebar [data-date="2026-11-02"]'); await page.waitForSelector('#todayTitle');
+  check('T4 yesterday header', (await txt(page, '#todayTitle')).startsWith('Mon Nov 2') && (await txt(page, '#liftDate')).startsWith('Yesterday'));
   check('T4 yesterday form blank', await val(page, '#tmMin') === '' && await val(page, '#w-chestpress') === '');
   check('T4 yesterday save label', (await txt(page, '#saveBtn')) === 'Save Yesterday');
   await page.click('.datebar [data-date="2026-11-03"]');
@@ -108,7 +109,7 @@ async function details(page, key) { await menu(page, key, 'details'); await page
   await page.click('#saveBtn');
   const t6 = await toastText(page);
   check('T6 toast explains outcome', t6.includes('20 treadmill minutes saved. No lifting sets recorded; Push remains next.'), t6);
-  await page.waitForFunction(() => document.querySelector('#statusLine') && document.querySelector('#statusLine').textContent.includes('Saved'));
+  await savedWait(page);
   check('T6 lifts 0/3', await txt(page, '#liftCount') === '0/3');
   check('T6 activity 1/5', await txt(page, '#actCount') === '1/5');
   check('T6 saved entry shows as Treadmill', await page.$eval('#kindSeg button.on', b => b.dataset.kind) === 'cardio');
@@ -131,7 +132,7 @@ async function details(page, key) { await menu(page, key, 'details'); await page
   check('T7 countAs auto-checked at 2 lifts', await page.$eval('#countAs', c => c.checked));
   check('T7 note says counts, partial', (await txt(page, '#savenote')).includes('Push · 2 of 3 exercises · counts as lift day'));
   await page.click('#saveBtn'); await toastText(page);
-  await page.waitForFunction(() => document.querySelector('#statusLine').textContent.includes('Saved'));
+  await savedWait(page);
   const rec = await page.evaluate(() => JSON.parse(localStorage.getItem('ml.sessions'))['2026-11-02']);
   check('T7 blanks saved as null', JSON.stringify(rec.ex.chestpress.reps) === '[12,null,null]', JSON.stringify(rec.ex.chestpress.reps));
   check('T7 zero kept as zero', JSON.stringify(rec.ex.pushdown.reps) === '[15,0,null]', JSON.stringify(rec.ex.pushdown.reps));
@@ -173,7 +174,7 @@ async function details(page, key) { await menu(page, key, 'details'); await page
   check('T8 expand restores inputs', await val(page, '#r-chestpress-2') === '12');
   await page.click('#saveBtn'); const t8 = await toastText(page);
   check('T8 toast says counts and next', t8.includes('Push day saved · counts as lift day · next: Pull'), t8);
-  await page.waitForFunction(() => document.querySelector('#statusLine').textContent.includes('Saved'));
+  await savedWait(page);
   check('T8 lifts 2/3', await txt(page, '#liftCount') === '2/3');
   check('T8 activity 2/5', await txt(page, '#actCount') === '2/5');
   await page.click('a[href="#program"]'); await page.waitForSelector('#nextLift');
@@ -184,12 +185,12 @@ async function details(page, key) { await menu(page, key, 'details'); await page
 
   // Test 9: save again, no extra credit
   await page.click('#tabs a[data-tab="train"]'); await page.waitForSelector('#saveBtn');
-  await page.click('#saveBtn'); await toastText(page); await page.waitForFunction(() => document.querySelector('#statusLine').textContent.includes('Saved'));
+  await page.click('#saveBtn'); await toastText(page); await savedWait(page);
   check('T9 lifts still 2/3', await txt(page, '#liftCount') === '2/3');
   check('T9 still 2 records', await page.evaluate(() => Object.keys(JSON.parse(localStorage.getItem('ml.sessions'))).length) === 2);
 
   // Progression next day + chronology of backdated edit (Test 10 part)
-  await page.clock.setSystemTime(T('2026-11-04T12:00:00Z')); await page.reload(); await page.waitForSelector('.sess h2');
+  await page.clock.setSystemTime(T('2026-11-04T12:00:00Z')); await page.reload(); await page.waitForSelector('#todayTitle');
   check('P2 today Nov 4', (await txt(page, '#todayLine')).startsWith('Wed Nov 4'));
   check('P2 Pull next', await page.$eval('#kindSeg button.on', b => b.dataset.kind) === 'pull');
   await page.click('#kindSeg [data-kind="push"]'); await page.waitForSelector('#w-chestpress');
@@ -198,13 +199,13 @@ async function details(page, key) { await menu(page, key, 'details'); await page
   check('P2 why says all sets hit 12', (await details(page, 'chestpress')).includes('All 3 sets hit 12. Up 5 lb.'));
   await page.reload(); await page.waitForSelector('#w-chestpress');
   check('P2 revisit does not stack increases', (await txt(page, '[data-usew="chestpress"]')) === 'Use 75 lb');
-  await page.fill('#datePick', '2026-10-30'); await page.$eval('#datePick', e => e.dispatchEvent(new Event('change', { bubbles: true }))); await page.waitForSelector('.sess h2');
-  check('T10 backdated header', (await txt(page, '.sess h2')).startsWith('Fri Oct 30'));
+  await page.fill('#datePick', '2026-10-30'); await page.$eval('#datePick', e => e.dispatchEvent(new Event('change', { bubbles: true }))); await page.waitForSelector('#todayTitle');
+  check('T10 backdated header', (await txt(page, '#todayTitle')).startsWith('Fri Oct 30'));
   check('T10 backdated save label', (await txt(page, '#saveBtn')) === 'Save Fri Oct 30');
   await page.click('#kindSeg [data-kind="push"]'); await page.waitForSelector('#w-chestpress');
   await fill(page, '#w-chestpress', 95); for (let i = 0; i < 3; i++) await fill(page, '#r-chestpress-' + i, 12);
   await fill(page, '#w-shoulderpress', 60); for (let i = 0; i < 3; i++) await fill(page, '#r-shoulderpress-' + i, 12);
-  await page.click('#saveBtn'); await toastText(page); await page.waitForFunction(() => document.querySelector('#statusLine').textContent.includes('Saved'));
+  await page.click('#saveBtn'); await toastText(page); await savedWait(page);
   check('T10 backdated entry does not change this week lifts', await txt(page, '#liftCount') === '2/3');
   await page.click('.datebar [data-date="2026-11-04"]'); await page.click('#kindSeg [data-kind="push"]'); await page.waitForSelector('#w-chestpress');
   check('T10 suggestion still from Nov 3 (75), not Oct 30', (await txt(page, '[data-usew="chestpress"]')) === 'Use 75 lb');
@@ -286,7 +287,7 @@ async function details(page, key) { await menu(page, key, 'details'); await page
   await page.clock.setSystemTime(T('2027-01-01T06:00:00Z')); await page.reload(); await page.waitForSelector('#todayLine'); // Jan 1 2027 01:00 Indy
   check('D year change today', (await txt(page, '#todayLine')).startsWith('Fri Jan 1'));
   await page.click('.datebar [data-date="2026-12-31"]');
-  check('D yesterday across year shows Dec 31 2026', (await txt(page, '.sess h2')).includes('Yesterday') && (await txt(page, '.sess h2')).includes('Dec 31 2026'));
+  check('D yesterday across year shows Dec 31 2026', (await txt(page, '#todayTitle')).includes('Dec 31 2026') && (await txt(page, '#liftDate')).includes('Yesterday') && (await txt(page, '#liftDate')).includes('Dec 31 2026'));
   await ctx.close();
 
   // ---------- Scenario C: layouts ----------
@@ -324,7 +325,7 @@ async function details(page, key) { await menu(page, key, 'details'); await page
   check('S retry button offered', (await txt(page, '#saveBtn')).startsWith('Retry'));
   await shot(page, 'state-save-failed.png');
   await page.evaluate(() => { window.__failSet = false; });
-  await page.click('#saveBtn'); await page.waitForFunction(() => document.querySelector('#statusLine').textContent.includes('Saved · synced'));
+  await page.click('#saveBtn'); await savedWait(page, 'synced');
   check('S retry succeeds and reports synced', await page.evaluate(() => window.__store['sessions/2026-11-03'].kind) === 'strength');
   await ctx.close();
 
