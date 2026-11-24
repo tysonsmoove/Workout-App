@@ -57,21 +57,87 @@ function gdHint(key) {
 function mySetHTML(key, pid) {
   const dk = pid + ':' + key, v = dk in gdDraft ? gdDraft[dk] : gearOf(pid, key).note || '';
   return '<section class="gsec gmine" data-mine="' + key + '"><h4>My settings</h4><div class="gset"><input type="text" class="gsetin" id="gdSet" data-gk="' + key + '" data-pid="' + pid + '" maxlength="60" value="' + esc(v) + '" placeholder="' + esc(gdHint(key)) + '" aria-label="My settings for ' + esc(gdName(key)) + '" enterkeyhint="done" autocomplete="off">' +
-    '<button type="button" class="small" id="gdSetSave" data-a="guide-set-save" data-k="' + key + '">Save</button></div><p class="tiny muted">Only for you. It shows under the name when you log this.</p></section>';
+    '<button type="button" class="small" id="gdSetSave" data-a="guide-set-save" data-k="' + key + '">Save</button></div><p class="tiny muted">Only for you. It shows under the name when you log this.</p>' + myPhotoHTML(key, pid) + '</section>';
 }
 document.addEventListener('input', e => { const el = e.target; if (el.classList && el.classList.contains('gsetin')) gdDraft[el.dataset.pid + ':' + el.dataset.gk] = el.value; });
 document.addEventListener('keydown', e => { const el = e.target; if (e.key === 'Enter' && el.classList && el.classList.contains('gsetin')) { e.preventDefault(); const b = el.parentNode.querySelector('[data-a="guide-set-save"]'); if (b) b.click(); } });
+// One move's settings on the profile: `patch` sets fields, and a null or empty value removes one. A move with nothing
+// left is removed from the map, so the profile only ever holds what a person set.
+async function saveGear(pid, key, patch) {
+  const all = Object.assign({}, (state.data[pid].profile || {}).gear), cur = Object.assign({}, all[key]);
+  Object.keys(patch).forEach(k => { if (patch[k] == null || patch[k] === '') delete cur[k]; else cur[k] = patch[k]; });
+  if (Object.keys(cur).length) all[key] = cur; else delete all[key];
+  return saveProfile(pid, { gear: all });
+}
+const gdRefresh = page => { if (wm) wmDraw(); else { if (page) render(); renderGuide(); } };
 ACT['guide-set-save'] = async el => {
   const key = el.dataset.k, inp = el.parentNode.querySelector('.gsetin'), pid = (inp && inp.dataset.pid) || me(), v = String(inp ? inp.value : '').replace(/\s+/g, ' ').trim().slice(0, 60);
   if ((gearOf(pid, key).note || '') === v) { delete gdDraft[pid + ':' + key]; toast(v ? 'Already saved.' : 'Type your settings first, like "Seat 4".'); return; }
-  const all = Object.assign({}, (state.data[pid].profile || {}).gear), cur = Object.assign({}, all[key]);
-  if (v) cur.note = v; else delete cur.note;
-  if (Object.keys(cur).length) all[key] = cur; else delete all[key];
-  if (!(await saveProfile(pid, { gear: all }))) return;
+  if (!(await saveGear(pid, key, { note: v }))) return;
   delete gdDraft[pid + ':' + key];
   toast(v ? 'Settings saved.' : 'Settings cleared.');
-  if (wm) wmDraw(); else { render(); renderGuide(); }
+  gdRefresh(true);
 };
+
+/* --- a photo of the machine, next to My settings --- */
+// Storing a photo needs the `assets` ability, which only some viewers are given: without it the buttons are not drawn.
+// The photo is shrunk to about 1200 px and re-encoded as a JPEG before it leaves the phone, which also drops the
+// camera's location data. The profile keeps only the id. A photo is deleted from storage in two cases, both a tap by
+// its owner: Delete, and Replace once the new one is saved, so a replaced photo is not left where others could open it.
+const GD_PHOTO_MAX = 1200;
+const gdBusy = {}; // pid:key while a photo is being stored or removed
+const gdPhotoOk = id => typeof id === 'string' && /^[A-Za-z0-9_-]{8,64}$/.test(id);
+function myPhotoHTML(key, pid) {
+  const id = gearOf(pid, key).photo, has = gdPhotoOk(id), can = !!caps.assets, busy = !!gdBusy[pid + ':' + key];
+  if (!has && !can) return '';
+  const pick = label => '<label class="filebtn small gphotobtn"' + (busy ? ' aria-disabled="true"' : '') + '>' + (busy ? 'Working…' : label) + '<input type="file" class="gphotoin" accept="image/*" capture="environment" data-gk="' + key + '" data-pid="' + pid + '" aria-label="' + label + '"' + (busy ? ' disabled' : '') + '></label>';
+  return '<div class="gphotowrap" data-photo="' + key + '">' +
+    (has ? '<img class="gphoto" src="/_blob/' + id + '" alt="My photo of the ' + esc(gdName(key)) + '" decoding="async">' : '') +
+    (can ? '<div class="gphotoacts">' + pick(has ? 'Replace photo' : 'Add a photo of the machine I use') + (has ? '<button type="button" class="small" id="gdPhotoDel" data-a="guide-photo-del" data-k="' + key + '" data-pid="' + pid + '"' + (busy ? ' disabled' : '') + '>Delete photo</button>' : '') + '</div>' +
+      '<p class="tiny muted gphotonote">Anyone who can open this app can see these photos. Keep people out of the shot.</p>' : '') + '</div>';
+}
+function gdPhotoWhy(e) {
+  const c = e && e.code;
+  if (c === 'not_granted' || c === 'capability_disabled' || c === 'capability_removed') { caps.assets = null; return 'Photos cannot be stored from this view.'; }
+  return c === 'too_large' ? 'That photo is too large to store.' : c === 'unsupported_type' ? 'That kind of file cannot be stored. Try a normal photo.' : c === 'quota_or_state' ? 'Photo storage is full or not available right now.' :
+    c === 'rate_limited' ? 'Too many uploads just now. Try again in a minute.' : c === 'upstream_auth' ? 'Could not confirm who you are. Reload the page and try again.' : c === 'image' ? 'That photo could not be read. Try another one.' : 'The photo was not saved. Try again.';
+}
+async function gdPhotoPick(key, pid, file) {
+  const a = caps.assets, dk = pid + ':' + key; if (!a || gdBusy[dk] || !GUIDE[key]) return;
+  gdBusy[dk] = true; gdRefresh(); let msg = '';
+  try {
+    let img; try { img = await loadImage(file); } catch (e) { throw { code: 'image' }; }
+    const blob = await toJpeg(drawTo(img, GD_PHOTO_MAX, false, 1), 0.82); if (!blob) throw { code: 'image' };
+    let up; try { up = await a.upload(blob, { type: 'image/jpeg' }); }
+    catch (e) { if (!e || e.code !== 'store_unavailable') throw e; await new Promise(r => setTimeout(r, 900)); up = await a.upload(blob, { type: 'image/jpeg' }); } // the one code worth a second try
+    if (!up || !gdPhotoOk(up.id)) throw { code: 'upstream_error' };
+    const old = gearOf(pid, key).photo;
+    if (await saveGear(pid, key, { photo: up.id })) { msg = gdPhotoOk(old) ? 'Photo replaced.' : 'Photo added.'; if (gdPhotoOk(old) && old !== up.id) { try { await a.delete(old); } catch (e) { /* the old file stays; nothing points at it */ } } }
+    else { try { await a.delete(up.id); } catch (e) { /* not stored on the profile, so not shown */ } } // the save said why
+  } catch (e) { msg = gdPhotoWhy(e); }
+  delete gdBusy[dk]; gdRefresh(); if (msg) toast(msg, 3200);
+}
+document.addEventListener('change', e => { const el = e.target; if (!el || el.type !== 'file' || !el.classList || !el.classList.contains('gphotoin')) return;
+  const f = el.files && el.files[0]; el.value = ''; if (f) gdPhotoPick(el.dataset.gk, el.dataset.pid || me(), f); });
+// Delete: first the profile stops pointing at the photo, then the file itself is removed. Only this tap does it.
+ACT['guide-photo-del'] = async el => {
+  const key = el.dataset.k, pid = el.dataset.pid || me(), dk = pid + ':' + key, a = caps.assets, id = gearOf(pid, key).photo; if (!a || !gdPhotoOk(id) || gdBusy[dk]) return;
+  gdBusy[dk] = true; gdRefresh(); let msg = '';
+  if (await saveGear(pid, key, { photo: null })) { msg = 'Photo deleted.';
+    try { await a.delete(id); } catch (e) { msg = e && e.code === 'not_uploader' ? 'Removed from your settings. Only the person who added that photo can delete the file.' : 'Removed from your settings. The file could not be deleted right now.'; } }
+  delete gdBusy[dk]; gdRefresh(); if (msg) toast(msg, 3200);
+};
+// a photo that does not load (deleted elsewhere, or not served to this viewer) leaves a short line, not a broken picture
+document.addEventListener('error', e => { const t = e.target; if (t && t.classList && t.classList.contains('gphoto') && !t.hidden) { t.hidden = true; t.insertAdjacentHTML('afterend', '<p class="tiny muted gphotomiss">The photo could not be shown here.</p>'); } }, true);
+
+/* --- "Watch a demo": a plain link to a YouTube search for this exact move, opened outside the app --- */
+// Nothing is embedded and nothing is fetched: the page cannot play outside video, so this is only a link.
+function watchQuery(key) {
+  const kind = gdKind(key), base = (kind === 'lift' ? EX[key].name : kind === 'station' ? CIRCUIT[GD_STATIONS.indexOf(key)] + ' machine' : gdName(key)).toLowerCase().replace(/[^a-z0-9' -]+/g, ' ').replace(/\s+/g, ' ').trim();
+  return base + (kind === 'stretch' ? (/stretch/.test(base) ? '' : ' stretch') + ' how to' : ' proper form');
+}
+const watchUrl = key => 'https://www.youtube.com/results?search_query=' + encodeURIComponent(watchQuery(key)).replace(/%20/g, '+');
+const watchHTML = key => '<p class="gwatch"><a href="' + esc(watchUrl(key)) + '" target="_blank" rel="noopener noreferrer" data-watch="' + key + '">Watch a demo<span aria-hidden="true"> ↗</span></a><span class="tiny muted">Opens a YouTube search for "' + esc(watchQuery(key)) + '" outside the app.</span></p>';
 
 /* --- the how-to card --- */
 // ctx: { pid, from: 'lift' | 'live' | 'lib', swap: [the exercises this slot of the open workout can swap to] }
@@ -83,7 +149,7 @@ function guideCardHTML(key, ctx) {
   const alt = (label, a) => { if (!a) return '';
     const ok = a.k && EX[a.k], btn = ok && swap.includes(a.k) ? '<button type="button" class="small" data-a="guide-swap" data-to="' + a.k + '">Swap to it</button>' : ok && ctx.from !== 'live' ? '<button type="button" class="small" data-a="guide-open" data-k="' + a.k + '" data-from="' + (ctx.from === 'lift' ? 'lift' : 'lib') + '">See it</button>' : '';
     return '<div class="galt" data-alt="' + label.toLowerCase() + '"><div><span class="eyebrow">' + label + '</span><p>' + esc(a.text) + '</p></div>' + btn + '</div>'; };
-  let h = '<div class="gcard" data-guide="' + key + '">';
+  let h = '<div class="gcard" data-guide="' + key + '">' + watchHTML(key);
   if (hit.length) h += '<p class="banner geasy" data-easy="' + hit.join(',') + '"><span><b>Go easy on your ' + esc(gdAnd(hit.map(a => AREAS[a].toLowerCase()))) + '.</b> This move loads ' + (hit.length > 1 || /s$/.test(AREAS[hit[0]]) ? 'them' : 'it') + '. ' +
     (kind === 'stretch' ? 'Stay well short of any pain, and ease out slowly.' : 'Keep the weight light, move slowly, and stop if anything feels sharp.') + '</span></p>';
   h += sec('equip', 'Equipment', '<p><b>' + esc(G.equip) + '</b>' + (EX[key] && EX[key].per ? ' <span class="muted">The weight you log is one dumbbell, not the pair.</span>' : '') + '</p><p class="muted">' + esc(G.where) + '</p>');

@@ -109,7 +109,7 @@ Nothing here changes scoring. The weekly race, locked weekly targets, scoring ve
 
 ### Capabilities
 
-The artifact declares `db`, `user`, `sample` (with images) and `downloads`. Declaring replaces the whole set, so `db` and `user` must always be restated; a republish that omits `capabilities` carries the stored set forward. `loadCaps()` asks for `sample` and `downloads` in the background (`caps` in `src/00-core.js`); either may resolve `null`, and nothing waits on them.
+The artifact declares `db`, `user`, `sample` (with images) and `downloads`, and since version 19 `assets` (see "A photo of the machine"). Declaring replaces the whole set, so `db` and `user` must always be restated; a republish that omits `capabilities` carries the stored set forward. `loadCaps()` asks for `sample` and `downloads` in the background (`caps` in `src/00-core.js`); either may resolve `null`, and nothing waits on them.
 
 | Situation | Scan a barcode | Describe it | Backup |
 |---|---|---|---|
@@ -289,9 +289,20 @@ Every move has: Equipment (what to grab and where it usually is), Set up (2 to 4
 
 A text field on every exercise and station guide, up to 60 characters, for example "Seat 4 · back pad 2 · handles middle". Saved by the Save button or Enter with `saveProfile(pid, { gear })` as `profiles/<pid>.gear[<move>].note`, so it is per person. Once set it shows in one line under the exercise name in the lift sheet and in live mode. Clearing the field and saving removes it.
 
-### Not built yet
+### A photo of the machine (`myPhotoHTML`, `gdPhotoPick`, `ACT['guide-photo-del']` in `src/66-guide.js`)
 
-A photo of the machine next to "My settings" needs the `assets` capability. It is not in this version.
+"Add a photo of the machine I use" sits under the settings field. It is a file input with `capture="environment"`, so a phone opens the back camera.
+
+- The photo is drawn to a canvas no longer than 1200 px (`drawTo`, shared with barcode scanning) and re-encoded as a JPEG before it leaves the phone, which also drops the camera's location data.
+- It is stored with the `assets` capability (`caps.assets`, asked for in `loadCaps`). The profile keeps only the returned id, as `gear[<move>].photo`, and the picture is shown from `"/_blob/" + id`.
+- The capability is declared as `assets: {}`, which the platform gives to people who can edit the artifact. For everyone else `claude.use("assets")` resolves `null` and the photo controls are not drawn at all. A photo that is already stored still shows.
+- **Replace** uploads the new photo, saves its id, then removes the replaced file. **Delete** takes the id off the profile, then removes the file. Nothing else deletes a photo: not clearing the settings line, not closing the guide.
+- Next to the button: "Anyone who can open this app can see these photos. Keep people out of the shot."
+- A refused upload leaves what was there and says why (`gdPhotoWhy`). `not_granted` and the two "not usable here" codes hide the controls for the rest of the visit. A stored photo that does not load is replaced by one line of text.
+
+### Watch a demo (`watchUrl`, `watchHTML`)
+
+A page on claude.ai cannot play outside video, so every card starts with a plain link: `https://www.youtube.com/results?search_query=<the exact move>+proper+form` (stretches: `+how+to`), with `target="_blank"` and `rel="noopener noreferrer"`. Nothing is embedded and nothing is fetched.
 
 ## Apple Health and Apple Watch
 
@@ -304,7 +315,7 @@ One path-addressed document store, backed by the artifact database when signed i
 | Path | Contents |
 |---|---|
 | `sessions/<date>`, `settings/program` | Tyson's lifting log and program settings (original location, kept) |
-| `profiles/<pid>` | Profile. Since version 19 also `gear`: that person's "My settings" line per move |
+| `profiles/<pid>` | Profile. Since version 19 also `gear`: per move, that person's "My settings" line (`note`) and the id of their photo of the machine (`photo`) |
 | `profiles/<pid>/sessions/<date>` | Other profile's workout log |
 | `profiles/<pid>/food/<date>` | Food items and water for a day |
 | `profiles/<pid>/health/<date>` | Steps, exercise minutes, active calories and distance imported from Apple Health |
@@ -338,7 +349,7 @@ node tests/account.test.js # account memory: profile choice, weekly result and b
 node tests/v12.test.js     # version 12: swaps, weekly locks, provisional/final results, Watch top-up, combined days, gym, stakes, custom foods, team, set shortcuts, rest timer, protein scoring, smoke of every tab (135 checks)
 node tests/v13.test.js     # version 13: saved meals, stalled lifts, deload weeks, reminders, weekly recap, IOUs, goal nudge, pain notes, smoke of every tab (98 checks)
 node tests/v16.test.js     # version 16: check-in rules, Full Body A/B, Healthplex activities, lift goal, gym info, Not at my gym, Jacquie's check-in, workout mode, animations, smoke of every tab and workout-mode screen
-node tests/v19.test.js     # version 19: every animation's joints, tempo, views, equipment and markers; the player; the 45 how-to cards; the guide in the lift sheet, live mode and the library; My settings; records identical to before
+node tests/v19.test.js     # version 19: every animation's joints, tempo, views, equipment and markers; the player; the 45 how-to cards; the guide in the lift sheet, live mode and the library; My settings; the machine photo with `assets` null and available; Watch a demo; every guide swap on every day; records identical to before; smoke of every tab, sheet, guide and live screen
 node tests/v18.test.js     # version 18: the Today card at 390 x 844, the lift sheet and its rest timer, the Add sheet in both modes, Jacquie's Train, past days, records identical to version 17's, smoke of every tab, sheet and live screen
 node tests/v17.test.js     # version 17: the top of Train at 390 x 844, the Log it / Go live switch, logging every kind of session without live mode, live finish edits, Subtle / Full / Off animations, smoke of every tab, live screen and Log it sheet
 ML_ZXING=/path/to/zxing/umd/index.min.js node tests/v15.test.js   # version 15: Health paste box, reset plus deload, stuck-lift lines, barcode scanning, meal estimates, undo, backup, smoke of every tab

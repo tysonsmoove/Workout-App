@@ -149,11 +149,25 @@ function capStub() {
     window.__saved.push({ filename: req.filename, data: typeof req.data === 'string' ? req.data : await new Response(req.data).text() });
     return { status: 'saved' };
   } };
+  // Stored photos. window.__assetMode: unset or 'null' (this viewer is not given the ability), 'ok', or an error code
+  // that every upload rejects with. What was uploaded and deleted is kept in window.__assets and window.__assetDel.
+  window.__assets = window.__assets || {}; window.__assetDel = window.__assetDel || []; window.__assetUp = window.__assetUp || [];
+  const assets = {
+    upload: async (blob, opts) => {
+      const m = window.__assetMode; if (m && m !== 'ok') throw { code: m, message: 'test' };
+      const bm = await createImageBitmap(blob), id = Array.from({ length: 32 }, () => '0123456789abcdef'[Math.floor(Math.random() * 16)]).join('');
+      window.__assets[id] = { type: (opts && opts.type) || blob.type, size: blob.size, w: bm.width, h: bm.height }; window.__assetUp.push(id);
+      return { id, url: '/_blob/' + id, sizeBytes: blob.size, contentType: (opts && opts.type) || blob.type };
+    },
+    list: async () => ({ assets: Object.keys(window.__assets).map(id => ({ id, url: '/_blob/' + id, contentType: window.__assets[id].type, sizeBytes: window.__assets[id].size, createdAt: '2026-12-09T00:00:00Z' })), usage: { files: Object.keys(window.__assets).length, bytes: 0, maxFiles: 100, maxBytes: 1e9 } }),
+    delete: async ref => { const id = String(ref).replace(/^.*\//, ''), had = id in window.__assets; if (window.__assetDelFail) throw { code: window.__assetDelFail, message: 'test' }; delete window.__assets[id]; window.__assetDel.push(id); return { deleted: had }; }
+  };
   const prev = window.claude && window.claude.use;
   window.claude = { use: async n => {
     window.__uses.push(n);
     if (n === 'sample') return window.__sampleMode === 'null' ? null : sample;
     if (n === 'downloads') return window.__dlMode === 'null' ? null : downloads;
+    if (n === 'assets') return !window.__assetMode || window.__assetMode === 'null' ? null : assets;
     return prev ? prev(n) : null;
   } };
 }

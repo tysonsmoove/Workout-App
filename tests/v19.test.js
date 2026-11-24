@@ -500,6 +500,17 @@ const FULLA = [['squat', 3], ['dbbench', 3], ['latpull', 3], ['dbshoulder', 2], 
     await page.click('#guideClose'); await openLib('stretch', 'sx_child');
     check('M a stretch has no My settings', !(await has(page, '#guideSheet #gdSet')) && !(await has(page, '#guideSheet .gmine')));
     await page.click('#guideClose');
+    // after a reload: still saved, still per person, and shown in the lift sheet and in live mode
+    await page.reload(); await settled(page);
+    check('M both people\'s settings survive a reload', same((await kv(page, 'profiles/jacquie')).gear, { latpull: { note: 'Seat 2' }, st_row: { note: 'Seat 3 · chest pad 2' } }) && same((await kv(page, 'profiles/tyson')).gear, { latpull: { note: 'Seat 4 · thigh pad 3' } }) && (await page.evaluate(() => window.MorningLaps.state.pid)) === 'jacquie');
+    await openLib('fba', 'latpull'); check('M after the reload her guide shows her line', (await val(page, '#gdSet')) === 'Seat 2'); await page.click('#guideClose');
+    await switchTo(page, 'tyson'); await go(page, 'train'); await page.click('[data-row="draft"], #addBtn'); if (await has(page, '#addLift')) await page.click('#addLift'); await page.waitForSelector('#liftSheet');
+    check('M after the reload his line shows in the lift sheet under the exercise name', (await txt(page, '#liftSheet .ex[data-ex="latpull"] .myset')) === 'My settings: Seat 4 · thigh pad 3' && (await page.$$('#liftSheet .myset')).length === 1);
+    await page.click('#wmStart'); await page.waitForSelector('#wm:not([hidden])'); if (await wmv() === 'start') await page.click('#wmStartSeq'); await waitView('main');
+    if (await has(page, '#wmWarmLog')) await page.click('#wmWarmLog');
+    for (let i = 0; i < 6 && (await page.$eval('#wmDemo .fig', f => f.dataset.fig)) !== 'latpull'; i++) await page.click('#wmNext');
+    check('M and in live mode, under the name of that lift only', (await page.$eval('#wmDemo .fig', f => f.dataset.fig)) === 'latpull' && (await txt(page, '#wm .myset')) === 'My settings: Seat 4 · thigh pad 3' && (await page.evaluate(() => document.querySelector('#wm .myset').previousElementSibling.id)) === 'wmName');
+    await page.click('[data-a="wm-prev"]'); check('M the lift before it has no line', !(await has(page, '#wm .myset')));
     // a save that fails says so and keeps what was typed
     await ctx.close();
     await open({ me: 'tyson', init: local(seedDocs()) + ';window.__noReady=1;' });
@@ -507,6 +518,234 @@ const FULLA = [['squat', 3], ['dbbench', 3], ['latpull', 3], ['dbshoulder', 2], 
     await page.evaluate(() => { window.MorningLaps.state.ready = false; }); await page.click('#gdSetSave'); await page.waitForTimeout(150);
     const fl = await page.evaluate(() => ({ toast: document.getElementById('toast').textContent, value: document.getElementById('gdSet').value, gear: ((JSON.parse(localStorage.getItem('ml.kv') || '{}'))['profiles/tyson'] || {}).gear }));
     check('M when the log cannot be reached the setting is not saved, a message says so, and the typed line is kept', /Still loading|cannot be reached/.test(fl.toast) && fl.value === 'Rack 3' && fl.gear === undefined, JSON.stringify(fl));
+  });
+
+  // ---------- A: a photo of the machine (claude.use("assets") as null and as available) ----------
+  const STUB = ';(' + require('./helpers').capStub.toString() + ')();';
+  const PNG1 = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
+  const blobRoute = p => p.route('**/_blob/**', r => r.fulfill({ status: 200, contentType: 'image/png', body: PNG1 }));
+  const photo = (w, h) => page.evaluate(([w, h]) => { const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d'); g.fillStyle = '#39c'; g.fillRect(0, 0, w, h); g.fillStyle = '#fff'; g.fillRect(w / 4, h / 4, w / 2, h / 2); return c.toDataURL('image/png').split(',')[1]; }, [w, h]).then(b => ({ name: 'machine.png', mimeType: 'image/png', buffer: Buffer.from(b, 'base64') }));
+  const gear = pid => kv(page, 'profiles/' + pid).then(p => (p && p.gear) || {});
+  const photoOf = (pid, key) => page.waitForFunction(([p, k, not]) => { const g = ((JSON.parse(localStorage.getItem('ml.kv') || '{}'))['profiles/' + p] || {}).gear || {}; return g[k] && g[k].photo && g[k].photo !== not; }, [pid, key, null]);
+  await section('A', async () => {
+    // not given the ability: the stub answers null
+    await open({ me: 'tyson', init: local(seedDocs()) + STUB });
+    await openLib('fba', 'latpull');
+    const n0 = await page.evaluate(() => ({ asked: window.__uses.includes('assets'), controls: document.querySelectorAll('#guideSheet .gphotobtn, #guideSheet .gphotoin, #guideSheet [data-a="guide-photo-del"], #guideSheet .gphotonote, #guideSheet .gphotowrap').length, field: !!document.getElementById('gdSet') }));
+    check('A when assets is null the photo controls are hidden: no button, no note, nothing to tap. My settings is still there', n0.asked && n0.controls === 0 && n0.field, JSON.stringify(n0));
+    await page.click('#guideClose'); await go(page, 'train'); await pick('strong'); await page.click('#ciStart'); await page.waitForSelector('#wm:not([hidden])'); if (await wmv() === 'start') await page.click('#wmStartSeq'); await waitView('main');
+    await page.click('#wmWarmLog'); await page.click('#wmHowBtn'); await page.waitForSelector('#wmHow');
+    check('A hidden in live mode too', (await page.$$('#wmHow .gphotowrap, #wmHow .gphotoin')).length === 0 && await has(page, '#wmHow .gsetin'));
+    await ctx.close();
+    await open({ me: 'tyson', init: local(seedDocs()) }); // no window.claude at all, as in a plain browser
+    await openLib('fba', 'latpull');
+    check('A with no claude.use at all the photo controls are hidden as well', (await page.$$('#guideSheet .gphotowrap, #guideSheet .gphotoin')).length === 0);
+    await ctx.close();
+    // available
+    await open({ me: 'tyson', init: 'window.__assetMode="ok";' + local(seedDocs()) + STUB }); await blobRoute(page);
+    await watchWrites(page);
+    await openLib('fba', 'latpull'); await page.waitForSelector('#guideSheet .gphotoin');
+    const c0 = await page.evaluate(() => { const w = document.querySelector('#guideSheet .gphotowrap'), i = w.querySelector('.gphotoin'), l = w.querySelector('.gphotobtn'), note = w.querySelector('.gphotonote'); return { label: l.textContent, type: i.type, accept: i.accept, capture: i.getAttribute('capture'), aria: i.getAttribute('aria-label'), note: note.textContent, inMine: !!w.closest('.gmine'), noteNear: note.previousElementSibling.contains(l), img: !!w.querySelector('img'), del: !!w.querySelector('[data-a="guide-photo-del"]'), h: l.getBoundingClientRect().height }; });
+    check('A when assets is available, My settings has "Add a photo of the machine I use": a file input that opens the back camera', c0.label === 'Add a photo of the machine I use' && c0.type === 'file' && c0.accept === 'image/*' && c0.capture === 'environment' && c0.aria === c0.label && c0.inMine && !c0.img && !c0.del && c0.h >= 44, JSON.stringify(c0));
+    check('A the note is next to the button, word for word', c0.note === 'Anyone who can open this app can see these photos. Keep people out of the shot.' && c0.noteNear, c0.note);
+    await fill(page, '#gdSet', 'Seat 4'); await page.click('#gdSetSave'); await page.waitForFunction(() => (((JSON.parse(localStorage.getItem('ml.kv'))['profiles/tyson'] || {}).gear || {}).latpull || {}).note === 'Seat 4');
+    await page.setInputFiles('#guideSheet .gphotoin', await photo(2400, 1800)); await photoOf('tyson', 'latpull');
+    const g1 = await gear('tyson'), up1 = await page.evaluate(() => ({ store: window.__assets, up: window.__assetUp.slice(), del: window.__assetDel.slice() })), id1 = g1.latpull.photo, a1 = up1.store[id1];
+    check('A a 2400 x 1800 photo is shrunk to 1200 px on its long side and uploaded once, as a JPEG', up1.up.length === 1 && a1 && a1.type === 'image/jpeg' && a1.w === 1200 && a1.h === 900 && a1.size > 0, JSON.stringify(a1));
+    check('A the profile keeps only the asset id, with that person\'s settings for that exercise', same(g1, { latpull: { note: 'Seat 4', photo: id1 } }) && /^[0-9a-f]{32}$/.test(id1) && !/data:|base64|blob:/.test(JSON.stringify(await kv(page, 'profiles/tyson'))), JSON.stringify(g1));
+    await page.waitForFunction(() => { const i = document.querySelector('#guideSheet img.gphoto'); return i && i.complete; });
+    const s1 = await page.evaluate(() => { const w = document.querySelector('#guideSheet .gphotowrap'), img = w.querySelector('img.gphoto'); return { src: img.getAttribute('src'), alt: img.alt, shown: !img.hidden && img.getBoundingClientRect().height > 10 && img.naturalWidth > 0, inMine: !!img.closest('.gmine'), afterField: !!(document.getElementById('gdSet').compareDocumentPosition(img) & 4), btns: Array.from(w.querySelectorAll('.gphotobtn, [data-a="guide-photo-del"]')).map(b => b.textContent), note: !!w.querySelector('.gphotonote'), toast: document.getElementById('toast').textContent, imgs: document.querySelectorAll('img.gphoto').length, wide: document.documentElement.scrollWidth - innerWidth }; });
+    check('A the photo shows next to My settings, and the buttons become Replace and Delete', s1.src === '/_blob/' + id1 && s1.shown && s1.inMine && s1.afterField && same(s1.btns, ['Replace photo', 'Delete photo']) && s1.note && s1.imgs === 1 && /Photo added/.test(s1.toast) && s1.alt === 'My photo of the Lat pulldown machine' && s1.wide <= 0, JSON.stringify(s1));
+    check('A two writes so far, both to his profile, both from a tap: the settings line and the photo. Nothing deleted', same(await writes(page), ['ml.kv', 'ml.kv']) && up1.del.length === 0, JSON.stringify(await writes(page)));
+    // per exercise, per person, and after a reload
+    await page.click('#guideClose'); await openLib('fba', 'squat'); await page.waitForSelector('#guideSheet .gphotoin');
+    check('A the photo belongs to that exercise only: the squat has none', !(await has(page, '#guideSheet img.gphoto')) && (await txt(page, '#guideSheet .gphotobtn')) === 'Add a photo of the machine I use');
+    await page.click('#guideClose'); await switchTo(page, 'jacquie'); await openLib('fba', 'latpull'); await page.waitForSelector('#guideSheet .gphotoin');
+    check('A and to that person only: Jacquie\'s lat pulldown has no photo and no settings', !(await has(page, '#guideSheet img.gphoto')) && (await val(page, '#gdSet')) === '');
+    await page.click('#guideClose'); await switchTo(page, 'tyson');
+    await page.reload(); await settled(page); await openLib('fba', 'latpull'); await page.waitForSelector('#guideSheet img.gphoto');
+    check('A after a reload the photo and the settings are still there', (await page.$eval('#guideSheet img.gphoto', i => i.getAttribute('src'))) === '/_blob/' + id1 && (await val(page, '#gdSet')) === 'Seat 4');
+    // deletes only on that tap: none of these removes it
+    await watchWrites(page);
+    await fill(page, '#gdSet', ''); await page.click('#gdSetSave'); await page.waitForFunction(() => !(JSON.parse(localStorage.getItem('ml.kv'))['profiles/tyson'].gear.latpull.note));
+    await page.click('#guideClose'); await openLib('fba', 'latpull'); await page.keyboard.press('Escape'); await page.waitForSelector('#guideSheet', { state: 'detached' }); await openLib('fba', 'latpull');
+    const keep = await page.evaluate(() => ({ del: window.__assetDel.slice(), img: !!document.querySelector('#guideSheet img.gphoto') }));
+    check('A clearing the settings line, closing and reopening the guide do not delete the photo', same(await gear('tyson'), { latpull: { photo: id1 } }) && keep.del.length === 0 && keep.img, JSON.stringify(keep));
+    // replace
+    await page.setInputFiles('#guideSheet .gphotoin', await photo(900, 1600));
+    await page.waitForFunction(old => { const g = (JSON.parse(localStorage.getItem('ml.kv'))['profiles/tyson'] || {}).gear; return g.latpull.photo && g.latpull.photo !== old; }, id1);
+    await page.waitForFunction(() => window.__assetDel.length === 1);
+    const g2 = await gear('tyson'), id2 = g2.latpull.photo, r2 = await page.evaluate(() => ({ store: window.__assets, del: window.__assetDel.slice(), imgs: Array.from(document.querySelectorAll('#guideSheet img.gphoto')).map(i => i.getAttribute('src')), toast: document.getElementById('toast').textContent }));
+    check('A Replace stores the new photo (a tall one, 675 x 1200), shows it alone, and removes the replaced file from storage', id2 !== id1 && r2.store[id2].w === 675 && r2.store[id2].h === 1200 && same(r2.imgs, ['/_blob/' + id2]) && same(r2.del, [id1]) && /Photo replaced/.test(r2.toast), JSON.stringify(r2));
+    // a refused upload changes nothing
+    await page.evaluate(() => { window.__assetMode = 'rate_limited'; });
+    await page.setInputFiles('#guideSheet .gphotoin', await photo(1600, 1200)); await page.waitForFunction(() => /Too many uploads/.test(document.getElementById('toast').textContent));
+    check('A an upload that is refused leaves the photo that was there, deletes nothing, and says why', (await gear('tyson')).latpull.photo === id2 && (await page.evaluate(() => window.__assetDel.length)) === 1 && (await page.$eval('#guideSheet img.gphoto', i => i.getAttribute('src'))) === '/_blob/' + id2);
+    await page.evaluate(() => { window.__assetMode = 'ok'; });
+    // delete, on that tap only
+    const w0 = (await writes(page)).length;
+    await page.click('#gdPhotoDel'); await page.waitForFunction(() => !((JSON.parse(localStorage.getItem('ml.kv'))['profiles/tyson'] || {}).gear || {}).latpull); await page.waitForFunction(() => window.__assetDel.length === 2);
+    await page.waitForSelector('#guideSheet .gphotobtn:not([aria-disabled])');
+    const d3 = await page.evaluate(() => ({ del: window.__assetDel.slice(), img: !!document.querySelector('#guideSheet img.gphoto'), btn: document.querySelector('#guideSheet .gphotobtn').textContent, delBtn: !!document.getElementById('gdPhotoDel'), toast: document.getElementById('toast').textContent }));
+    check('A "Delete photo" deletes it on that tap: off the profile, out of storage, off the screen, in one write', same(await gear('tyson'), {}) && same(d3.del, [id1, id2]) && !d3.img && d3.btn === 'Add a photo of the machine I use' && !d3.delBtn && /Photo deleted/.test(d3.toast) && (await writes(page)).length === w0 + 1, JSON.stringify(d3));
+    await page.setInputFiles('#guideSheet .gphotoin', await photo(800, 600)); await photoOf('tyson', 'latpull');
+    const id3 = (await gear('tyson')).latpull.photo, a3 = await page.evaluate(id => window.__assets[id], id3);
+    check('A a photo already smaller than 1200 px is not blown up', a3.w === 800 && a3.h === 600 && a3.type === 'image/jpeg', JSON.stringify(a3));
+    await page.evaluate(() => { window.__assetMode = 'not_granted'; });
+    await page.waitForSelector('#guideSheet .gphotobtn:not([aria-disabled])');
+    await page.setInputFiles('#guideSheet .gphotoin', await photo(1000, 800)); await page.waitForFunction(() => /cannot be stored from this view/.test(document.getElementById('toast').textContent));
+    const ng = await page.evaluate(() => ({ controls: document.querySelectorAll('#guideSheet .gphotoin, #guideSheet .gphotobtn, #guideSheet #gdPhotoDel, #guideSheet .gphotonote').length, img: !!document.querySelector('#guideSheet img.gphoto') }));
+    check('A if the ability is taken away mid-visit, the controls go and the stored photo still shows', ng.controls === 0 && ng.img && (await gear('tyson')).latpull.photo === id3, JSON.stringify(ng));
+    await ctx.close();
+    // in live mode, on a circuit station, for Jacquie
+    await open({ me: 'jacquie', init: 'window.__assetMode="ok";' + local(seedDocs()) + STUB }); await blobRoute(page);
+    await pick('good'); await page.click('#ciStart'); await page.waitForSelector('#wm:not([hidden])'); if (await wmv() === 'start') await page.click('#wmStartSeq'); await waitView('main');
+    await page.click('#wmNext'); await page.waitForSelector('#wmStations'); await page.click('#wmStations [data-a="wm-sthow"][data-k="1"]'); await page.waitForSelector('#wmHow .gphotoin');
+    await page.setInputFiles('#wmHow .gphotoin', await photo(2000, 1500)); await photoOf('jacquie', 'st_row'); await page.waitForSelector('#wmHow img.gphoto');
+    const lv = await page.evaluate(() => ({ img: document.querySelector('#wmHow img.gphoto').getAttribute('src'), wm: !!window.MorningLaps.wmState(), card: document.querySelector('#wmHow .gcard').dataset.guide, t: ((JSON.parse(localStorage.getItem('ml.kv'))['profiles/tyson'] || {}).gear), j: (JSON.parse(localStorage.getItem('ml.kv'))['profiles/jacquie'] || {}).gear, up: window.__assets }));
+    check('A in live mode the same controls are on the card: her photo of the row machine is saved on her profile and shown there', lv.wm && lv.card === 'st_row' && lv.t === undefined && lv.img === '/_blob/' + lv.j.st_row.photo && lv.up[lv.j.st_row.photo].w === 1200, JSON.stringify(lv));
+    await ctx.close();
+    // a stored photo whose file is gone
+    await open({ me: 'tyson', init: local(seedDocs({ tProfile: { gear: { legpress: { note: 'Seat 5', photo: 'f'.repeat(32) } } } })) + STUB });
+    await page.route('**/_blob/**', r => r.fulfill({ status: 200, contentType: 'image/jpeg', body: 'gone' }));
+    await openLib('lifts', 'legpress'); await page.waitForSelector('#guideSheet .gphotomiss');
+    const miss = await page.evaluate(() => ({ hidden: document.querySelector('#guideSheet img.gphoto').hidden, text: document.querySelector('#guideSheet .gphotomiss').textContent, controls: document.querySelectorAll('#guideSheet .gphotoin, #guideSheet #gdPhotoDel').length, set: document.getElementById('gdSet').value }));
+    check('A a stored photo that cannot be loaded leaves a short line, not a broken picture', miss.hidden && /could not be shown/.test(miss.text) && miss.controls === 0 && miss.set === 'Seat 5', JSON.stringify(miss));
+  });
+
+  // ---------- Y: Watch a demo ----------
+  await section('Y', async () => {
+    await open({ me: 'tyson', init: local(seedDocs()) });
+    const reqs = []; page.on('request', r => { if (/youtu|ytimg|googlevideo/.test(r.url())) reqs.push(r.url()); });
+    const keys = await KEYS();
+    const links = await page.evaluate(ks => { const M = window.MorningLaps, host = document.createElement('div'); return ks.map(k => { host.innerHTML = M.guideCardHTML(k, { pid: 'tyson', from: 'lib' }); const a = host.querySelectorAll('a[data-watch]'), u = a.length === 1 ? new URL(a[0].href) : null;
+      return { k, n: a.length, proto: u && u.protocol, host: u && u.hostname, path: u && u.pathname, q: u && u.searchParams.get('search_query'), params: u && Array.from(u.searchParams.keys()).join(), target: a[0] && a[0].target, rel: a[0] && a[0].rel, text: a[0] && a[0].textContent, act: a[0] && a[0].dataset.a }; }); }, keys);
+    const badL = links.filter(l => l.n !== 1 || l.proto !== 'https:' || l.host !== 'www.youtube.com' || l.path !== '/results' || l.params !== 'search_query' || !l.q || l.target !== '_blank' || !/noopener/.test(l.rel) || !/^Watch a demo/.test(l.text) || l.act);
+    check('Y every one of the 45 guides has one "Watch a demo" link: a plain https link to a youtube.com search that opens outside the page', links.length === 45 && badL.length === 0, JSON.stringify(badL.slice(0, 3)));
+    const q = k => links.find(l => l.k === k).q;
+    check('Y the search is for the exact exercise', q('dbrdl') === 'dumbbell romanian deadlift proper form' && q('squat') === 'barbell back squat proper form' && q('pecdeck') === 'pec deck chest fly machine proper form' && q('st_legpress') === 'leg press machine proper form' && q('sx_calf') === 'standing calf stretch how to' && q('sx_child') === 'child\'s pose stretch how to' && new Set(links.map(l => l.q)).size >= 42, JSON.stringify(['dbrdl', 'pecdeck', 'st_legpress', 'sx_calf', 'sx_child'].map(q)));
+    await ctx.route(/youtube\.com/, r => r.fulfill({ status: 200, contentType: 'text/html', body: '<title>stub</title>' })); // the test never reaches the real site
+    await openLib('fbb', 'dbrdl');
+    const on = await page.evaluate(() => { const a = document.querySelector('#guideSheet a[data-watch]'), r = a.getBoundingClientRect(); return { href: a.getAttribute('href'), h: r.height, note: a.parentNode.textContent, embeds: document.querySelectorAll('iframe, video, embed, object, audio').length, firstInCard: a.closest('.gcard').firstElementChild === a.parentNode }; });
+    check('Y on screen it is the first thing on the card, a 44 px tap target, and says where it goes', on.href === 'https://www.youtube.com/results?search_query=dumbbell+romanian+deadlift+proper+form' && on.h >= 44 && /outside the app/.test(on.note) && on.firstInCard, JSON.stringify(on));
+    const here = page.url();
+    const [pop] = await Promise.all([ctx.waitForEvent('page'), page.click('#guideSheet a[data-watch]')]);
+    await pop.waitForLoadState('domcontentloaded').catch(() => {});
+    const after = await page.evaluate(() => ({ url: location.href, guide: window.MorningLaps.state.guide && window.MorningLaps.state.guide.key, embeds: document.querySelectorAll('iframe, video, embed, object, audio').length }));
+    const noOpener = await pop.evaluate(() => window.opener === null).catch(() => null);
+    check('Y a tap opens the YouTube search in a new page, with no link back to the app; the app stays where it was with the guide open', pop.url() === 'https://www.youtube.com/results?search_query=dumbbell+romanian+deadlift+proper+form' && after.url === here && after.guide === 'dbrdl' && noOpener === true, JSON.stringify([pop.url(), after, noOpener]));
+    await pop.close();
+    check('Y nothing is embedded and nothing is fetched: no frame or video in the page, and the page made no request to YouTube', on.embeds === 0 && after.embeds === 0 && reqs.length === 0, JSON.stringify(reqs.slice(0, 3)));
+    await page.click('#guideClose'); await go(page, 'train'); await pick('strong'); await page.click('#ciStart'); await page.waitForSelector('#wm:not([hidden])'); if (await wmv() === 'start') await page.click('#wmStartSeq'); await waitView('main');
+    await page.click('#wmWarmLog'); await page.click('#wmHowBtn'); await page.waitForSelector('#wmHow');
+    check('Y the link is on the card in live mode too', (await page.$eval('#wmHow a[data-watch]', a => a.getAttribute('href'))) === 'https://www.youtube.com/results?search_query=barbell+back+squat+proper+form');
+  });
+
+  // ---------- X: the easier/harder swap is the existing swap, and never drops an exercise ----------
+  await section('X', async () => {
+    let tried = 0; const allBad = [], days = [];
+    for (const [split, kinds] of [['full', ['fba', 'fbb']], ['ppl', ['push', 'pull', 'legs']]]) {
+      await open({ me: 'tyson', init: local(seedDocs({ settings: { split } })) });
+      await page.click('#addBtn'); await page.click('#addLift'); await page.waitForSelector('#liftSheet');
+      const res = await page.evaluate(kinds => { const M = window.MorningLaps, out = { tried: 0, bad: [], kinds: [], notInMenu: [] }, date = M.state.selDate, exs = () => Array.from(document.querySelectorAll('#liftSheet .ex')).map(e => e.dataset.ex);
+        if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+        const kindBtn = k => document.querySelector('#kindSeg [data-kind="' + k + '"]');
+        // what the exercise's own menu offers: the swap logic that was already there
+        const menuTos = key => { document.querySelector('[data-menu="' + key + '"]').click(); const sb = document.querySelector('.menu [data-act="swap"]'); let r = []; if (sb && !sb.disabled) { sb.click(); r = Array.from(document.querySelectorAll('.menu [data-act="swapto"]')).map(b => b.dataset.to); } if (document.querySelector('.menu')) document.querySelector('[data-menu="' + key + '"]').click(); return r; };
+        for (const kind of kinds) { if (!kindBtn(kind)) { out.bad.push('no day ' + kind); continue; } kindBtn(kind).click(); const n0 = exs(); out.kinds.push(kind + ':' + n0.length);
+          for (let i = 0; i < n0.length; i++) { const menu = menuTos(n0[i]);
+            document.querySelectorAll('#liftSheet .ex .exname')[i].click();
+            const tos = Array.from(document.querySelectorAll('#guideSheet [data-a="guide-swap"]')).map(b => b.dataset.to);
+            tos.forEach(t => { if (!menu.includes(t)) out.notInMenu.push(n0[i] + '>' + t); });
+            for (const to of tos) { out.tried++;
+              document.querySelector('#guideSheet [data-a="guide-swap"][data-to="' + to + '"]').click();
+              const n1 = exs(), sw = (M.state.drafts[date] || {}).swaps || {};
+              if (n1.length !== n0.length || new Set(n1).size !== n1.length || n1[i] !== to || !n1.every((x, j) => j === i || x === n0[j]) || sw[n0[i]] !== to || document.getElementById('guideSheet').dataset.guide !== to) out.bad.push(kind + ': ' + n0[i] + ' to ' + to + ' gave ' + n1.join(','));
+              M.guideClose(); M.state.drafts[date].swaps = {}; kindBtn(kind).click(); // back to the plan
+              if (exs().join() !== n0.join()) out.bad.push(kind + ': the plan did not come back after ' + to);
+              document.querySelectorAll('#liftSheet .ex .exname')[i].click(); }
+            M.guideClose(); } }
+        return out; }, kinds);
+      tried += res.tried; days.push.apply(days, res.kinds); res.bad.concat(res.notInMenu.map(x => 'not in the menu: ' + x)).forEach(b => allBad.push(b));
+      await ctx.close();
+    }
+    check('X every "Swap to it" on every lift of every day was tapped (' + tried + ' swaps over ' + days.join(', ') + '): the day keeps the same number of exercises, no two the same, only that slot changes', tried >= 15 && days.length === 5 && allBad.length === 0, allBad.slice(0, 4).join(' | '));
+    check('X every target the guide offers is one the exercise\'s own Swap menu offers: it is the same swap logic', !allBad.some(b => /not in the menu/.test(b)));
+    // and through a save
+    await open({ me: 'tyson', init: local(seedDocs()) });
+    await page.click('#addBtn'); await page.click('#addLift'); await page.waitForSelector('#liftSheet');
+    await page.click('.exname[data-k="legcurl"]'); await page.waitForSelector('#guideSheet'); await page.click('#guideSheet [data-a="guide-swap"][data-to="dbrdl"]'); await page.waitForSelector('#guideSheet[data-guide="dbrdl"]'); await page.click('#guideClose'); await page.waitForSelector('#guideSheet', { state: 'detached' });
+    await fill(page, '#tmMin', 5);
+    for (const k of await page.$$eval('#liftSheet .ex', els => els.map(e => e.dataset.ex))) { if (await has(page, '[data-usew="' + k + '"]:not([hidden])')) await page.click('[data-usew="' + k + '"]'); const n = (await page.$$('[data-field="rep"][data-ex="' + k + '"]')).length; for (let i = 0; i < n; i++) await fill(page, '#r-' + k + '-' + i, 10); }
+    await blur(); await saveLift();
+    const rec = await ses(page, WED);
+    check('X saved after a guide swap, the workout still has all six lifts, with the swap recorded the way the menu records it', rec.kind === 'strength' && rec.planned.length === 6 && same(rec.planned, ['squat', 'dbbench', 'latpull', 'dbshoulder', 'dbrdl', 'legraise']) && same(rec.plannedBase, ['squat', 'dbbench', 'latpull', 'dbshoulder', 'legcurl', 'legraise']) && same(rec.swaps, { legcurl: 'dbrdl' }) && Object.keys(rec.ex).length === 6 && rec.complete === true, JSON.stringify([rec.planned, rec.plannedBase, rec.swaps, rec.complete]));
+  });
+
+  // ---------- S: smoke: every tab, sheet, guide and live-mode screen, both profiles, 390 px ----------
+  await section('S', async () => {
+    await open({ me: 'tyson', init: 'window.__assetMode="ok";' + local(seedDocs()) + STUB }); await blobRoute(page);
+    await switchTo(page, 'jacquie'); await page.waitForTimeout(300); await switchTo(page, 'tyson'); await page.waitForTimeout(700);
+    await watchWrites(page);
+    const bad = [], wide = [], screens = [], guides = { tyson: 0, jacquie: 0 };
+    const junk = t => /undefined|NaN|\[object/.test(t);
+    const fit = async name => { const o = await page.evaluate(() => { const w = document.getElementById('wm'), b = w.querySelector('.wm-body'); return Math.max(document.documentElement.scrollWidth - document.documentElement.clientWidth, w.scrollWidth - w.clientWidth, b ? b.scrollWidth - b.clientWidth : 0); }); screens.push(name); if (o > 0) wide.push(name + ':' + o); if (junk(await txt(page, '#wm'))) bad.push('wm:' + name); };
+    const sheet = async name => { const o = await page.evaluate(() => { const v = document.querySelector('#ov .ov'), b = document.querySelector('#ov .ls-body'); return Math.max(document.documentElement.scrollWidth - document.documentElement.clientWidth, v ? v.scrollWidth - v.clientWidth : 0, b ? b.scrollWidth - b.clientWidth : 0); }); screens.push(name); if (o > 0) wide.push(name + ':' + o); if (junk(await txt(page, '#ov'))) bad.push('sheet:' + name); };
+    const guide = async name => { await page.waitForSelector('#guideSheet'); const o = await page.evaluate(() => { const v = document.getElementById('guideSheet'), b = v.querySelector('.gd-body'); return { w: Math.max(document.documentElement.scrollWidth - document.documentElement.clientWidth, v.scrollWidth - v.clientWidth, b.scrollWidth - b.clientWidth), ok: !!v.querySelector('svg.figs') && !!v.querySelector('.gcard') && !!v.querySelector('a[data-watch]'), text: v.textContent }; }); screens.push(name); if (o.w > 0) wide.push(name + ':' + o.w); if (!o.ok || junk(o.text)) bad.push('guide:' + name); };
+    const shut = async () => { await page.evaluate(() => { const b = document.querySelector('#ov [data-a="ov-close"]'); if (b) b.click(); }); await noOv(); };
+    const leave = async () => { await page.click('[data-a="wm-quit"]'); await fit('quit'); await page.click('#wmQuitKeep'); await page.waitForSelector('#wm', { state: 'hidden' }); };
+    const startLive = async () => { await page.click('#ciStart'); await page.waitForSelector('#wm:not([hidden])'); await waitView('main'); };
+    const how = async name => { await page.click('#wmHowBtn'); await page.waitForSelector('#wmHow'); await fit(name + ' how to'); await page.click('#wmHowBtn'); };
+    for (const who of ['tyson', 'jacquie']) { if (who === 'jacquie') await switchTo(page, 'jacquie');
+      for (const tab of ['train', 'program', 'history', 'fuel', 'compete', 'me']) { await go(page, tab); const n = await page.evaluate(() => document.querySelectorAll('#main .card, #main .sheet').length); if (!n || junk(await txt(page, '#main'))) bad.push(who + ':' + tab); if ((await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)) > 0) wide.push(who + ':' + tab); screens.push(who + ' ' + tab); }
+      // every guide, from the library, by real taps
+      await go(page, 'program'); await page.waitForSelector('#guideLib');
+      for (const g of await page.$$eval('#guideLib .glgroup', ds => ds.map(d => d.dataset.group))) { await page.click('[data-group="' + g + '"] summary');
+        for (const k of await page.$$eval('[data-group="' + g + '"] .glrow', rs => rs.map(r => r.dataset.k))) { await page.click('.glrow[data-k="' + k + '"]'); await page.waitForSelector('#guideSheet[data-guide="' + k + '"]'); await guide(who + ' guide ' + k); guides[who]++; await page.click('#guideClose'); await page.waitForSelector('#guideSheet', { state: 'detached' }); }
+        await page.click('[data-group="' + g + '"] summary'); }
+      await fill(page, '#glQ', 'press'); screens.push(who + ' library search'); if ((await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)) > 0) wide.push(who + ':library search'); await fill(page, '#glQ', ''); await blur();
+      await go(page, 'train'); await page.click('#coach summary'); await page.click('#coach summary');
+      await page.click('#dateChip'); await page.waitForSelector('#ov .datebar'); await sheet(who + ' date sheet'); await shut();
+      await page.click('#addBtn'); await page.waitForSelector('#addGrid'); await sheet(who + ' add sheet');
+      await page.click('#ov [data-a="health"]'); await page.waitForSelector('#hkText'); await sheet(who + ' health sheet'); await shut();
+      await page.click('#addBtn'); await page.click('#addCardio'); await page.waitForSelector('#cilogSave'); await sheet(who + ' cardio sheet'); await page.click('#cilogOpts0 button:last-child'); await sheet(who + ' cardio sheet, pool'); await shut();
+      await page.click('#addBtn'); await page.click('#addRecovery'); await page.waitForSelector('#cilogSave'); await sheet(who + ' recovery sheet'); await shut();
+      await page.click('#addBtn'); await page.click('#addMore'); await page.waitForSelector('#moreList'); await sheet(who + ' something else'); await fill(page, '#moreQ', 'walk'); await sheet(who + ' search'); await fill(page, '#moreQ', ''); await page.click('#moreAll'); await sheet(who + ' show all');
+      await page.click('#moreList .act.hp[data-k="hpswim"]'); await sheet(who + ' healthplex card'); await page.click('#moreList .act[data-k="walkeasy"]'); await page.waitForSelector('#actLog'); await sheet(who + ' activity sheet'); await shut();
+      await page.click('#ciExtra'); await page.waitForSelector('#hpExtra'); await sheet(who + ' class or game'); await shut();
+      if (who === 'tyson') {
+        await page.click('#addBtn'); await page.click('#addLift'); await page.waitForSelector('#liftSheet'); await sheet('lift sheet');
+        await page.click('#kindSeg [data-kind="cardio"]'); await sheet('lift sheet, treadmill'); await page.click('#kindSeg [data-kind="rest"]'); await sheet('lift sheet, rest'); await page.click('#kindSeg [data-kind="fba"]');
+        await page.click('[data-menu="squat"]'); await sheet('lift sheet, exercise menu'); await page.click('.menu [data-act="howto"]'); await guide('lift sheet guide, from the menu'); await page.click('#guideClose'); await page.waitForSelector('#guideSheet', { state: 'detached' });
+        await page.click('.exname[data-k="latpull"]'); await guide('lift sheet guide, from the name'); await page.click('#guideSheet .figplay'); await page.click('#guideSheet .figplay'); await page.keyboard.press('Escape'); await page.waitForSelector('#guideSheet', { state: 'detached' });
+        await page.evaluate(() => { const d = document.querySelector('.ls-body details.sessopts'); d.open = true; }); await sheet('lift sheet, session options');
+        await page.evaluate(() => { const st = window.MorningLaps.state; delete st.drafts[st.selDate]; }); await shut();
+        await pick('strong'); await startLive(); await fit('warm-up'); await page.click('[data-a="wm-next"]'); await fit('lift'); await how('lift'); await page.click('#wm .figview'); await fit('lift, front view'); await page.click('#wm .figview'); await page.click('[data-a="wm-swap"]'); await fit('swap'); await page.click('[data-a="wm-swap"]');
+        await page.click('#wmFinish'); await waitView('finish'); await fit('lift finish'); await page.click('[data-a="wm-unfinish"]'); await leave();
+        await page.evaluate(() => { const st = window.MorningLaps.state; delete st.drafts[st.selDate]; localStorage.removeItem('ml.drafts'); }); await go(page, 'program'); await go(page, 'train');
+        for (const [c, o, n] of [['tired', 'hptrack', 'laps'], ['tired', 'hpswim', 'lengths'], ['tired', 'treadmill', 'timer'], ['sore', 'hptrack', 'recovery']]) {
+          await pick(c); await page.click('[data-a="ci-opt"][data-v="' + o + '"]'); await page.click('#ciLog'); await page.waitForSelector('#cilogSave'); await sheet('log sheet ' + n); await shut();
+          await startLive(); await fit(n);
+          if (n === 'recovery') { await page.click('#wmNext'); await fit('stretch'); await how('stretch'); await page.click('#wmStretchNext'); await fit('stretch 2'); await page.click('#wmNext'); await fit('heat'); }
+          await page.click('#wmFinish'); await waitView('finish'); await fit(n + ' finish'); await page.click('[data-a="wm-unfinish"]'); await leave();
+          await page.evaluate(() => localStorage.removeItem('ml.wm')); await go(page, 'program'); await go(page, 'train');
+        }
+      } else {
+        await page.click('#addBtn'); await page.click('#addLift'); await page.waitForSelector('#actLog'); await sheet('her machine circuit'); await shut();
+        await pick('good'); await page.click('#ciLog'); await page.waitForSelector('#cilogSave'); await sheet('her log sheet'); await shut();
+        await startLive(); await fit('her laps'); await page.click('#wmNext'); await fit('circuit');
+        for (let k = 0; k < 4; k++) { await page.click('#wmStations [data-a="wm-sthow"][data-k="' + k + '"]'); await page.waitForSelector('#wmHow'); await fit('circuit how to ' + k); await page.click('#wmStations [data-a="wm-sthow"][data-k="' + k + '"]'); }
+        await page.click('#wmFinish'); await waitView('finish'); await fit('her finish'); await page.click('[data-a="wm-unfinish"]'); await leave();
+        await page.evaluate(() => localStorage.removeItem('ml.wm')); await go(page, 'program'); await go(page, 'train');
+        await pick('sore'); await startLive(); await fit('her stretch'); await how('her stretch'); await page.click('#wmNext'); await fit('her heat'); await leave();
+      }
+    }
+    await page.waitForTimeout(400);
+    check('S smoke: every tab draws for both profiles, with nothing broken in the text', bad.length === 0, bad.join(' '));
+    check('S all 45 guides were opened from the library by a tap, for each profile, each with its picture, its card and its Watch a demo link', guides.tyson === 45 && guides.jacquie === 45, JSON.stringify(guides));
+    check('S every sheet and live-mode screen was shown: ' + screens.length, screens.length >= 170 && ['tyson date sheet', 'tyson add sheet', 'tyson health sheet', 'tyson cardio sheet', 'tyson recovery sheet', 'tyson something else', 'tyson show all', 'tyson activity sheet', 'tyson class or game', 'lift sheet', 'lift sheet, treadmill', 'lift sheet, rest', 'lift sheet, exercise menu', 'lift sheet guide, from the menu', 'lift sheet guide, from the name', 'warm-up', 'lift', 'lift how to', 'lift, front view', 'swap', 'lift finish', 'quit', 'laps', 'lengths', 'timer', 'recovery', 'stretch', 'stretch how to', 'heat', 'jacquie date sheet', 'jacquie add sheet', 'jacquie something else', 'her machine circuit', 'her log sheet', 'her laps', 'circuit', 'circuit how to 0', 'circuit how to 3', 'her finish', 'her stretch', 'her stretch how to', 'her heat', 'tyson library search', 'jacquie library search'].every(s => screens.includes(s)), screens.filter(s => !/ guide /.test(s)).join(', '));
+    check('S at 390 px wide nothing scrolls sideways', wide.length === 0, wide.join(' '));
+    check('S showing screens, sheets and guides writes nothing', (await writes(page)).length === 0, JSON.stringify(await writes(page)));
   });
 
   // ---------- D: nothing else changed ----------
@@ -531,8 +770,8 @@ const FULLA = [['squat', 3], ['dbbench', 3], ['latpull', 3], ['dbshoulder', 2], 
     check('D while a guide plays, only its own sheet is redrawn: the page behind is not touched', mu[0] === 0 && mu[1] > 10, JSON.stringify(mu));
   });
 
-  // ---------- S: smoke: both profiles, every tab, light and dark ----------
-  await section('S', async () => {
+  // ---------- K: light and dark ----------
+  await section('K', async () => {
     const bad = [], wide = [];
     for (const [me, scheme] of [['tyson', 'light'], ['jacquie', 'dark']]) {
       await open({ me, scheme, init: local(seedDocs()) });
@@ -542,8 +781,8 @@ const FULLA = [['squat', 3], ['dbbench', 3], ['latpull', 3], ['dbshoulder', 2], 
       if (c.bg === c.stroke || c.w < 300) bad.push(me + ':figure colors ' + JSON.stringify(c));
       await page.click('#guideClose'); await ctx.close();
     }
-    check('S every tab draws for both profiles in light and dark, with nothing broken in the text', bad.length === 0, bad.join(' '));
-    check('S at 390 px wide nothing scrolls sideways', wide.length === 0, wide.join(' '));
+    check('K every tab draws for both profiles in light and dark, and the figure is drawn in that theme\'s colors', bad.length === 0, bad.join(' '));
+    check('K at 390 px wide nothing scrolls sideways in either theme', wide.length === 0, wide.join(' '));
   });
   check('no console errors in any section', consoleErrors.length === 0, consoleErrors.slice(0, 3).join(' | '));
 

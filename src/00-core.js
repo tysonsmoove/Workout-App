@@ -294,9 +294,9 @@ async function saveProfile(pid, patch) {
 // Both come from the Claude viewer some time after load, or never. `null` means this view cannot use one, and every
 // feature that wants one has a path without it: nothing waits on them, and nothing breaks when they are missing,
 // declined, or rate limited.
-const caps = { sample: null, images: null, downloads: null, known: false }; // images: this view's photo limits, or null; known: the viewer has answered about saving files
+const caps = { sample: null, images: null, downloads: null, assets: null, known: false }; // images: this view's photo limits, or null; known: the viewer has answered about saving files
 function useCap(name) { try { return window.claude && window.claude.use ? Promise.resolve(window.claude.use(name)).catch(() => null) : Promise.resolve(null); } catch (e) { return Promise.resolve(null); } }
-function capsChanged() { render(); if (state.ov && state.ov.type === 'food') renderOv(); }
+function capsChanged() { render(); if (state.ov && state.ov.type === 'food') renderOv(); if (state.guide) renderGuide(); }
 function loadCaps() {
   useCap('sample').then(async s => {
     if (!s || typeof s.json !== 'function') return;
@@ -304,6 +304,8 @@ function loadCaps() {
     capsChanged();
   });
   useCap('downloads').then(d => { caps.downloads = d && typeof d.save === 'function' ? d : null; caps.known = true; capsChanged(); });
+  // storing a photo: only some viewers are given this. Without it the photo buttons are never drawn.
+  useCap('assets').then(a => { caps.assets = a && typeof a.upload === 'function' && typeof a.delete === 'function' ? a : null; if (caps.assets) capsChanged(); });
 }
 // Ask Claude for one JSON value, on a tap, never from a loop and never retried here.
 // Resolves { ok: true, data }, or { ok: false, why } with why = 'gone' (unavailable, or the viewer said no: the
