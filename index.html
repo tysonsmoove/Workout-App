@@ -444,11 +444,6 @@ textarea.plaintext { font-family: var(--body); min-height: 88px; }
 .wm-body h2 { font-size: 1.75rem; }
 .wm-body h3 { font-size: 1.375rem; }
 .wm-target { font-size: 1.125rem; }
-.wm-how { display: grid; grid-template-columns: 112px 1fr; gap: 10px; align-items: center; }
-.wm-demo { background: var(--card); border: 1px solid var(--line); border-radius: 12px; aspect-ratio: 1; display: grid; place-items: center; overflow: hidden; }
-.wm-demo svg { width: 100%; height: 100%; display: block; }
-.wm-cues { margin: 0; padding-left: 20px; display: grid; gap: 4px; font-size: .9375rem; line-height: 1.25; }
-.wm-mistake { font-size: .875rem; background: var(--warn-soft); border-radius: 8px; padding: 6px 10px; }
 .wm-btn { min-height: 48px; padding: 8px 16px; font-size: 1rem; font-weight: 600; border-radius: 12px; }
 .wm-btn.sm { min-height: 44px; font-size: .875rem; padding: 6px 12px; }
 .wm-btn.on { background: var(--fg); color: var(--bg); border-color: var(--fg); }
@@ -611,6 +606,103 @@ span.wm-pip { display: inline-grid; place-items: center; height: 48px; }
 .ls-foot .savebar { position: static; background: transparent; padding: 0; }
 .ov-root[data-type="lift"]:not([hidden]) ~ .toast { bottom: auto; top: calc(64px + env(safe-area-inset-top, 0px)); }
 
+/* ---------- Version 19: the figure, the guide ---------- */
+.figs { display: block; width: 100%; height: auto; background: var(--card); border: 1px solid var(--line); border-radius: 12px; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.figs .fgb { stroke: var(--fg); }
+.figs .fgb.fgfill { fill: var(--fg); stroke: none; }
+.figs .fgfar { stroke: color-mix(in srgb, var(--fg) 42%, var(--card)); }
+.figs .fgfar.fgfill { fill: color-mix(in srgb, var(--fg) 42%, var(--card)); stroke: none; }
+.figs .fgh { stroke: var(--card); }
+.figs .fge { stroke: var(--muted); }
+.figs .fge.fgfill { fill: var(--muted); stroke: none; }
+.figs .fgpad { stroke: color-mix(in srgb, var(--muted) 62%, var(--card)); }
+.figs .fgpad.fgfill { fill: color-mix(in srgb, var(--muted) 62%, var(--card)); stroke: none; }
+.figs .fgsoft { opacity: .45; }
+.figs .fgw { stroke: var(--accent); stroke-width: 2.4; }
+.figs .fgw.fgfill { fill: var(--accent); stroke: none; }
+.figs .fgc { stroke: var(--muted); }
+.figs .fgl { stroke: var(--line); stroke-width: 1.5; }
+.figs .fgm { fill: var(--accent); stroke: var(--card); stroke-width: 1.2; }
+.figs .fgmt { fill: var(--accent-ink); font: 700 6px var(--body); stroke: none; }
+
+/* --- v19: the figure player --- */
+.fig { display: grid; gap: 6px; min-width: 0; }
+.fig .figs { max-height: 44vh; }
+.figinfo { display: grid; gap: 4px; min-width: 0; align-content: start; }
+.figphase { font-family: var(--display); font-size: 1.0625rem; font-weight: 600; text-transform: var(--caps); letter-spacing: var(--track); min-height: 1.3em; line-height: 1.3; }
+.figlegend { display: grid; gap: 3px; font-size: .8125rem; line-height: 1.25; color: var(--muted); }
+.figlegend span { display: flex; gap: 6px; align-items: flex-start; text-align: left; }
+.figlegend b { flex: none; width: 1.4em; height: 1.4em; border-radius: 50%; background: var(--soft); color: var(--muted); font-size: .6875rem; display: inline-grid; place-items: center; }
+.figlegend span.on { color: var(--fg); }
+.figlegend span.on b { background: var(--accent); color: var(--accent-ink); }
+.figbar { display: flex; align-items: center; gap: 8px; min-height: 44px; }
+.figplay { flex: none; width: 44px; min-height: 44px; padding: 0; border-radius: 50%; font-size: .8125rem; line-height: 1; }
+.figscrub { flex: 1 1 auto; min-width: 0; height: 44px; margin: 0; padding: 0; border: 0; background: transparent; accent-color: var(--accent); }
+.fig .figview { flex: none; min-height: 44px; }
+.fig.compact { grid-template-columns: minmax(0, 46%) minmax(0, 1fr); column-gap: 10px; align-items: center; text-align: left; }
+.fig.compact .figs { max-height: 132px; }
+.fig.compact .figbar { grid-column: 1 / -1; }
+.fig.compact .figlegend { font-size: .75rem; }
+.wm-demo { width: 100%; }
+/* --- v19: the how-to card --- */
+.gcard { display: grid; gap: 14px; text-align: left; }
+.gsec { display: grid; gap: 6px; min-width: 0; }
+.gsec h4 { font-family: var(--display); font-size: .8125rem; font-weight: 600; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); margin: 0; }
+.gsec p { margin: 0; }
+.gsec ol { margin: 0; padding-left: 22px; display: grid; gap: 5px; }
+.gsec ol li::marker { font-weight: 700; color: var(--accent); }
+.gmis { display: grid; gap: 1px; padding: 8px 10px; background: var(--soft); border-radius: 8px; font-size: .9375rem; }
+.gmis span::before { content: "Fix: "; font-weight: 600; color: var(--good); }
+.galt { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); }
+.galt:first-of-type { border-top: 0; padding-top: 0; }
+.galt p { font-size: .9375rem; }
+.galt button { flex: none; min-height: 40px; }
+.gset { display: flex; gap: 8px; align-items: center; }
+.gset input { flex: 1 1 auto; min-width: 0; font-size: 1rem; }
+.gset button { flex: none; min-height: 44px; }
+.geasy { background: var(--warn-soft); }
+.mmwrap { display: grid; grid-template-columns: minmax(0, 150px) 1fr; gap: 12px; align-items: center; }
+.mmap { display: block; width: 100%; height: auto; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.mmap .mmb { --c: var(--soft); }
+.mmap .mm { --c: color-mix(in srgb, var(--muted) 34%, var(--card)); }
+.mmap .mm.also { --c: color-mix(in srgb, var(--accent) 48%, var(--card)); }
+.mmap .mm.on { --c: var(--accent); }
+.mmap .mmf { fill: var(--c); stroke: none; }
+.mmap .mmo { stroke: var(--c); stroke-width: 3; }
+.mmap .mml { stroke: var(--c); }
+.mmap .mmt { fill: var(--muted); font: 600 7.5px var(--body); stroke: none; }
+.mmkey { display: grid; gap: 6px; font-size: .9375rem; }
+.mmkey p { display: flex; gap: 8px; align-items: baseline; }
+.mmdot { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+.mmdot.also { background: color-mix(in srgb, var(--accent) 48%, var(--card)); }
+/* --- v19: the guide sheet, above the lift sheet and below live mode --- */
+.gd-root { z-index: 32; }
+.ov.gd { display: flex; flex-direction: column; gap: 0; padding: 0; overflow: hidden; }
+.ov.gd.gdin { animation: mlRise .2s ease-out both; }
+.gd-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: grid; gap: 14px; align-content: start; padding: 12px max(16px, env(safe-area-inset-right, 0px)) calc(20px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+/* --- v19: the guide in the lift sheet and in live mode --- */
+.exname { border: 0; background: transparent; padding: 0; min-height: 0; font: inherit; color: inherit; text-align: left; border-radius: 4px; text-decoration: underline dotted color-mix(in srgb, var(--muted) 70%, transparent); text-underline-offset: 4px; }
+.blk .bhead h3 .exname { padding: 6px 0; margin: -6px 0; }
+.myset { font-size: .8125rem; line-height: 1.3; min-height: 1.3em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; } /* the least height keeps a clipped line from folding to nothing in a full grid */
+.wm-body > .myset { font-size: .875rem; }
+.wm-howbtn { justify-self: start; }
+.wm-center .wm-howbtn { justify-self: center; }
+.wm-howcard { justify-self: stretch; width: 100%; border-top: 1px solid var(--line); padding-top: 12px; }
+.wm-strow { display: flex; gap: 8px; align-items: stretch; }
+.wm-strow > .wm-btn:first-child { flex: 1 1 auto; min-width: 0; }
+.wm-strow > .wm-btn.sm { flex: none; }
+.wm-strow .wm-btn > span { text-align: left; min-width: 0; }
+.wm-strow .myset { display: block; font-weight: 400; }
+/* a screen with a picture starts at the top: centred content taller than the screen would lose its top */
+.wm-body.wm-hasdemo { align-content: start; }
+/* --- v19: the exercise guide library --- */
+.glgroup { border-top: 1px solid var(--line); padding-top: 8px; }
+.glgroup > summary { min-height: 36px; color: var(--fg); font-size: .9375rem; font-weight: 600; }
+.gllist { display: grid; }
+.glrow { display: grid; gap: 1px; text-align: left; border: 0; border-top: 1px solid var(--line); border-radius: 0; background: transparent; padding: 8px 0; min-height: 48px; width: 100%; }
+.glrow:first-child { border-top: 0; }
+.glrow .gln { font-weight: 500; }
+
 </style>
 
 <div class="wrap">
@@ -631,6 +723,7 @@ span.wm-pip { display: inline-grid; place-items: center; height: 48px; }
   <main id="main"></main>
 </div>
 <div id="ov" class="ov-root" hidden></div>
+<div id="gd" class="ov-root gd-root" hidden></div>
 <canvas id="fx" class="fx" aria-hidden="true"></canvas>
 <div id="sweep" class="sweep" aria-hidden="true" hidden><i></i><b>✓</b></div>
 <div id="wm" class="wm" role="dialog" aria-modal="true" aria-label="Workout" hidden></div>
@@ -2635,287 +2728,1601 @@ ACT['timer-x'] = () => restStop();
 document.addEventListener('pointerdown', e => { if (e.target.closest && e.target.closest('#rest')) e.preventDefault(); });
 
 /* ---- 57-moves.js ---- */
-// 57-moves.js: movement demos and how-to text for workout mode.
-// MOVE_OF maps each exercise to one of 11 movement patterns, demoSVG(pattern) returns an animated line figure,
-// HOWTO holds three form cues and one common mistake per exercise, STRETCHES is the cool-down sequence.
-// Top-level names here are MOVE_OF, HOWTO, STRETCHES, demoSVG, plus helpers prefixed MV_.
-
-// Which demo animation each exercise uses. Eleven movement patterns cover all 33 exercises.
-const MOVE_OF = {
-  squat: 'squat', goblet: 'squat', legpress: 'squat',
-  dbrdl: 'hinge', bbrdl: 'hinge', hipthrust: 'hinge',
-  lunge: 'lunge', splitsquat: 'lunge',
-  chestpress: 'hpress', dbbench: 'hpress', inclinedb: 'hpress', pecdeck: 'hpress',
-  shoulderpress: 'vpress', dbshoulder: 'vpress',
-  latpull: 'vpull', assistpull: 'vpull',
-  seatedrow: 'hpull', dbrow: 'hpull', facepull: 'hpull', reardelt: 'hpull',
-  latraise: 'raise', cablelat: 'raise', calf: 'raise',
-  dbcurl: 'curl', cablecurl: 'curl', hammer: 'curl', legcurl: 'curl',
-  pushdown: 'extension', dbtri: 'extension', legext: 'extension',
-  crunch: 'core', legraise: 'core', benchtuck: 'core'
-};
-
-// Three form cues and one common mistake per exercise, in plain words.
-const HOWTO = {
-  chestpress: { cues: [
-    'Set the seat so the handles line up with the middle of your chest.',
-    'Press forward until your arms are almost straight.',
-    'Bring the handles back slowly, under control.'],
-    mistake: 'Shoulders rolling forward. Keep your back and head on the pad.' },
-  dbbench: { cues: [
-    'Lie back with your feet flat on the floor.',
-    'Lower the weights to the sides of your chest.',
-    'Press up until your arms are straight over your chest.'],
-    mistake: 'Elbows flared straight out. Tuck them a little toward your sides.' },
-  shoulderpress: { cues: [
-    'Set the seat so the handles start at shoulder height.',
-    'Press up until your arms are almost straight.',
-    'Lower slowly until your hands reach ear level.'],
-    mistake: 'Lower back arching. Keep it on the pad and tighten your belly.' },
-  dbshoulder: { cues: [
-    'Sit tall with your back against the pad.',
-    'Start with the weights beside your ears, palms forward.',
-    'Press straight up, then lower slowly to ear height.'],
-    mistake: 'Leaning back to push. Use a lighter weight and stay upright.' },
-  pushdown: { cues: [
-    'Stand tall and pin your elbows to your sides.',
-    'Push the bar down until your arms are straight.',
-    'Let it rise slowly until your forearms pass level.'],
-    mistake: 'Elbows drifting forward. Keep them glued to your ribs.' },
-  dbtri: { cues: [
-    'Hold one weight overhead with both hands.',
-    'Bend your elbows to lower it behind your head.',
-    'Straighten your arms to lift it back up.'],
-    mistake: 'Elbows flaring wide. Keep them pointing forward, near your head.' },
-  inclinedb: { cues: [
-    'Set the bench to a low incline and lie back.',
-    'Lower the weights to the sides of your upper chest.',
-    'Press up until your arms are straight above your shoulders.'],
-    mistake: 'Bench set too upright. Keep it low so your chest does the work.' },
-  pecdeck: { cues: [
-    'Sit tall with your back flat against the pad.',
-    'Keep a soft bend in your elbows the whole time.',
-    'Bring your hands together in front, then open slowly.'],
-    mistake: 'Opening too far back. Stop when your hands line up with your chest.' },
-  latraise: { cues: [
-    'Stand tall with the weights at your sides.',
-    'Lift your arms out to the sides, up to shoulder height.',
-    'Lower slowly. Do not let the weights drop.'],
-    mistake: 'Swinging the weights up. Go lighter and lift without a swing.' },
-  cablelat: { cues: [
-    'Stand side-on to the machine with the handle in your far hand.',
-    'Lift your arm out to the side, up to shoulder height.',
-    'Lower slowly and keep the cable tight.'],
-    mistake: 'Shoulder shrugging up. Keep it down, away from your ear.' },
-  latpull: { cues: [
-    'Sit with your thighs snug under the pads.',
-    'Pull the bar down to your upper chest.',
-    'Let the bar rise slowly until your arms are straight.'],
-    mistake: 'Leaning far back and yanking. Stay upright and pull smoothly.' },
-  assistpull: { cues: [
-    'Kneel on the pad and grip the bar just wider than your shoulders.',
-    'Pull your chest up toward the bar.',
-    'Lower slowly until your arms are straight.'],
-    mistake: 'Stopping halfway down. Lower until your arms are fully straight.' },
-  seatedrow: { cues: [
-    'Sit tall with your knees slightly bent.',
-    'Pull the handle to your belly button.',
-    'Squeeze your shoulder blades, then reach forward slowly.'],
-    mistake: 'Rocking back and forth. Keep your upper body still.' },
-  dbrow: { cues: [
-    'Put one hand and one knee on a bench, back flat.',
-    'Pull the weight up toward your hip.',
-    'Lower it slowly until your arm is straight.'],
-    mistake: 'Twisting your body to lift. Keep both shoulders level.' },
-  dbcurl: { cues: [
-    'Stand tall with your palms facing forward.',
-    'Curl the weights up toward your shoulders.',
-    'Lower slowly until your arms are straight.'],
-    mistake: 'Swinging your body. Keep your elbows by your sides and go lighter.' },
-  cablecurl: { cues: [
-    'Stand facing the machine with your elbows at your sides.',
-    'Curl the bar up toward your shoulders.',
-    'Lower slowly and keep the cable tight.'],
-    mistake: 'Elbows moving forward. Keep them still beside your ribs.' },
-  hammer: { cues: [
-    'Hold the weights with your palms facing each other.',
-    'Curl up without turning your wrists.',
-    'Lower slowly until your arms are straight.'],
-    mistake: 'Leaning back to lift. Stand tall and use a lighter weight.' },
-  facepull: { cues: [
-    'Set the rope at about face height.',
-    'Pull the rope toward your face, hands going past your ears.',
-    'Keep your elbows high, then return slowly.'],
-    mistake: 'Leaning back to pull. Stay upright and use less weight.' },
-  reardelt: { cues: [
-    'Bend forward at the hips and keep your back flat.',
-    'Lift your arms out to the sides with a soft bend in the elbows.',
-    'Squeeze your shoulder blades, then lower slowly.'],
-    mistake: 'Standing up as you lift. Keep your chest facing the floor.' },
-  legpress: { cues: [
-    'Place your feet shoulder-width apart on the platform.',
-    'Lower until your knees are bent to about a right angle.',
-    'Push through your heels until your legs are almost straight.'],
-    mistake: 'Snapping your knees straight. Stop just short of fully straight.' },
-  goblet: { cues: [
-    'Hold one weight against your chest with both hands.',
-    'Sit down between your knees and keep your chest up.',
-    'Push through your whole foot to stand.'],
-    mistake: 'Heels lifting. Sit back more and keep your heels down.' },
-  legext: { cues: [
-    'Set the pad just above your ankles.',
-    'Straighten your legs until they are level.',
-    'Lower slowly. Do not let the weight drop.'],
-    mistake: 'Kicking the weight up. Lift smoothly and pause at the top.' },
-  splitsquat: { cues: [
-    'Stand in a long step, one foot forward and one back.',
-    'Drop your back knee straight down toward the floor.',
-    'Push through your front heel to stand back up.'],
-    mistake: 'Front knee caving in. Keep it pointing over your toes.' },
-  legcurl: { cues: [
-    'Set the pad just above your heels.',
-    'Curl your heels toward your backside.',
-    'Let the pad return slowly, all the way.'],
-    mistake: 'Hips lifting off the pad. Press them down and go lighter.' },
-  dbrdl: { cues: [
-    'Stand tall with the weights in front of your thighs.',
-    'Push your hips back and slide the weights down your legs.',
-    'Stop at mid-shin, then push your hips forward to stand.'],
-    mistake: 'Back rounding. Keep your chest up and your back flat.' },
-  calf: { cues: [
-    'Stand with the balls of your feet on the step.',
-    'Rise onto your toes as high as you can.',
-    'Lower your heels slowly below the step.'],
-    mistake: 'Bouncing fast. Pause at the top and lower slowly.' },
-  squat: { cues: [
-    'Rest the bar on your upper back, not on your neck.',
-    'Sit back and down like reaching for a chair.',
-    'Push the floor away and stand tall.'],
-    mistake: 'Knees caving in. Push them out over your toes.' },
-  lunge: { cues: [
-    'Take a long step forward and keep your chest up.',
-    'Lower until both knees are bent to about a right angle.',
-    'Push through your front heel into the next step.'],
-    mistake: 'Steps too short. Step longer so your front heel stays down.' },
-  bbrdl: { cues: [
-    'Hold the bar against your thighs with soft knees.',
-    'Push your hips back and keep the bar close to your legs.',
-    'Stop just below your knees, then push your hips forward.'],
-    mistake: 'Bar drifting away from you. Keep it brushing your legs.' },
-  hipthrust: { cues: [
-    'Rest your upper back on a bench with the weight on your hips.',
-    'Push through your heels and lift your hips until level.',
-    'Squeeze at the top, then lower slowly.'],
-    mistake: 'Lower back arching. Tuck your chin and keep your ribs down.' },
-  crunch: { cues: [
-    'Lie on your back with your knees bent and feet flat.',
-    'Curl your shoulders off the floor toward your knees.',
-    'Lower slowly back down.'],
-    mistake: 'Pulling on your neck. Rest your fingertips lightly by your ears.' },
-  legraise: { cues: [
-    'Lie flat with your hands under your hips.',
-    'Lift your legs until they point at the ceiling.',
-    'Lower slowly and stop just above the floor.'],
-    mistake: 'Lower back lifting. Press it into the floor and bend your knees.' },
-  benchtuck: { cues: [
-    'Sit on the edge of a bench and lean back a little.',
-    'Pull your knees in toward your chest.',
-    'Stretch your legs back out without touching the floor.'],
-    mistake: 'Rushing the reps. Move slowly and keep your belly tight.' }
-};
+// 57-moves.js: the cool-down stretch sequence of a guided session.
+// The pictures of every move are in 58-figure.js and 59-figures.js, and the how-to cards in 59-guide-text.js.
+// `g` is the key of each stretch's picture and card.
 
 // Gentle cool-down, 4 min 50 s in total: standing first, then seated, then lying on a mat.
 const STRETCHES = [
-  { name: 'Chest opener', sec: 30, cue: 'Clasp your hands behind your back and gently lift your chest.' },
-  { name: 'Cross-body shoulder', sec: 40, cue: 'Hug one arm across your chest. Switch arms halfway.' },
-  { name: 'Standing calf stretch', sec: 40, cue: 'Step one foot back and press the heel down. Switch halfway.' },
-  { name: 'Seated forward reach', sec: 40, cue: 'Sit tall with legs out and reach toward your shins. No bouncing.' },
-  { name: 'Butterfly', sec: 30, cue: 'Soles of your feet together, sit tall, let your knees relax down.' },
-  { name: 'Figure four', sec: 40, cue: 'On your back, ankle over knee, pull in gently. Switch halfway.' },
-  { name: 'Knees to chest', sec: 30, cue: 'Lie back, hug both knees in, and breathe slowly.' },
-  { name: 'Child\'s pose', sec: 40, cue: 'Kneel, sit back on your heels, and reach your arms forward.' }
+  { name: 'Chest opener', sec: 30, g: 'sx_chest', cue: 'Clasp your hands behind your back and gently lift your chest.' },
+  { name: 'Cross-body shoulder', sec: 40, g: 'sx_shoulder', cue: 'Hug one arm across your chest. Switch arms halfway.' },
+  { name: 'Standing calf stretch', sec: 40, g: 'sx_calf', cue: 'Step one foot back and press the heel down. Switch halfway.' },
+  { name: 'Seated forward reach', sec: 40, g: 'sx_reach', cue: 'Sit tall with legs out and reach toward your shins. No bouncing.' },
+  { name: 'Butterfly', sec: 30, g: 'sx_butterfly', cue: 'Soles of your feet together, sit tall, let your knees relax down.' },
+  { name: 'Figure four', sec: 40, g: 'sx_figure4', cue: 'On your back, ankle over knee, pull in gently. Switch halfway.' },
+  { name: 'Knees to chest', sec: 30, g: 'sx_knees', cue: 'Lie back, hug both knees in, and breathe slowly.' },
+  { name: 'Child\'s pose', sec: 40, g: 'sx_child', cue: 'Kneel, sit back on your heels, and reach your arms forward.' }
 ];
 
-// How the figures move: each joint is a <g class="mvj"> drawn in its mid-rep pose, with its pivot in
-// transform-origin (viewBox units) and its two end poses in custom properties. --mva and --mvb are the rotation
-// at each end of the rep; --mvxa, --mvya, --mvxb and --mvyb are an optional slide. All six are reset on every
-// joint so that a nested joint never inherits its parent's values. One shared keyframe rule plays end A, mid,
-// end B, mid. The two cubic-beziers are the two halves of ease-in-out, so a rep eases in and out as a whole and
-// passes through the drawn pose exactly. With animation off, the drawn mid-rep pose shows.
-const MV_CSS = [
-  '.mv{display:block;width:140px;height:140px;max-width:100%;overflow:hidden;fill:none;stroke:var(--fg);stroke-width:4;stroke-linecap:round;stroke-linejoin:round}',
-  '.mv .mvh{fill:var(--fg);stroke:none}',
-  '.mv .mvw{fill:var(--accent);stroke:none}',
-  '.mv .mve{stroke:var(--accent)}',
-  '.mv .mvc{stroke:var(--accent);stroke-width:2}',
-  '.mv .mvf{stroke:var(--line);stroke-width:3}',
-  '.mv .mvj{--mva:0deg;--mvb:0deg;--mvxa:0px;--mvya:0px;--mvxb:0px;--mvyb:0px;transform-box:view-box;animation:mvk 2.4s ease-in-out infinite}',
-  '@keyframes mvk{',
-  '0%,100%{transform:translate(var(--mvxa),var(--mvya)) rotate(var(--mva));animation-timing-function:cubic-bezier(.42,0,.71,.5)}',
-  '25%,75%{transform:translate(0px,0px) rotate(0deg);animation-timing-function:cubic-bezier(.29,.5,.58,1)}',
-  '50%{transform:translate(var(--mvxb),var(--mvyb)) rotate(var(--mvb));animation-timing-function:cubic-bezier(.42,0,.71,.5)}}',
-  '@media (prefers-reduced-motion: reduce){.mv,.mv *{animation:none !important}}'
-].join('\n');
-(function () { const s = document.createElement('style'); s.id = 'mv-css'; s.textContent = MV_CSS; document.head.appendChild(s); })();
-
-const MV_LABEL = {
-  squat: 'Squat: hips drop and rise with a bar on the shoulders',
-  hinge: 'Hip hinge: torso tips forward with a flat back as the weight slides down the legs',
-  lunge: 'Lunge: the back knee drops toward the floor and rises',
-  hpress: 'Horizontal press: lying on a bench, arms press the weight up',
-  vpress: 'Vertical press: arms press the weights overhead',
-  vpull: 'Vertical pull: arms pull a bar down from overhead',
-  hpull: 'Horizontal pull: seated, arms pull a handle to the body',
-  raise: 'Raise: arms lift out to the sides',
-  curl: 'Curl: the forearm curls up at the elbow',
-  extension: 'Extension: the forearm straightens down at the elbow',
-  core: 'Core: lying on the floor, the legs lift'
-};
-
-// Line-figure artwork, one entry per pattern, in viewBox units (120 x 120). Classes: mvh head, mvw weight,
-// mve equipment, mvc cable, mvf floor or bench, mvj animated joint.
-const MV_ART = {
-  squat: '<path class="mvf" d="M8 111H112"/><path d="M54 107.5 67 107.5"/><g class="mvj" style="transform-origin:57px 106px;--mva:-13deg;--mvb:13deg"><path d="M57 106 63.4 85"/><g class="mvj" style="transform-origin:63.4px 85px;--mva:52deg;--mvb:-52deg">' +
-    '<path d="M63.4 85 48.4 68.9"/><g class="mvj" style="transform-origin:48.4px 68.9px;--mva:-55deg;--mvb:55deg"><path d="M48.4 68.9 58 42.6"/><path d="M58 42.6 48.1 49.3 52 41.4"/><circle class="mvw" cx="52" cy="41.4" r="6.5"/>' +
-    '<circle class="mvh" cx="61.4" cy="31.6" r="6.5"/></g></g></g>',
-  hinge: '<path class="mvf" d="M8 111H112"/><path d="M51 107.5 64 107.5"/><g class="mvj" style="transform-origin:54px 106px;--mva:4deg;--mvb:-4deg"><path d="M54 106 52.5 84.1"/><g class="mvj" style="transform-origin:52.5px 84.1px;--mva:7deg;--mvb:-7deg">' +
-    '<path d="M52.5 84.1 48.3 62.5"/><g class="mvj" style="transform-origin:48.3px 62.5px;--mva:-46deg;--mvb:46deg"><path d="M48.3 62.5 65.9 40.7"/><g class="mvj" style="transform-origin:65.9px 40.7px;--mva:23deg;--mvb:-23deg">' +
-    '<path d="M65.9 40.7 60.1 68.1"/><circle class="mvw" cx="60.1" cy="68.1" r="6"/></g><circle class="mvh" cx="73.1" cy="31.8" r="6.5"/></g></g></g>',
-  lunge: '<path class="mvf" d="M8 111H112"/><g class="mvj" style="--mvya:-6.5px;--mvyb:6.5px"><g class="mvj" style="transform-origin:57px 75.5px;--mva:5.6deg;--mvb:-0.2deg"><path d="M57 75.5 57.7 97.5"/>' +
-    '<g class="mvj" style="transform-origin:57.7px 97.5px;--mva:-23.6deg;--mvb:17.2deg"><path d="M57.7 97.5 36 101"/></g></g><g class="mvj" style="transform-origin:57px 75.5px;--mva:22.9deg;--mvb:-17.5deg"><path d="M57 75.5 77.3 84"/>' +
-    '<g class="mvj" style="transform-origin:77.3px 84px;--mva:-35.8deg;--mvb:21.7deg"><path d="M77.3 84 78 106"/></g></g><path d="M57 75.5 58.5 47.5"/><path d="M58.5 47.5 58.5 76.5"/><path class="mve" d="M53 77.5 64 77.5"/>' +
-    '<circle class="mvw" cx="53" cy="77.5" r="3.4"/><circle class="mvw" cx="64" cy="77.5" r="3.4"/><circle class="mvh" cx="59.1" cy="36.1" r="6.5"/></g><path d="M36 101 41.5 107.5"/><path d="M78 106 88 107.5"/>',
-  hpress: '<path class="mvf" d="M8 111H112"/><path class="mvf" d="M20 85H82M28 85V110M74 85V110"/><circle class="mvh" cx="27" cy="76.5" r="6.5"/><path d="M36 79 70 79 91 81 93 106.5 102 107.5"/>' +
-    '<g class="mvj" style="transform-origin:42px 78px;--mva:-30deg;--mvb:30deg"><path d="M42 78 52.4 67.2"/><g class="mvj" style="transform-origin:52.4px 67.2px;--mva:60deg;--mvb:-60deg"><path d="M52.4 67.2 42 56.4"/>' +
-    '<circle class="mvw" cx="42" cy="56.4" r="7"/></g></g>',
-  vpress: '<path class="mvf" d="M8 111H112"/><circle class="mvh" cx="60" cy="36" r="6.5"/><path d="M46 49 74 49"/><path d="M60 49 60 77"/><path d="M45.5 107.5 51 107 60 77 69 107 74.5 107.5"/>' +
-    '<g class="mvj" style="transform-origin:46px 49px;--mva:48deg;--mvb:-48deg"><path d="M46 49 32.8 42"/><g class="mvj" style="transform-origin:32.8px 42px;--mva:-46deg;--mvb:46deg"><path d="M32.8 42 33.3 27"/><path class="mve" d="M27.8 27 38.8 27"/>' +
-    '<circle class="mvw" cx="27.8" cy="27" r="3.4"/><circle class="mvw" cx="38.8" cy="27" r="3.4"/></g></g><g class="mvj" style="transform-origin:74px 49px;--mva:-48deg;--mvb:48deg"><path d="M74 49 87.2 42"/>' +
-    '<g class="mvj" style="transform-origin:87.2px 42px;--mva:46deg;--mvb:-46deg"><path d="M87.2 42 86.7 27"/><path class="mve" d="M81.2 27 92.2 27"/><circle class="mvw" cx="81.2" cy="27" r="3.4"/><circle class="mvw" cx="92.2" cy="27" r="3.4"/></g></g>',
-  vpull: '<path class="mvf" d="M8 111H112"/><path class="mvf" d="M38 94H82"/><g class="mvj" style="--mvya:-11.5px;--mvyb:11.5px"><path class="mvc" d="M60 44.5 60 -40"/><path class="mve" d="M30 44.5 90 44.5"/></g><circle class="mvh" cx="60" cy="47" r="6.5"/>' +
-    '<path d="M47 60 73 60"/><path d="M60 60 60 87"/><path d="M43.5 108 49 107 50 92 60 87 70 92 71 107 76.5 108"/><g class="mvj" style="transform-origin:47px 60px;--mva:50.3deg;--mvb:-51deg"><path d="M47 60 32 59"/>' +
-    '<g class="mvj" style="transform-origin:32px 59px;--mva:-74.1deg;--mvb:32.7deg"><path d="M32 59 36 44.5"/></g></g><g class="mvj" style="transform-origin:73px 60px;--mva:-50.3deg;--mvb:51deg"><path d="M73 60 88 59"/>' +
-    '<g class="mvj" style="transform-origin:88px 59px;--mva:74.1deg;--mvb:-32.7deg"><path d="M88 59 84 44.5"/></g></g>',
-  hpull: '<path class="mvf" d="M8 111H112"/><path class="mvf" d="M28 92H60M44 92V110"/><path d="M44 86 66 84 69 106.5 79 107.5"/><g class="mvj" style="transform-origin:44px 86px;--mva:2deg;--mvb:-2deg"><path d="M44 86 45.5 58"/>' +
-    '<g class="mvj" style="transform-origin:45.5px 58px;--mva:-55.6deg;--mvb:60.2deg"><path d="M45.5 58 48.4 72.8"/><g class="mvj" style="transform-origin:48.4px 72.8px;--mva:78.5deg;--mvb:-32.3deg"><path d="M48.4 72.8 61.8 66"/>' +
-    '<g class="mvj" style="transform-origin:61.8px 66px;--mva:-22.2deg;--mvb:-27.9deg"><path class="mvc" d="M61.8 66 171.1 78.4"/></g><circle class="mvw" cx="61.8" cy="66" r="3.4"/></g></g><circle class="mvh" cx="46.1" cy="46.6" r="6.5"/></g>',
-  raise: '<path class="mvf" d="M8 111H112"/><circle class="mvh" cx="60" cy="36" r="6.5"/><path d="M46 49 74 49"/><path d="M60 49 60 77"/><path d="M45.5 107.5 51 107 60 77 69 107 74.5 107.5"/>' +
-    '<g class="mvj" style="transform-origin:46px 49px;--mva:-40deg;--mvb:40deg"><path d="M46 49 24.4 68.4"/><circle class="mvw" cx="24.4" cy="68.4" r="4.6"/></g><g class="mvj" style="transform-origin:74px 49px;--mva:40deg;--mvb:-40deg">' +
-    '<path d="M74 49 95.6 68.4"/><circle class="mvw" cx="95.6" cy="68.4" r="4.6"/></g>',
-  curl: '<path class="mvf" d="M8 111H112"/><path d="M57 107.5 49 106 53 67 58 106 66 107.5"/><path d="M53 67 53 39"/><circle class="mvh" cx="53.4" cy="27.5" r="6.5"/><path d="M53 39 56.6 53.6"/>' +
-    '<g class="mvj" style="transform-origin:56.6px 53.6px;--mva:72.5deg;--mvb:-72.5deg"><path d="M56.6 53.6 71.6 54.2"/><circle class="mvw" cx="71.6" cy="54.2" r="5"/></g>',
-  extension: '<path class="mvf" d="M8 111H112"/><path d="M54 107.5 46 106 50 67 55 106 63 107.5"/><path d="M50 67 53.9 39.3"/><circle class="mvh" cx="55.9" cy="27.9" r="6.5"/><path d="M53.9 39.3 56.5 54"/>' +
-    '<g class="mvj" style="transform-origin:56.5px 54px;--mva:-58deg;--mvb:58deg"><path d="M56.5 54 70.6 59.2"/><g class="mvj" style="transform-origin:70.6px 59.2px;--mva:60.9deg;--mvb:-52.4deg"><path class="mvc" d="M70.6 59.2 83.7 -65.1"/></g>' +
-    '<circle class="mvw" cx="70.6" cy="59.2" r="3.6"/></g>',
-  core: '<path class="mvf" d="M8 111H112"/><circle class="mvh" cx="19.5" cy="102.5" r="6.5"/><path d="M29 101.5 58 101.5"/><path d="M32 102.5 40 106.5 53 106.5"/><g class="mvj" style="transform-origin:58px 101.5px;--mva:35deg;--mvb:-35deg">' +
-    '<path d="M58 101.5 89.1 70.4"/><path d="M89.1 70.4 84.2 65.4"/></g>'
-};
-
-// Returns the inline SVG for a movement pattern. Unknown patterns fall back to the squat.
-function demoSVG(pattern) {
-  const p = Object.prototype.hasOwnProperty.call(MV_ART, pattern) ? pattern : 'squat';
-  return '<svg class="mv mv-' + p + '" viewBox="0 0 120 120" role="img" aria-label="' + MV_LABEL[p] + '">' + MV_ART[p] + '</svg>';
+/* ---- 58-figure.js ---- */
+/* ---------- 58-figure.js: an articulated figure, drawn from joint angles, with the equipment to scale ---------- */
+// One animation per exercise (FIG, in 59-figures.js). A pose is a handful of numbers: where the body is anchored,
+// the lean of the torso, and for each limb either its two joint directions or the point its hand or foot must reach
+// (the elbow or knee is then solved). The rep is played by blending between two or three poses on a real tempo:
+// about 2 s lowering, a short pause, about 1 s lifting. Everything is drawn in a 200 x 150 box where 1 unit is about
+// 1.77 cm, so a 175 cm person stands 99 units tall, a bench is 24 high and a 45 lb plate is 25 across.
+// Directions are in degrees: 0 points straight down, 90 forward (the figure faces right), 180 up, negative backward.
+const FG = { W: 200, H: 150, FLOOR: 136, shin: 24, thigh: 25, torso: 28, neck: 5, head: 6.5, ua: 17, fa: 15, ankle: 4, heel: 4, toe: 11, sh: 9.5, hw: 6 };
+const fgU = a => { const r = a * Math.PI / 180; return [Math.sin(r), Math.cos(r)]; };
+const fgAdd = (p, len, a) => { const u = fgU(a); return [p[0] + len * u[0], p[1] + len * u[1]]; };
+const fgN = v => Math.round(v * 10) / 10;
+const fgP = p => fgN(p[0]) + ' ' + fgN(p[1]);
+// Two-bone reach: from root A to target T with bone lengths l1 and l2. `bend` picks the side the joint folds to.
+function fgIK(A, T, l1, l2, bend) {
+  let dx = T[0] - A[0], dy = T[1] - A[1], d = Math.hypot(dx, dy) || 0.001; const max = l1 + l2 - 0.05, min = Math.abs(l1 - l2) + 0.05;
+  if (d > max) { dx *= max / d; dy *= max / d; d = max; } else if (d < min) { dx *= min / d; dy *= min / d; d = min; }
+  const a = (l1 * l1 - l2 * l2 + d * d) / (2 * d), h = Math.sqrt(Math.max(0, l1 * l1 - a * a));
+  return { J: [A[0] + dx * a / d - bend * h * dy / d, A[1] + dy * a / d + bend * h * dx / d], T: [A[0] + dx, A[1] + dy] };
 }
+const fgNum = (p, k, d) => p[k] == null ? d : p[k];
+// Side view: every joint position for a pose.
+function fgSolve(p) {
+  const L = FG, tA = 180 - (p.lean || 0), nA = tA - (p.neck || 0);
+  let H = [0, 0], S = fgAdd(H, L.torso, tA), N = fgAdd(S, L.neck, nA), Hd = fgAdd(N, L.head, nA);
+  const leg = (th, sh) => { const K = fgAdd(H, L.thigh, th), A = fgAdd(K, L.shin, sh); return { K, A }; };
+  const arm = (ua, fa, f) => { const E = fgAdd(S, L.ua * f, ua), W = fgAdd(E, L.fa, fa); return { E, W }; };
+  let l1 = leg(p.thigh || 0, p.shin || 0), l2 = leg(fgNum(p, 'thigh2', p.thigh || 0), fgNum(p, 'shin2', p.shin || 0));
+  let a1 = arm(p.ua || 0, fgNum(p, 'fa', p.ua || 0), fgNum(p, 'uaF', 1)), a2 = arm(fgNum(p, 'ua2', p.ua || 0), fgNum(p, 'fa2', fgNum(p, 'fa', p.ua || 0)), fgNum(p, 'uaF2', fgNum(p, 'uaF', 1)));
+  const anchor = p.anchor || 'foot', at = p.at || [100, L.FLOOR - L.ankle];
+  const foot = (A, ft) => { const f = fgU(ft), n = fgU(ft - 90); return { heel: [A[0] - L.heel * f[0] + L.ankle * n[0], A[1] - L.heel * f[1] + L.ankle * n[1]], toe: [A[0] + L.toe * f[0] + L.ankle * n[0], A[1] + L.toe * f[1] + L.ankle * n[1]] }; };
+  const ref = anchor === 'hip' ? H : anchor === 'hand' ? a1.W : anchor === 'shoulder' ? S : anchor === 'toe' ? foot(l1.A, fgNum(p, 'ft', 90)).toe : l1.A;
+  const dx = at[0] - ref[0], dy = at[1] - ref[1], mv = q => [q[0] + dx, q[1] + dy];
+  H = mv(H); S = mv(S); N = mv(N); Hd = mv(Hd); l1 = { K: mv(l1.K), A: mv(l1.A) }; l2 = { K: mv(l2.K), A: mv(l2.A) }; a1 = { E: mv(a1.E), W: mv(a1.W) }; a2 = { E: mv(a2.E), W: mv(a2.W) };
+  // limbs with a fixed end are solved from the point they must reach
+  if (p.footAt) { const r = fgIK(H, p.footAt, L.thigh, L.shin, fgNum(p, 'kb', -1)); l1 = { K: r.J, A: r.T }; }
+  if (p.foot2At) { const r = fgIK(H, p.foot2At, L.thigh, L.shin, fgNum(p, 'kb2', fgNum(p, 'kb', -1))); l2 = { K: r.J, A: r.T }; }
+  else if (p.footAt && p.thigh2 == null) l2 = l1;
+  const rel = (k, s2) => p[k + 'S' + s2] ? [S[0] + p[k + 'S' + s2][0], S[1] + p[k + 'S' + s2][1]] : p[k + 'H' + s2] ? [H[0] + p[k + 'H' + s2][0], H[1] + p[k + 'H' + s2][1]] : p[k + s2] || null, h1 = rel('hand', ''), h2 = rel('hand', '2');
+  if (h1) { const f = fgNum(p, 'armF', 1), r = fgIK(S, h1, L.ua * fgNum(p, 'uaF', 1) * f, L.fa * fgNum(p, 'faF', 1) * f, fgNum(p, 'eb', 1)); a1 = { E: r.J, W: r.T }; }
+  if (h2) { const f = fgNum(p, 'armF2', fgNum(p, 'armF', 1)), r = fgIK(S, h2, L.ua * fgNum(p, 'uaF2', 1) * f, L.fa * f, fgNum(p, 'eb2', fgNum(p, 'eb', 1))); a2 = { E: r.J, W: r.T }; }
+  else if (h1 && p.ua2 == null) a2 = a1;
+  const flat = A => A[1] > L.FLOOR - 9; // a foot near the floor lies flat; otherwise it follows the shin
+  const dirOf = (K, A) => Math.atan2(A[0] - K[0], A[1] - K[1]) * 180 / Math.PI;
+  const f1 = foot(l1.A, fgNum(p, 'ft', flat(l1.A) ? 90 : dirOf(l1.K, l1.A) + 80)), f2 = foot(l2.A, fgNum(p, 'ft2', fgNum(p, 'ft', flat(l2.A) ? 90 : dirOf(l2.K, l2.A) + 80)));
+  return { H, S, N, Hd, K: l1.K, A: l1.A, K2: l2.K, A2: l2.A, E: a1.E, W: a1.W, E2: a2.E, W2: a2.W, F: f1, F2: f2, M: [(H[0] + S[0]) / 2, (H[1] + S[1]) / 2], twoLegs: l2 !== l1, twoArms: a2 !== a1 };
+}
+// Front view: the body faces the viewer and is the same on both sides unless a "2" field says otherwise (side 1 is
+// on the right of the picture). Heights are above the floor; arm points are offsets from the shoulder, outward positive.
+function fgFrontSolve(p) {
+  const L = FG, cx = fgNum(p, 'cx', 100), fl = L.FLOOR, hipY = fl - fgNum(p, 'hip', 53), tl = fgNum(p, 'torso', L.torso), shY = hipY - tl, o = { front: true, cx };
+  [1, -1].forEach(sd => { const s = sd === 1 ? '' : '2', g = k => fgNum(p, k + s, p[k]);
+    const S = [cx + sd * L.sh, shY], H = [cx + sd * L.hw, hipY], A = [cx + sd * fgNum(p, 'stance' + s, fgNum(p, 'stance', 8)), fl - fgNum(p, 'ankleY' + s, fgNum(p, 'ankleY', L.ankle))];
+    const K = [cx + sd * fgNum(p, 'kneeX' + s, fgNum(p, 'kneeX', 7)), fl - fgNum(p, 'kneeY' + s, fgNum(p, 'kneeY', 28))], e = g('e') || [2, 17], w = g('w') || [3, 32];
+    o['S' + s] = S; o['H' + s] = H; o['A' + s] = A; o['K' + s] = K; o['E' + s] = [S[0] + sd * e[0], S[1] + e[1]]; o['W' + s] = [S[0] + sd * w[0], S[1] + w[1]]; });
+  o.N = [cx, shY - L.neck + 1]; o.Hd = [cx, shY - L.neck - L.head + fgNum(p, 'headY', 0)]; o.M = [cx, (shY + hipY) / 2];
+  return o;
+}
+// an arm in the front view from how far it is lifted out to the side (abd) and how much the elbow is bent inward
+const fgArm = (abd, bend) => { const u = fgU(abd), v = fgU(abd + (bend || 0)); return { e: [FG.ua * u[0], FG.ua * u[1]], w: [FG.ua * u[0] + FG.fa * v[0], FG.ua * u[1] + FG.fa * v[1]] }; };
+// blend two poses: numbers and points are blended, everything else is taken from the nearer pose
+function fgLerp(a, b, f) {
+  if (a === b || f <= 0) return a; if (f >= 1) return b;
+  const o = {}, keys = Object.keys(a).concat(Object.keys(b).filter(k => !(k in a)));
+  keys.forEach(k => { const x = a[k], y = b[k];
+    if (typeof x === 'number' && typeof y === 'number') o[k] = x + (y - x) * f;
+    else if (Array.isArray(x) && Array.isArray(y)) o[k] = x.map((v, i) => v + (y[i] - v) * f);
+    else o[k] = f < 0.5 ? (x == null ? y : x) : (y == null ? x : y); });
+  return o;
+}
+
+/* --- the tempo of a rep --- */
+// A phase is [label, seconds, from pose, to pose]. `down` lowers first (squat, press on a bench); `up` lifts or pulls
+// first and returns slowly (pulldown, curl, raise); `hold` eases into a stretch and stays there.
+const FG_TEMPO = {
+  down: l => [[l[0] || 'Lower', 2, 0, 1], ['Pause', 0.5, 1, 1], [l[1] || 'Drive up', 1, 1, 0], ['', 0.5, 0, 0]],
+  up: l => [[l[0] || 'Lift', 1, 0, 1], [l[2] || 'Squeeze', 0.5, 1, 1], [l[1] || 'Lower slowly', 2, 1, 0], ['', 0.5, 0, 0]],
+  hold: l => [[l[0] || 'Ease in', 2, 0, 1], [l[1] || 'Hold and breathe', 2.5, 1, 1], [l[2] || 'Ease out', 1.5, 1, 0], ['', 0.5, 0, 0]],
+  // through a middle pose without stopping in it: the first half speeds up, the second slows down
+  up3: l => [[l[0] || 'Lift', 0.5, 0, 1, 'in'], [l[0] || 'Lift', 0.5, 1, 2, 'out'], [l[2] || 'Squeeze', 0.5, 2, 2], [l[1] || 'Lower slowly', 1, 2, 1, 'in'], [l[1] || 'Lower slowly', 1, 1, 0, 'out'], ['', 0.5, 0, 0]],
+  down3: l => [[l[0] || 'Lower', 1, 0, 1, 'in'], [l[0] || 'Lower', 1, 1, 2, 'out'], ['Pause', 0.5, 2, 2], [l[1] || 'Drive up', 0.5, 2, 1, 'in'], [l[1] || 'Drive up', 0.5, 1, 0, 'out'], ['', 0.5, 0, 0]]
+};
+const fgDef = key => FIG[FIG_ALIAS[key] || key] || null;
+const fgViewOf = (def, view) => view === 'front' && def.front ? def.front : view === 'side' && def.keys ? def : def.keys ? def : def.front;
+function fgPhases(v) { return v.phases || FG_TEMPO[v.tempo || 'down'](v.labels || []); }
+const fgEase = (t, kind) => kind === 'in' ? t * t : kind === 'out' ? 1 - (1 - t) * (1 - t) : t * t * (3 - 2 * t);
+// Where the rep is at `pos` (0 to 1 around the loop): the pose, the phase label, and the pose it is resting in, if any.
+function fgAt(v, pos) {
+  const ph = fgPhases(v), total = ph.reduce((t, x) => t + x[1], 0); let t = ((pos % 1) + 1) % 1 * total;
+  for (let i = 0; i < ph.length; i++) { const x = ph[i]; if (t <= x[1] || i === ph.length - 1) { const f = x[2] === x[3] ? 0 : fgEase(clamp(t / x[1], 0, 1), x[4]);
+    return { pose: fgLerp(v.keys[x[2]], v.keys[x[3]], f), label: x[0] || ph[0][0], rest: x[2] === x[3] ? x[2] : f > 0.97 ? x[3] : f < 0.03 ? x[2] : -1, total }; } t -= x[1]; }
+}
+// the loop position where the figure rests in its key pose (the bottom of a squat, the top of a curl)
+function fgKeyPos(v) { const ph = fgPhases(v), total = ph.reduce((t, x) => t + x[1], 0), k = fgNum(v, 'still', 1); let t = 0;
+  for (let i = 0; i < ph.length; i++) { if (ph[i][2] === k && ph[i][3] === k) return (t + ph[i][1] / 2) / total; t += ph[i][1]; } return 0; }
+
+/* --- drawing --- */
+const fgLine = (pts, w, cls) => '<path class="' + cls + '" d="M' + pts.map(fgP).join('L') + '" stroke-width="' + w + '"/>';
+const fgDot = (c, r, cls) => '<circle class="' + cls + '" cx="' + fgN(c[0]) + '" cy="' + fgN(c[1]) + '" r="' + r + '"/>';
+const fgBox = (x, y, w, h, r, cls, rot, o) => '<rect class="' + cls + '" x="' + fgN(x) + '" y="' + fgN(y) + '" width="' + fgN(w) + '" height="' + fgN(h) + '" rx="' + (r || 0) + '"' + (rot ? ' transform="rotate(' + fgN(rot) + ' ' + fgP(o || [x, y]) + ')"' : '') + '/>';
+function fgBodySide(J) {
+  const far = 'fgb fgfar', near = 'fgb', halo = 'fgh', sole = f => fgLine([f.heel, f.toe], 4.6, 'XX');
+  const leg = (K, A, F, c) => fgLine([J.H, K], 8.6, c) + fgLine([K, A], 7, c) + sole(F).replace('XX', c);
+  const arm = (E, W, c) => fgLine([J.S, E], 6.2, c) + fgLine([E, W], 5.2, c) + fgDot(W, 3, c + ' fgfill');
+  return (J.twoLegs ? leg(J.K2, J.A2, J.F2, far) : '') + (J.twoArms ? arm(J.E2, J.W2, far) : '') +
+    fgLine([J.H, J.S], 12.5, near) + fgLine([J.S, J.N], 5.4, near) + fgDot(J.Hd, FG.head, near + ' fgfill') +
+    leg(J.K, J.A, J.F, near) + fgLine([J.S, J.E, J.W], 9.4, halo) + arm(J.E, J.W, near);
+}
+function fgBodyFront(J) {
+  const c = 'fgb', limb = s => fgLine([J['H' + s], J['K' + s]], 8.6, c) + fgLine([J['K' + s], J['A' + s]], 7, c) + fgBox(J['A' + s][0] - 4.2, J['A' + s][1] + 0.2, 8.4, 4, 2, c + ' fgfill');
+  const arm = s => fgLine([J['S' + s], J['E' + s]], 6.2, c) + fgLine([J['E' + s], J['W' + s]], 5.2, c) + fgDot(J['W' + s], 3, c + ' fgfill');
+  return limb('') + limb('2') + '<path class="' + c + ' fgfill" stroke-width="5" d="M' + fgP(J.S) + 'L' + fgP(J.S2) + 'L' + fgP(J.H2) + 'L' + fgP(J.H) + 'Z"/>' +
+    fgLine([J.N, [J.cx, J.S[1]]], 5.4, c) + fgDot(J.Hd, FG.head, c + ' fgfill') + fgLine([J.S, J.E, J.W], 9.4, 'fgh') + fgLine([J.S2, J.E2, J.W2], 9.4, 'fgh') + arm('') + arm('2');
+}
+// equipment, drawn from a few shapes. Weights and handles (what you hold) take the accent color.
+const EQ = {
+  floor: () => '<path class="fgl" d="M6 ' + FG.FLOOR + 'H194"/>',
+  mat: (x0, x1) => fgBox(x0, FG.FLOOR - 2.2, x1 - x0, 2.2, 1, 'fge fgfill'),
+  bench: (x0, x1, top) => { const y = fgNum({ t: top }, 't', FG.FLOOR - 24); return fgBox(x0, y, x1 - x0, 4, 2, 'fge fgfill') + fgLine([[x0 + 6, y + 4], [x0 + 6, FG.FLOOR]], 2.4, 'fge') + fgLine([[x1 - 6, y + 4], [x1 - 6, FG.FLOOR]], 2.4, 'fge') + fgLine([[x0 + 2, FG.FLOOR], [x0 + 10, FG.FLOOR]], 2.4, 'fge') + fgLine([[x1 - 10, FG.FLOOR], [x1 - 2, FG.FLOOR]], 2.4, 'fge'); },
+  // a pad of a machine or an adjustable bench: from point a, `len` long, pointing at `ang`
+  pad: (a, len, ang, th) => { const b = fgAdd(a, len, ang); return fgLine([a, b], th || 4.4, 'fge fgpad'); },
+  post: (x, y0, y1, w) => fgLine([[x, y0], [x, y1 == null ? FG.FLOOR : y1]], w || 3, 'fge'),
+  bar: (a, b, w) => fgLine([a, b], w || 2.2, 'fge'),
+  seat: (x0, x1, y) => fgBox(x0, y, x1 - x0, 3.6, 1.8, 'fge fgfill') + fgLine([[(x0 + x1) / 2, y + 3.6], [(x0 + x1) / 2, FG.FLOOR]], 3, 'fge'),
+  roll: c => fgDot(c, 3.6, 'fge fgpad fgfill'),
+  plate: c => fgDot(c, 12.4, 'fgw') + fgDot(c, 2, 'fgw fgfill'),              // a 45 lb plate, seen from the end of the bar
+  db: c => fgDot(c, 4.4, 'fgw fgfill'),                                        // a dumbbell, seen from its end
+  dbSide: (c, ang) => { const a = fgAdd(c, 5.5, ang), b = fgAdd(c, -5.5, ang); return fgLine([a, b], 2, 'fgw') + fgDot(a, 3.2, 'fgw fgfill') + fgDot(b, 3.2, 'fgw fgfill'); },
+  kb: c => fgDot([c[0], c[1] + 5], 5.6, 'fgw fgfill') + '<path class="fgw" stroke-width="1.8" d="M' + fgP([c[0] - 3.4, c[1] + 1]) + 'Q' + fgP([c[0], c[1] - 5]) + ' ' + fgP([c[0] + 3.4, c[1] + 1]) + '"/>',
+  // a cable from a pulley to the hand, with what is clipped to it
+  cable: (pul, to, att, ang) => fgDot(pul, 2.6, 'fge') + fgLine([pul, to], 0.9, 'fgc') + (att === 'rope' ? fgLine([to, fgAdd(to, 5, fgNum({ a: ang }, 'a', 200))], 1.8, 'fgw') : att === 'handle' ? fgDot(to, 3.4, 'fgw') : fgDot(to, 2.3, 'fgw fgfill')),
+  stack: (x, top) => fgBox(x - 5, top, 10, FG.FLOOR - top, 2, 'fge') + fgBox(x - 3.4, FG.FLOOR - 34, 6.8, 30, 1, 'fge fgfill fgsoft')
+};
+// one frame as SVG markup (without the outer <svg>): equipment behind, the body, equipment in front, then markers
+function fgFrame(key, view, pos, marks) {
+  const def = fgDef(key); if (!def) return '';
+  const v = fgViewOf(def, view), at = fgAt(v, pos), front = v.view === 'front', J = front ? fgFrontSolve(at.pose) : fgSolve(at.pose), eq = v.eq ? v.eq(J, at.pose) : {};
+  let h = EQ.floor() + (eq.back || '') + (front ? fgBodyFront(J) : fgBodySide(J)) + (eq.front || '');
+  if (marks) (v.marks || []).forEach((m, i) => { if (fgNum(m, 'k', fgNum(v, 'still', 1)) !== at.rest) return; const c0 = typeof m.j === 'function' ? m.j(J) : J[m.j], c = [c0[0] + (m.dx || 0), c0[1] + (m.dy || 0)];
+    h += fgDot(c, 4.6, 'fgm') + '<text class="fgmt" x="' + fgN(c[0]) + '" y="' + fgN(c[1] + 2.5) + '" text-anchor="middle">' + (i + 1) + '</text>'; });
+  return h;
+}
+const fgSVG = (key, view, pos, marks, label) => '<svg class="figs" viewBox="0 0 ' + FG.W + ' ' + FG.H + '" role="img" aria-label="' + esc(label || 'How the move looks') + '">' + fgFrame(key, view, pos, marks) + '</svg>';
+
+/* --- the player: pause or play, drag through the rep, side or front --- */
+// Each player has an id (data-fid) and keeps its place in figSt across redraws, so a screen that is drawn again does
+// not restart the rep. One timer redraws whatever players are on screen, and stops when there are none.
+const figSt = {};
+let figRaf = 0, figLast = 0;
+const figStill = () => motionOf() === 'off'; // Off animations or the phone's reduce-motion setting: the key position, as a still
+function figState(fid, key) {
+  const def = fgDef(key), s = figSt[fid];
+  if (s && s.key === key) return s;
+  const view = def && !def.keys ? 'front' : 'side', v = def ? fgViewOf(def, view) : null;
+  return (figSt[fid] = { key, view, t0: Date.now(), paused: figStill(), pos: v ? fgKeyPos(v) : 0, drag: false });
+}
+function figPos(s, v) { if (s.paused) return s.pos; const total = fgAt(v, 0).total * 1000; return ((Date.now() - s.t0) % total) / total; }
+// every marker of the view is always listed and the ones on screen are lit, so the legend never changes height
+function figLegend(v, rest) { return (v.marks || []).map((m, i) => '<span' + (fgNum(m, 'k', fgNum(v, 'still', 1)) === rest ? ' class="on"' : '') + '><b>' + (i + 1) + '</b> ' + esc(m.t) + '</span>').join(''); }
+// The player's markup. `name` is read out for the picture; `compact` is the smaller one at the top of a live screen.
+function figHTML(key, fid, name, compact) {
+  const def = fgDef(key); if (!def) return '';
+  const s = figState(fid, key), v = fgViewOf(def, s.view), pos = figPos(s, v), at = fgAt(v, pos), both = !!(def.keys && def.front);
+  figKick();
+  return '<div class="fig' + (compact ? ' compact' : '') + '" data-fig="' + esc(key) + '" data-fid="' + esc(fid) + '" data-view="' + s.view + '">' +
+    fgSVG(key, s.view, pos, true, name + ', ' + (v.view === 'front' ? 'front' : 'side') + ' view') +
+    '<div class="figinfo"><b class="figphase" aria-live="off">' + esc(at.label) + '</b><div class="figlegend" aria-live="off">' + figLegend(v, at.rest) + '</div></div>' +
+    '<div class="figbar"><button type="button" class="figplay" data-a="fig-play" data-fid="' + esc(fid) + '" aria-label="' + (s.paused ? 'Play' : 'Pause') + '" aria-pressed="' + !s.paused + '">' + (s.paused ? '▶' : '❚❚') + '</button>' +
+    '<input type="range" class="figscrub" min="0" max="1000" step="1" value="' + Math.round(pos * 1000) + '" data-fid="' + esc(fid) + '" aria-label="Drag through the rep">' +
+    (both ? '<button type="button" class="small figview" data-a="fig-view" data-fid="' + esc(fid) + '" aria-pressed="' + (s.view === 'front') + '">' + (s.view === 'front' ? 'Side view' : 'Front view') + '</button>' : '') + '</div></div>';
+}
+function figPaint(el) { // bring one player on screen up to date, in place
+  const s = figSt[el.dataset.fid], def = s && fgDef(s.key); if (!def) return;
+  const v = fgViewOf(def, s.view), pos = figPos(s, v), at = fgAt(v, pos), svg = el.querySelector('.figs'), ph = el.querySelector('.figphase'), lg = el.querySelector('.figlegend'), sc = el.querySelector('.figscrub');
+  if (svg) svg.innerHTML = fgFrame(s.key, s.view, pos, true);
+  if (ph && ph.textContent !== at.label) ph.textContent = at.label;
+  if (lg) { const t = figLegend(v, at.rest); if (lg.dataset.t !== t) { lg.dataset.t = t; lg.innerHTML = t; } }
+  if (sc && !s.drag) sc.value = String(Math.round(pos * 1000));
+}
+function figTick() {
+  figRaf = 0; const els = document.querySelectorAll('.fig[data-fid]'); if (!els.length) return; // nothing to play: the timer stops
+  const now = Date.now(); let moving = false;
+  els.forEach(el => { const s = figSt[el.dataset.fid]; if (!s || s.paused || document.hidden) return; moving = true; if (now - figLast >= 33) figPaint(el); });
+  if (now - figLast >= 33) figLast = now;
+  if (moving) figRaf = requestAnimationFrame(figTick);
+}
+function figKick() { if (!figRaf) figRaf = requestAnimationFrame(figTick); }
+function figRedraw(fid) { document.querySelectorAll('.fig[data-fid="' + fid + '"]').forEach(el => { const s = figSt[fid], b = el.querySelector('.figplay'), vb = el.querySelector('.figview'); el.dataset.view = s.view; figPaint(el);
+  if (b) { b.textContent = s.paused ? '▶' : '❚❚'; b.setAttribute('aria-label', s.paused ? 'Play' : 'Pause'); b.setAttribute('aria-pressed', String(!s.paused)); }
+  if (vb) { vb.textContent = s.view === 'front' ? 'Side view' : 'Front view'; vb.setAttribute('aria-pressed', String(s.view === 'front')); } }); figKick(); }
+ACT['fig-play'] = el => { const s = figSt[el.dataset.fid]; if (!s) return; const def = fgDef(s.key), v = fgViewOf(def, s.view);
+  if (s.paused) { s.t0 = Date.now() - s.pos * fgAt(v, 0).total * 1000; s.paused = false; } else { s.pos = figPos(s, v); s.paused = true; }
+  figRedraw(el.dataset.fid); };
+ACT['fig-view'] = el => { const s = figSt[el.dataset.fid]; if (!s) return; const def = fgDef(s.key); if (!(def.keys && def.front)) return;
+  s.view = s.view === 'front' ? 'side' : 'front'; const v = fgViewOf(def, s.view); if (s.paused) s.pos = fgKeyPos(v); else s.t0 = Date.now();
+  figRedraw(el.dataset.fid); };
+// dragging the slider pauses the rep and shows the frame under the thumb
+document.addEventListener('input', e => { const el = e.target; if (!el.classList || !el.classList.contains('figscrub')) return; const s = figSt[el.dataset.fid]; if (!s) return;
+  s.paused = true; s.drag = true; s.pos = clamp(Number(el.value) / 1000, 0, 0.9999); figRedraw(el.dataset.fid); s.drag = false; });
+document.addEventListener('visibilitychange', () => { if (!document.hidden) figKick(); }); // the timer stops while the page is hidden
+
+/* ---- 59-figures.js ---- */
+/* ---------- 59-figures.js: one animation for every exercise, station and stretch ---------- */
+// Each entry is the poses of one rep (see 58-figure.js for what the numbers mean), the equipment drawn around the
+// figure, the tempo, and one or two markers for the position that matters most. `keys` is the side view; `front`
+// is a front view, used alone where the move is judged from the front, or as a second view for knee tracking.
+const fqF = FG.FLOOR;
+const fqT = lean => fgU(180 - lean);                                                    // along the torso, hip to shoulder
+const fqB = lean => { const r = lean * Math.PI / 180; return [-Math.cos(r), -Math.sin(r)]; }; // straight out of the back
+const fqOff = (p, v, k) => [p[0] + v[0] * k, p[1] + v[1] * k];
+const fqUp = (p, dx, dy) => [p[0] + dx, p[1] + dy];
+// the pad a back rests on: a line just behind the torso, from below the hips to the shoulders
+const fqBackPad = (J, lean, len, drop) => EQ.pad(fqOff(fqOff(J.H, fqB(lean), 8.8), fqT(lean), -(drop == null ? 3 : drop)), len || 36, 180 - lean, 4.6);
+const fqBarOnBack = (J, lean) => fqOff(J.S, fqB(lean), 4.2);
+const fqRack = () => EQ.post(70, 18) + EQ.post(140, 18) + EQ.bar([70, 18], [140, 18], 3) + EQ.bar([70, 95], [140, 95], 2.6) + EQ.bar([136, 57], [144, 57], 3);
+// the barbell seen from the front: the bar across the shoulders and a plate on each sleeve
+const fqBarFront = (J, y) => EQ.bar([J.cx - 62, y], [J.cx + 62, y], 2) + fgBox(J.cx - 52, y - 12.4, 3, 24.8, 1.2, 'fgw fgfill') + fgBox(J.cx + 49, y - 12.4, 3, 24.8, 1.2, 'fgw fgfill');
+const fqStand = { at: [100, fqF - 4], lean: 0, thigh: 2, shin: -2 };
+const fqSquatFront = { view: 'front', tempo: 'down', labels: ['Lower', 'Drive up'],
+  keys: [{ hip: 53, kneeY: 28, kneeX: 9, stance: 10.5, e: [5, 13], w: [9, -1] }, { hip: 23.5, torso: 24, kneeY: 26.5, kneeX: 14, stance: 10.5, e: [5, 13], w: [9, -1] }],
+  eq: J => ({ back: fqBarFront(J, J.S[1] - 1) }),
+  marks: [{ j: 'K', t: 'knees track out over your toes' }, { j: 'A', t: 'feet about shoulder width, toes slightly out', dy: 6 }] };
+const fqLungeFront = { view: 'front', tempo: 'down', labels: ['Lower', 'Push back up'],
+  keys: [{ hip: 50, kneeY: 27, kneeX: 7.5, stance: 7.5, kneeY2: 27, e: [3, 16], w: [4, 31] }, { hip: 31, kneeY: 27.5, kneeX: 8, stance: 7.5, kneeX2: 7.5, kneeY2: 7, stance2: 8, ankleY2: 5, e: [3, 16], w: [4, 31] }],
+  eq: J => ({ front: EQ.db(fqUp(J.W, 0, 3.5)) + EQ.db(fqUp(J.W2, 0, 3.5)) }),
+  marks: [{ j: 'K', t: 'front knee stays over the middle of the foot' }, { j: J => [J.cx, J.A[1] + 1.5], t: 'feet on two tracks, hip width apart' }] };
+// a seated person from the front: thighs come toward the viewer, so the knees sit just under the hips
+const fqSeatFront = { hip: 27, kneeY: 25, kneeX: 9.5, stance: 9.5 };
+const fqSeatFrontEq = J => fgBox(J.cx - 14, J.S[1] - 7, 28, 38, 3, 'fge fgpad fgfill') + fgBox(J.cx - 14, J.H[1] + 2, 28, 4, 2, 'fge fgfill') + EQ.post(J.cx, J.H[1] + 6);
+
+const FIG = {
+  /* --- legs --- */
+  squat: { tempo: 'down', labels: ['Lower', 'Drive up'],
+    keys: [{ at: [104, 132], lean: 6, thigh: 2, shin: -1, ua: -28, fa: 163 }, { at: [104, 132], lean: 34, thigh: 96, shin: -27, ua: -30, fa: 158 }],
+    eq: (J, p) => ({ back: fqRack(), front: EQ.plate(fqBarOnBack(J, p.lean)) }),
+    marks: [{ j: 'H', t: 'hips at or below knee height' }, { j: J => J.F.heel, t: 'heels stay down, knees over toes', dx: 2 }],
+    front: fqSquatFront },
+  goblet: { tempo: 'down', labels: ['Lower', 'Drive up'],
+    keys: [{ at: [104, 132], lean: 4, thigh: 2, shin: -1, ua: 24, fa: 152 }, { at: [104, 132], lean: 24, thigh: 97, shin: -27, ua: 32, fa: 150 }],
+    eq: J => ({ front: EQ.kb(fqUp(J.W, 1, -5)) }),
+    marks: [{ j: 'H', t: 'hips at or below knee height' }, { j: 'E', t: 'elbows drop inside your knees' }],
+    front: Object.assign({}, fqSquatFront, { keys: [{ hip: 53, kneeY: 28, kneeX: 9, stance: 10.5, e: [2, 14], w: [-6, 5] }, { hip: 23.5, torso: 26, kneeY: 26.5, kneeX: 14, stance: 10.5, e: [2, 14], w: [-6, 5] }], eq: J => ({ front: EQ.kb([J.cx, J.W[1] - 5]) }) }) },
+  legpress: { tempo: 'down', labels: ['Lower', 'Press'],
+    keys: [{ anchor: 'hip', at: [70, 112], lean: -28, footAt: [115.3, 104], ft: 190, hand: [76, 117] }, { anchor: 'hip', at: [70, 112], lean: -28, footAt: [102.5, 106.3], ft: 190, hand: [76, 117] }],
+    eq: (J, p) => ({ back: fqBackPad(J, p.lean, 40, 5) + EQ.pad([64, 118.5], 22, 90, 4.4) + EQ.bar([84, fqF], [150, fqF - 12], 2.6) + EQ.post(150, fqF - 60) + EQ.stack(162, 60),
+      front: EQ.pad(fqOff(J.F.heel, fgU(190), -5), 24, 190, 3.4) + EQ.bar(fqUp(J.A, 6, 3), [150, fqF - 12 + (J.A[0] - 115.3) * 0], 2) }),
+    marks: [{ j: 'K', t: 'knees bend to about 90 degrees, in line with your toes' }, { j: 'H', t: 'hips and lower back stay on the pad' }] },
+  legext: { tempo: 'up', labels: ['Lift', 'Lower slowly'],
+    keys: [{ anchor: 'hip', at: [88, 100], lean: -10, thigh: 88, shin: 2, hand: [93, 105] }, { anchor: 'hip', at: [88, 100], lean: -10, thigh: 88, shin: 80, hand: [93, 105] }],
+    eq: (J, p) => { const s = [(J.A[0] - J.K[0]) / 24, (J.A[1] - J.K[1]) / 24], n = [s[1], -s[0]], roll = [J.A[0] - 4 * s[0] + 6 * n[0], J.A[1] - 4 * s[1] + 6 * n[1]];
+      return { back: fqBackPad(J, p.lean, 34, 4) + EQ.pad([80, 106.6], 30, 90, 4.4) + EQ.post(95, 108.8) + EQ.stack(56, 64), front: EQ.bar(fqUp(J.K, 0, 2), roll, 2) + EQ.roll(roll) + fgDot(fqUp(J.K, 0, 2), 1.8, 'fge fgfill') }; },
+    marks: [{ j: 'K', t: 'knees line up with the machine\'s pivot' }, { j: 'A', t: 'straighten without snapping your knees', dy: -6 }] },
+  legcurl: { tempo: 'up', labels: ['Curl', 'Return slowly'],
+    keys: [{ anchor: 'hip', at: [84, 100], lean: -12, thigh: 88, shin: 84, hand: [92, 94] }, { anchor: 'hip', at: [84, 100], lean: -12, thigh: 88, shin: -22, hand: [92, 94] }],
+    eq: (J, p) => { const s = [(J.A[0] - J.K[0]) / 24, (J.A[1] - J.K[1]) / 24], n = [s[1], -s[0]], roll = [J.A[0] - 4 * s[0] - 6 * n[0], J.A[1] - 4 * s[1] - 6 * n[1]];
+      return { back: fqBackPad(J, p.lean, 34, 4) + EQ.pad([76, 106.6], 24, 90, 4.4) + EQ.post(84, 108.8) + EQ.stack(52, 64), front: EQ.bar(fqUp(J.K, 0, 3), roll, 2) + EQ.roll(roll) + EQ.roll(fqUp(J.K, -7, -7.5)) + fgDot(fqUp(J.K, 0, 3), 1.8, 'fge fgfill') }; },
+    marks: [{ j: 'A', t: 'heels pull under the seat' }, { j: 'H', t: 'hips stay down on the seat' }] },
+  splitsquat: { tempo: 'down', labels: ['Lower', 'Drive up'],
+    keys: [{ anchor: 'hip', at: [95, 87], lean: 6, footAt: [114, 132], foot2At: [66, 124.4], ft2: 45, ua: 0, fa: 0 }, { anchor: 'hip', at: [94, 104], lean: 10, footAt: [114, 132], foot2At: [66, 124.4], ft2: 45, ua: 0, fa: 0 }],
+    eq: J => ({ front: EQ.dbSide(fqUp(J.W, 0, 3.5), 90) }),
+    marks: [{ j: 'K', t: 'front knee over the ankle' }, { j: 'K2', t: 'back knee just above the floor' }],
+    front: fqLungeFront },
+  lunge: { tempo: 'down', labels: ['Step and lower', 'Push back up'],
+    keys: [{ anchor: 'hip', at: [94, 83.4], lean: 3, footAt: [98, 132], foot2At: [90, 132], ft2: 90, ua: 0, fa: 0 }, { anchor: 'hip', at: [95, 104], lean: 8, footAt: [117, 132], foot2At: [67, 124.4], ft2: 45, ua: 0, fa: 0 }],
+    eq: J => ({ front: EQ.dbSide(fqUp(J.W, 0, 3.5), 90) }),
+    marks: [{ j: 'K', t: 'front knee over the ankle' }, { j: 'K2', t: 'back knee just above the floor' }],
+    front: fqLungeFront },
+  calf: { tempo: 'up', labels: ['Rise', 'Lower slowly'],
+    keys: [{ anchor: 'toe', at: [112, 124], thigh: 0, shin: 0, lean: 1, ft: 104, hand: [121, 82], ua2: 0, fa2: 0 }, { anchor: 'toe', at: [112, 124], thigh: 0, shin: 0, lean: 1, ft: 62, hand: [121, 76], ua2: 0, fa2: 0 }],
+    eq: J => ({ back: fgBox(103, 124, 22, fqF - 124, 1.5, 'fge fgfill') + EQ.post(124, 30), front: EQ.dbSide(fqUp(J.W2, 0, 3.5), 90) }),
+    marks: [{ j: J => J.F.heel, t: 'heels as high as they go' }, { j: 'K', t: 'knees straight, not locked' }] },
+  // three poses, so the arms can angle back in the middle of the hinge and the weight stays on the legs all the way
+  dbrdl: { tempo: 'down3', still: 2, labels: ['Hinge and lower', 'Stand tall'],
+    keys: [{ at: [104, 132], lean: 4, thigh: 3, shin: -3, ua: 0, fa: 0 }, { at: [104, 132], lean: 45, thigh: 17, shin: -5, ua: -22, fa: -22 }, { at: [104, 132], lean: 84, thigh: 30, shin: -6, ua: -20, fa: -20 }],
+    eq: J => ({ front: EQ.db(fqUp(J.W, 0, 3)) }),
+    marks: [{ j: 'M', t: 'back flat from hips to head' }, { j: 'K', t: 'knees soft, hips pushed back' }] },
+  bbrdl: { tempo: 'down3', still: 2, labels: ['Hinge and lower', 'Stand tall'],
+    keys: [{ at: [104, 132], lean: 4, thigh: 3, shin: -3, ua: 0, fa: 0 }, { at: [104, 132], lean: 45, thigh: 17, shin: -5, ua: -22, fa: -22 }, { at: [104, 132], lean: 84, thigh: 30, shin: -6, ua: -20, fa: -20 }],
+    eq: J => ({ front: EQ.plate(fqUp(J.W, 0, 3)) }),
+    marks: [{ j: 'W', t: 'bar slides close along your legs, past your knees' }, { j: 'M', t: 'back flat, hips pushed back' }] },
+  hipthrust: { tempo: 'up', labels: ['Drive up', 'Lower'],
+    keys: [{ anchor: 'shoulder', at: [66, 109], lean: -52, neck: -6, footAt: [118, 132], handH: [3, -8] }, { anchor: 'shoulder', at: [66, 109], lean: -90, neck: -24, footAt: [118, 132], handH: [3, -8] }],
+    eq: J => ({ back: EQ.bench(46, 70), front: EQ.db(fqUp(J.H, 3, -9)) }),
+    marks: [{ j: 'H', t: 'hips level with knees and shoulders' }, { j: 'K', t: 'shins vertical, feet flat' }] },
+  /* --- push --- */
+  dbbench: { tempo: 'down', labels: ['Lower', 'Press'],
+    keys: [{ anchor: 'hip', at: [112, 107], lean: -90, footAt: [136, 132], handS: [1, -31.5], uaF: 1 }, { anchor: 'hip', at: [112, 107], lean: -90, footAt: [136, 132], handS: [7, -8], uaF: 0.55 }],
+    eq: J => ({ back: EQ.bench(62, 124), front: EQ.db(fqUp(J.W, 0, -2)) }),
+    marks: [{ j: 'E', t: 'elbows about 45 degrees from your sides' }, { j: 'W', t: 'wrists stacked over elbows' }] },
+  inclinedb: { tempo: 'down', labels: ['Lower', 'Press'],
+    keys: [{ anchor: 'hip', at: [104, 110], lean: -52, footAt: [128, 132], handS: [2, -31], uaF: 1 }, { anchor: 'hip', at: [104, 110], lean: -52, footAt: [128, 132], handS: [8, -7], uaF: 0.6 }],
+    eq: (J, p) => ({ back: fqBackPad(J, p.lean, 40, 2) + EQ.pad([99, 117], 20, 90, 4.4) + EQ.post(88, 119) + EQ.post(112, 119) + EQ.bar([84, fqF], [116, fqF], 2.4), front: EQ.db(fqUp(J.W, 0, -2)) }),
+    marks: [{ j: 'E', t: 'elbows under the wrists' }, { j: J => fqOff(fqOff(J.H, fqB(-52), 14), fqT(-52), 12), t: 'bench back set at 30 to 45 degrees' }] },
+  chestpress: { tempo: 'up', labels: ['Press', 'Return slowly', 'Pause'], still: 0,
+    keys: [{ anchor: 'hip', at: [78, 108], lean: -8, footAt: [100, 132], handS: [6, 9], uaF: 0.6 }, { anchor: 'hip', at: [78, 108], lean: -8, footAt: [100, 132], handS: [29, 8], uaF: 1 }],
+    eq: (J, p) => ({ back: fqBackPad(J, p.lean, 36, 3) + EQ.seat(72, 94, 114.6) + EQ.stack(52, 40) + EQ.bar([52, 44], [J.S[0] + 8, 44], 2.6), front: EQ.bar([J.S[0] + 8, 44], fqUp(J.W, 0, -3), 2) + EQ.cable(fqUp(J.W, 0, 0), J.W, 'handle') }),
+    marks: [{ j: 'W', k: 0, t: 'handles level with the middle of your chest' }, { j: 'E', k: 1, t: 'elbows soft at full reach, not locked' }] },
+  shoulderpress: { tempo: 'up', labels: ['Press', 'Lower slowly', 'Pause'], still: 0,
+    keys: [{ anchor: 'hip', at: [84, 108], lean: -6, footAt: [106, 132], handS: [5, -9], uaF: 0.65 }, { anchor: 'hip', at: [84, 108], lean: -6, footAt: [106, 132], handS: [3, -31], uaF: 1 }],
+    eq: (J, p) => ({ back: fqBackPad(J, p.lean, 38, 3) + EQ.seat(78, 100, 114.6) + EQ.stack(56, 30) + fgDot([62, 62], 2, 'fge fgfill'), front: EQ.bar([62, 62], fqUp(J.W, 0, 0), 2) + EQ.cable(J.W, J.W, 'handle') }),
+    marks: [{ j: 'W', k: 0, t: 'hands start between your shoulders and ears' }, { j: 'M', k: 1, t: 'back stays on the pad' }] },
+  dbshoulder: { tempo: 'up', labels: ['Press', 'Lower slowly', 'Pause'], still: 0,
+    keys: [{ anchor: 'hip', at: [92, 108], lean: -8, footAt: [114, 132], handS: [5, -6], uaF: 0.65 }, { anchor: 'hip', at: [92, 108], lean: -8, footAt: [114, 132], handS: [2, -31.5], uaF: 1 }],
+    eq: (J, p) => ({ back: fqBackPad(J, p.lean, 38, 3) + EQ.pad([86, 114.8], 20, 90, 4.4) + EQ.post(96, 117) + EQ.bar([84, fqF], [108, fqF], 2.4), front: EQ.db(fqUp(J.W, 0, -1)) }),
+    marks: [{ j: 'E', k: 0, t: 'forearms vertical, weights level with your ears' }, { j: 'W', k: 1, t: 'weights finish over your shoulders' }] },
+  pushdown: { tempo: 'up', labels: ['Push down', 'Return slowly'],
+    keys: [{ at: [92, 132], lean: 12, thigh: 5, shin: -5, ua: 6, fa: 112 }, { at: [92, 132], lean: 12, thigh: 5, shin: -5, ua: 6, fa: 10 }],
+    eq: J => ({ back: EQ.stack(152, 14) + EQ.bar([152, 18], [120, 18], 2.6), front: EQ.cable([120, 20], fqUp(J.W, 1, 0), 'bar') }),
+    marks: [{ j: 'E', t: 'elbows pinned to your sides' }, { j: 'W', t: 'arms straight at the bottom' }] },
+  dbtri: { tempo: 'down', labels: ['Lower behind your head', 'Press up'],
+    keys: [{ at: [100, 132], lean: 2, thigh: 2, shin: -2, ua: 174, fa: -182 }, { at: [100, 132], lean: 2, thigh: 2, shin: -2, ua: 168, fa: -42 }],
+    eq: (J, p) => ({ front: EQ.dbSide(fgAdd(J.W, 3.5, p.fa), p.fa) }),
+    marks: [{ j: 'E', t: 'elbows point up, close to your ears' }, { j: 'M', t: 'ribs down, no arching' }] },
+  // judged from the front: the arms sweep in a wide arc, so from the side they would only seem to shorten
+  pecdeck: { front: { view: 'front', tempo: 'up', labels: ['Squeeze together', 'Open slowly'],
+    keys: [Object.assign({}, fqSeatFront, { e: [16.5, 3], w: [28.5, 4.5] }), Object.assign({}, fqSeatFront, { e: [7, 4.5], w: [-8, 5.5] })],
+    eq: J => { const top = J.S[1] - 26, arm = W => EQ.bar([W[0], top], W, 2.2) + fgDot(W, 3.4, 'fgw');
+      return { back: EQ.bar([J.cx - 40, top], [J.cx + 40, top], 3) + EQ.post(J.cx, top, J.S[1] - 7) + fqSeatFrontEq(J), front: arm(J.W) + arm(J.W2) }; },
+    marks: [{ j: 'E', k: 0, t: 'elbows soft, just below shoulder height' }, { j: 'W', k: 1, t: 'hands meet in front of your chest', dy: 7 }] } },
+  latraise: { front: { view: 'front', tempo: 'up', labels: ['Raise', 'Lower slowly', 'Pause'],
+    keys: [Object.assign({ hip: 53 }, fgArm(8, 6)), Object.assign({ hip: 53 }, fgArm(86, 8))],
+    eq: J => ({ front: EQ.db(J.W) + EQ.db(J.W2) }),
+    marks: [{ j: 'W', t: 'hands level with your shoulders, no higher' }, { j: 'E', t: 'soft elbows lead the way' }] } },
+  cablelat: { front: { view: 'front', tempo: 'up', labels: ['Raise', 'Lower slowly', 'Pause'],
+    keys: [Object.assign({ hip: 53, e2: [4, 15], w2: [14, 24] }, fgArm(-14, 10)), Object.assign({ hip: 53, e2: [4, 15], w2: [14, 24] }, fgArm(86, 8))],
+    eq: J => ({ back: EQ.stack(60, 20), front: EQ.cable([66, 128], J.W, 'handle') }),
+    marks: [{ j: 'W', t: 'hand to shoulder height' }, { j: 'M', t: 'body still, no leaning away' }] } },
+  /* --- pull --- */
+  latpull: { tempo: 'up3', labels: ['Pull down', 'Return slowly'], still: 2,
+    keys: [{ anchor: 'hip', at: [92, 106], lean: -6, footAt: [116, 132], handS: [5, -31.4], uaF: 1 }, { anchor: 'hip', at: [92, 106], lean: -9, footAt: [116, 132], handS: [4.5, -16], uaF: 0.36 }, { anchor: 'hip', at: [92, 106], lean: -12, footAt: [116, 132], handS: [5, 1], uaF: 0.85 }],
+    eq: (J, p) => ({ back: EQ.seat(84, 104, 112.4) + EQ.post(134, 10) + EQ.bar([134, 12], [J.W[0], 12], 2.6) + EQ.stack(146, 50), front: EQ.roll(fqUp(J.K, -6, -7.5)) + EQ.cable([J.W[0], 13], J.W, 'bar') }),
+    marks: [{ j: 'W', t: 'bar to your upper chest' }, { j: 'E', t: 'elbows drive down and back' }] },
+  assistpull: { tempo: 'up3', labels: ['Pull up', 'Lower slowly'], still: 2,
+    keys: [{ anchor: 'hand', at: [100, 26], lean: 0, thigh: 12, shin: -88, ua: 176, fa: 180, uaF: 1 }, { anchor: 'hand', at: [100, 26], lean: -3, thigh: 12, shin: -88, ua: 110, fa: 176, uaF: 0.45 }, { anchor: 'hand', at: [100, 26], lean: -6, thigh: 12, shin: -88, ua: 5, fa: 172, uaF: 0.9 }],
+    eq: J => ({ back: EQ.post(72, 14) + EQ.post(128, 14) + EQ.bar([72, 16], [128, 16], 3) + EQ.bar([100, 16], [100, 24], 2) + EQ.stack(140, 60), front: fgDot([100, 26], 2.6, 'fgw fgfill') + EQ.pad(fqUp(J.A, -3, 5.4), 30, 90, 4.2) + EQ.bar(fqUp(J.K, 0, 7.5), [128, fqUp(J.K, 0, 7.5)[1] + 6], 2.2) }),
+    marks: [{ j: 'Hd', t: 'chin clears your hands', dy: 5 }, { j: 'S', t: 'shoulders down, away from your ears' }] },
+  seatedrow: { tempo: 'up', labels: ['Pull', 'Return slowly'],
+    keys: [{ anchor: 'hip', at: [78, 107], lean: 4, footAt: [118, 110], ft: 172, handS: [27, 15] }, { anchor: 'hip', at: [78, 107], lean: -3, footAt: [118, 110], ft: 172, handS: [8, 17] }],
+    eq: J => ({ back: EQ.bench(64, 96, 113.2) + EQ.stack(166, 60) + EQ.post(152, 92) + EQ.pad([124, 98], 22, 6, 3.2), front: EQ.cable([152, 96], J.W, 'handle') }),
+    marks: [{ j: 'E', t: 'elbows drive straight back' }, { j: 'M', t: 'chest tall, torso still' }] },
+  dbrow: { tempo: 'up', labels: ['Row', 'Lower slowly'],
+    keys: [{ anchor: 'hip', at: [84, 83], lean: 82, footAt: [80, 132], foot2At: [61, 106], ft2: -80, hand2: [112, 108.5], handS: [0.5, 30.5] }, { anchor: 'hip', at: [84, 83], lean: 82, footAt: [80, 132], foot2At: [61, 106], ft2: -80, hand2: [112, 108.5], handS: [-15, 11] }],
+    eq: J => ({ back: EQ.bench(52, 122), front: EQ.dbSide(fqUp(J.W, 0, 3.5), 90) }),
+    marks: [{ j: 'E', t: 'elbow passes your ribs, close to your side' }, { j: 'M', t: 'back flat, hips square' }] },
+  dbcurl: { tempo: 'up', labels: ['Curl', 'Lower slowly'],
+    keys: [Object.assign({}, fqStand, { ua: 2, fa: 4 }), Object.assign({}, fqStand, { ua: 4, fa: 152 })],
+    eq: J => ({ front: EQ.db(J.W) }),
+    marks: [{ j: 'E', t: 'elbows stay by your ribs' }, { j: 'W', t: 'palms face up the whole way' }] },
+  hammer: { tempo: 'up', labels: ['Curl', 'Lower slowly'],
+    keys: [Object.assign({}, fqStand, { ua: 2, fa: 4 }), Object.assign({}, fqStand, { ua: 4, fa: 150 })],
+    eq: (J, p) => ({ front: EQ.dbSide(J.W, p.fa + 90) }),
+    marks: [{ j: 'E', t: 'elbows stay by your ribs' }, { j: 'W', t: 'thumbs up, palms facing in' }] },
+  cablecurl: { tempo: 'up', labels: ['Curl', 'Lower slowly'],
+    keys: [{ at: [92, 132], lean: 0, thigh: 2, shin: -2, ua: 4, fa: 16 }, { at: [92, 132], lean: 0, thigh: 2, shin: -2, ua: 5, fa: 150 }],
+    eq: J => ({ back: EQ.stack(152, 30), front: EQ.cable([138, 128], J.W, 'bar') }),
+    marks: [{ j: 'E', t: 'elbows stay by your ribs' }, { j: 'M', t: 'stand tall, no swinging' }] },
+  facepull: { front: { view: 'front', tempo: 'up', labels: ['Pull apart', 'Return slowly'],
+    keys: [{ hip: 53, stance: 9, e: [-1, 4], w: [-6.5, -9] }, { hip: 53, stance: 9, e: [16, -3], w: [5, -13] }],
+    eq: J => { const c = [J.cx, J.S[1] - 10]; return { front: fgLine([J.W, c], 1.6, 'fgw') + fgLine([J.W2, c], 1.6, 'fgw') + fgDot(c, 2.2, 'fgc') }; },
+    marks: [{ j: 'E', t: 'elbows high and wide' }, { j: 'W', t: 'rope to eye level' }] } },
+  reardelt: { tempo: 'up', labels: ['Raise', 'Lower slowly'],
+    keys: [{ at: [100, 132], lean: 62, thigh: 35, shin: -8, handS: [0, 30.5], armF: 1 }, { at: [100, 132], lean: 62, thigh: 35, shin: -8, handS: [1, 3], armF: 0.2 }],
+    eq: J => ({ front: EQ.db(fqUp(J.W, 0, 2)) }),
+    marks: [{ j: 'W', t: 'arms lift out to the sides, level with your back' }, { j: 'M', t: 'back flat, neck long' }],
+    // from the front the chest faces the floor, so the body looks short and the arms open wide
+    front: { view: 'front', tempo: 'up', labels: ['Raise', 'Lower slowly'],
+      keys: [Object.assign({ hip: 49, torso: 13, headY: 7, kneeX: 8, kneeY: 26 }, fgArm(4, 4)), Object.assign({ hip: 49, torso: 13, headY: 7, kneeX: 8, kneeY: 26 }, fgArm(84, 10))],
+      eq: J => ({ front: EQ.db(J.W) + EQ.db(J.W2) }),
+      marks: [{ j: 'E', t: 'elbows lead, arms level with your back' }, { j: 'W', t: 'no swinging, lift slowly' }] } },
+  /* --- core --- */
+  crunch: { tempo: 'up', labels: ['Curl up', 'Lower slowly'],
+    keys: [{ anchor: 'hip', at: [112, 129.6], lean: -90, neck: 0, footAt: [138, 132], handS: [9, -5], eb: -1 }, { anchor: 'hip', at: [112, 129.6], lean: -66, neck: 12, footAt: [138, 132], handS: [9, -5], eb: -1 }],
+    eq: () => ({ back: EQ.mat(58, 152) }),
+    marks: [{ j: 'S', t: 'shoulder blades just off the floor' }, { j: 'H', t: 'lower back stays down', dx: -8 }] },
+  legraise: { tempo: 'up', labels: ['Raise', 'Lower slowly'], still: 0,
+    keys: [{ anchor: 'hip', at: [96, 129.6], lean: -90, thigh: 93, shin: 93, ft: 180, ua: 90, fa: 90 }, { anchor: 'hip', at: [96, 129.6], lean: -90, thigh: 176, shin: 176, ft: 262, ua: 90, fa: 90 }],
+    eq: () => ({ back: EQ.mat(50, 156) }),
+    marks: [{ j: 'H', k: 0, t: 'lower back pressed into the floor', dx: -9 }, { j: 'A', k: 0, t: 'stop just above the floor' }] },
+  benchtuck: { tempo: 'up', labels: ['Tuck', 'Extend slowly'],
+    keys: [{ anchor: 'hip', at: [100, 107], lean: -38, thigh: 98, shin: 92, ft: 180, hand: [88, 111] }, { anchor: 'hip', at: [100, 107], lean: -30, thigh: 152, shin: 55, ft: 140, hand: [88, 111] }],
+    eq: () => ({ back: EQ.bench(52, 106) }),
+    marks: [{ j: 'K', t: 'knees come to your chest' }, { j: 'M', t: 'lean back a little, chest open' }] },
+  /* --- stretches --- */
+  sx_chest: { tempo: 'hold',
+    keys: [Object.assign({}, fqStand, { ua: -8, fa: -14 }), Object.assign({}, fqStand, { lean: -5, neck: -4, ua: -32, fa: -38 })],
+    marks: [{ j: 'S', t: 'chest lifts, shoulders roll back' }] },
+  sx_shoulder: { front: { view: 'front', tempo: 'hold',
+    keys: [{ hip: 53, e: [1, 16], w: [2, 31], e2: [1, 16], w2: [2, 31] }, { hip: 53, e: [-13, 3], w: [-27, 4], e2: [1, 15], w2: [-9, 6] }],
+    marks: [{ j: 'S', t: 'feel it across the back of the shoulder' }] } },
+  sx_calf: { tempo: 'hold',
+    keys: [{ anchor: 'hip', at: [94, 86], lean: 6, footAt: [110, 132], foot2At: [75, 132], ft2: 90, hand: [124.5, 64] }, { anchor: 'hip', at: [99, 89.6], lean: 16, footAt: [110, 132], foot2At: [75, 132], ft2: 90, hand: [124.5, 64] }],
+    eq: () => ({ back: EQ.post(129.5, 14, fqF, 4) }),
+    marks: [{ j: J => J.F2.heel, t: 'back heel stays down' }, { j: 'K2', t: 'back knee straight' }] },
+  sx_reach: { tempo: 'hold',
+    keys: [{ anchor: 'hip', at: [78, 129.6], lean: 4, thigh: 90, shin: 90, ft: 172, hand: [100, 123] }, { anchor: 'hip', at: [78, 129.6], lean: 52, thigh: 90, shin: 90, ft: 172, hand: [124, 121] }],
+    eq: () => ({ back: EQ.mat(56, 150) }),
+    marks: [{ j: 'M', t: 'long back, fold from the hips' }, { j: 'K', t: 'soft knees are fine' }] },
+  sx_butterfly: { front: { view: 'front', tempo: 'hold',
+    keys: [{ hip: 8, torso: 28, stance: 3, ankleY: 5, kneeX: 21, kneeY: 16, e: [3, 16], w: [-6, 30] }, { hip: 8, torso: 27, stance: 3, ankleY: 5, kneeX: 23.5, kneeY: 9, e: [3, 16], w: [-6, 29] }],
+    eq: () => ({ back: EQ.mat(60, 140) }),
+    marks: [{ j: 'K', t: 'knees relax toward the floor' }, { j: 'M', t: 'sit tall' }] } },
+  sx_figure4: { tempo: 'hold',
+    keys: [{ anchor: 'hip', at: [104, 129.6], lean: -90, thigh2: 165, shin2: 95, footAt: [108.5, 109], kb: 1, hand: [102, 118] }, { anchor: 'hip', at: [104, 129.6], lean: -90, thigh2: 200, shin2: 95, footAt: [96, 109.5], kb: 1, hand: [98, 114] }],
+    eq: () => ({ back: EQ.mat(50, 150) }),
+    marks: [{ j: 'H', t: 'feel it in the hip of the crossed leg' }, { j: 'Hd', t: 'head and shoulders stay down' }] },
+  sx_knees: { tempo: 'hold',
+    keys: [{ anchor: 'hip', at: [104, 129.6], lean: -90, thigh: 150, shin: 11, hand: [108, 116] }, { anchor: 'hip', at: [104, 129.6], lean: -90, thigh: 215, shin: 75, hand: [101, 111] }],
+    eq: () => ({ back: EQ.mat(50, 150) }),
+    marks: [{ j: 'H', t: 'lower back relaxes into the floor', dx: -7 }] },
+  sx_child: { tempo: 'hold',
+    keys: [{ anchor: 'hip', at: [78, 119], lean: 8, thigh: 60, shin: -89, ft: -90, hand: [97, 116] }, { anchor: 'hip', at: [78, 119], lean: 104, neck: -8, thigh: 60, shin: -89, ft: -90, hand: [138, 131] }],
+    eq: () => ({ back: EQ.mat(50, 152) }),
+    marks: [{ j: 'H', t: 'hips sink back toward your heels' }, { j: 'M', t: 'let your back round and relax' }] }
+};
+// The seated row machine of the circuit: a chest pad to lean on and two handles on a lever, not the cable row's foot plate.
+FIG.st_row = { tempo: 'up', labels: ['Pull', 'Return slowly'],
+  keys: [{ anchor: 'hip', at: [80, 108], lean: 2, footAt: [102, 132], handS: [29, 7] }, { anchor: 'hip', at: [80, 108], lean: 2, footAt: [102, 132], handS: [8, 14] }],
+  eq: J => ({ back: EQ.seat(72, 94, 114.6) + EQ.pad(fqUp(J.S, 9.4, 3), 22, 0, 4.6) + EQ.post(J.S[0] + 9.4, J.S[1] + 25) + EQ.stack(150, 48) + EQ.post(138, 60, 96), front: EQ.bar([138, 64], J.W, 2) + fgDot(J.W, 3.4, 'fgw') }),
+  marks: [{ j: 'E', t: 'elbows drive straight back past your sides' }, { j: J => fqUp(J.S, 9.4, 12), t: 'chest stays on the pad' }] };
+// the other three circuit stations use the lifts' own pictures
+const FIG_ALIAS = { st_legpress: 'legpress', st_chest: 'chestpress', st_latpull: 'latpull' };
+
+/* ---- 59-guide-text.js ---- */
+// 59-guide-text.js: full how-to card text. Pure data, and the only top-level name is GUIDE.
+// Keys: the 33 EX exercises, Jacquie's four circuit stations (st_*) and the eight cool-down stretches (sx_*, in
+// STRETCHES order). Every entry has equip, where, setup (2 to 4), steps (3 to 5), breathe, main, also,
+// mistakes (two [mistake, fix] pairs), easier and harder ({ k: EX key or null, text }) and stress (body areas).
+const GUIDE = {
+  // ----- Push -----
+  chestpress: {
+    equip: 'Chest press machine',
+    where: 'Machine area: a seat with a back pad and two handles at chest height that push forward.',
+    setup: [
+      'Set the seat so the handles line up with the middle of your chest.',
+      'Put the pin in the weight stack at the weight you want.',
+      'Sit with your head and back on the pad and both feet flat on the floor.',
+      'Grip the handles with straight wrists and your elbows a little below shoulder height.'
+    ],
+    steps: [
+      'Pull your shoulder blades back and down against the pad.',
+      'Press the handles forward until your arms are almost straight.',
+      'Pause for a moment. Do not snap your elbows straight.',
+      'Bring the handles back slowly until your hands are just in front of your chest.'
+    ],
+    breathe: 'Breathe out as you press, in as the handles come back.',
+    main: ['chest'],
+    also: ['shoulders', 'triceps'],
+    mistakes: [
+      ['Shoulders rolling forward', 'Keep your shoulder blades and head against the pad.'],
+      ['Letting the weight stack slam', 'Return slowly and stop just before the plates touch.']
+    ],
+    easier: { k: null, text: 'Use a lighter weight and slow each rep down.' },
+    harder: { k: 'dbbench', text: 'Dumbbell bench press: each arm has to steady its own weight.' },
+    stress: ['shoulder', 'wrist']
+  },
+  dbbench: {
+    equip: 'Two dumbbells, start at 30 lb each, and a flat bench',
+    where: 'Free-weight area: the flat benches near the dumbbell rack.',
+    setup: [
+      'Sit on the end of the bench with a dumbbell standing on each thigh.',
+      'Lie back and bring the weights to the sides of your chest, using your knees to help.',
+      'Plant both feet flat on the floor.',
+      'Pull your shoulder blades back and down. Keep your head, back and backside on the bench.'
+    ],
+    steps: [
+      'Press both weights up until your arms are straight over your chest.',
+      'Lower slowly with your elbows about halfway between your sides and straight out.',
+      'Stop when the weights are beside your chest and your upper arms are level with the bench.',
+      'After the last rep, bring the weights to your chest and sit up. Do not drop them out wide.'
+    ],
+    breathe: 'Breathe in as you lower, out as you press.',
+    main: ['chest'],
+    also: ['shoulders', 'triceps'],
+    mistakes: [
+      ['Elbows flared straight out to the sides', 'Tuck them in about halfway toward your ribs.'],
+      ['Backside lifting off the bench', 'Keep your hips down and your feet planted.']
+    ],
+    easier: { k: 'chestpress', text: 'Chest press machine: it guides the path for you.' },
+    harder: { k: null, text: 'Lower for three seconds on every rep.' },
+    stress: ['shoulder', 'wrist']
+  },
+  shoulderpress: {
+    equip: 'Shoulder press machine',
+    where: 'Machine area: an upright seat with two handles beside your shoulders that push overhead.',
+    setup: [
+      'Set the seat so the handles start level with your shoulders.',
+      'Put the pin in the weight stack at the weight you want.',
+      'Sit with your back flat on the pad and both feet flat on the floor.',
+      'Grip the handles with straight wrists and your elbows under your hands.'
+    ],
+    steps: [
+      'Tighten your belly so your lower back stays on the pad.',
+      'Press up until your arms are almost straight.',
+      'Lower slowly until your hands are about level with your ears.',
+      'Keep your head back on the pad and look straight ahead the whole time.'
+    ],
+    breathe: 'Breathe out as you press up, in as you lower.',
+    main: ['shoulders'],
+    also: ['triceps', 'traps'],
+    mistakes: [
+      ['Lower back arching off the pad', 'Tighten your belly and use a lighter weight.'],
+      ['Handles starting too low, below your shoulders', 'Lower the seat so they start at shoulder height.']
+    ],
+    easier: { k: null, text: 'Use a lighter weight and press only as high as feels smooth.' },
+    harder: { k: 'dbshoulder', text: 'Seated dumbbell shoulder press: each arm balances its own weight.' },
+    stress: ['shoulder', 'back']
+  },
+  dbshoulder: {
+    equip: 'Two dumbbells, start at 20 lb each, and a bench with an upright back',
+    where: 'Free-weight area: an adjustable bench near the dumbbell rack.',
+    setup: [
+      'Set the bench back almost straight up, one notch short of fully upright.',
+      'Sit with a dumbbell standing on each thigh, then lift them to your shoulders one at a time.',
+      'Sit tall with your back on the pad and both feet flat on the floor.',
+      'Hold the weights beside your ears, palms forward, elbows under your wrists.'
+    ],
+    steps: [
+      'Tighten your belly so your lower back stays on the pad.',
+      'Press straight up until your arms are almost straight over your shoulders.',
+      'Lower slowly until the weights are about level with your ears.',
+      'After the last rep, lower the weights to your thighs before you stand.'
+    ],
+    breathe: 'Breathe out as you press up, in as you lower.',
+    main: ['shoulders'],
+    also: ['triceps', 'traps'],
+    mistakes: [
+      ['Leaning back and arching to push', 'Use a lighter weight and keep your ribs down.'],
+      ['Elbows pointing straight out to the sides', 'Bring them a little forward of your shoulders.']
+    ],
+    easier: { k: 'shoulderpress', text: 'Shoulder press machine: it guides the path for you.' },
+    harder: { k: null, text: 'Pause for one second at ear height on every rep.' },
+    stress: ['shoulder', 'back']
+  },
+  pushdown: {
+    equip: 'Cable station with a short straight bar or a rope',
+    where: 'Cable station: a tall tower with a weight stack and a pulley that slides up and down.',
+    setup: [
+      'Slide the pulley to the top of the tower and clip on the short bar.',
+      'Put the pin in the weight stack. Grip the bar palms down, hands shoulder-width apart.',
+      'Stand a small step back, feet hip-width apart, with a slight lean forward from the hips.',
+      'Pull the bar down until your elbows sit at your sides. That is your start position.'
+    ],
+    steps: [
+      'Pin your elbows to your sides.',
+      'Push the bar down until your arms are straight.',
+      'Squeeze the back of your arms for a moment.',
+      'Let the bar rise slowly until your forearms are just above level.'
+    ],
+    breathe: 'Breathe out as you push down, in as the bar rises.',
+    main: ['triceps'],
+    also: [],
+    mistakes: [
+      ['Elbows drifting forward', 'Keep them glued to your ribs.'],
+      ['Hunching over to push with your body weight', 'Stand tall and use a lighter weight.']
+    ],
+    easier: { k: null, text: 'Use a lighter weight and slow each rep down.' },
+    harder: { k: 'dbtri', text: 'Dumbbell overhead triceps extension: works the muscle in a longer stretch.' },
+    stress: []
+  },
+  dbtri: {
+    equip: 'One dumbbell, start at 25 lb, held in both hands',
+    where: 'Free-weight area: a bench with an upright back near the dumbbell rack.',
+    setup: [
+      'Sit on a bench with an upright back, or stand tall with feet hip-width apart.',
+      'Cup both hands under the top end of the dumbbell so it hangs straight down.',
+      'Lift it to one shoulder first, then press it over your head until your arms are straight.',
+      'Point your elbows forward and keep them close to your head.'
+    ],
+    steps: [
+      'Bend your elbows and lower the weight slowly behind your head.',
+      'Stop when you feel a stretch in the back of your arms.',
+      'Straighten your arms to lift it back over your head.',
+      'Keep your upper arms still. Only your forearms move.'
+    ],
+    breathe: 'Breathe in as you lower, out as you lift.',
+    main: ['triceps'],
+    also: [],
+    mistakes: [
+      ['Elbows flaring wide', 'Keep them pointing forward, close to your head.'],
+      ['Lower back arching', 'Tighten your belly and keep your ribs down.']
+    ],
+    easier: { k: 'pushdown', text: 'Cable triceps pushdown: your arms stay by your sides.' },
+    harder: { k: null, text: 'Lower for three seconds on every rep.' },
+    stress: ['shoulder', 'back']
+  },
+  inclinedb: {
+    equip: 'Two dumbbells, start at 25 lb each, and an adjustable bench',
+    where: 'Free-weight area: a bench with a back that tilts, near the dumbbell rack.',
+    setup: [
+      'Set the bench back to between 30 and 45 degrees. That is a low to middle tilt.',
+      'If the seat tilts, raise it one notch so you do not slide down.',
+      'Sit with a dumbbell on each thigh, lie back, and bring them beside your upper chest.',
+      'Plant your feet flat and pull your shoulder blades back and down.'
+    ],
+    steps: [
+      'Press the weights up until your arms are straight above your shoulders.',
+      'Lower slowly to the sides of your upper chest.',
+      'Keep your elbows about halfway between your sides and straight out.',
+      'Keep your wrists straight and stacked over your elbows.'
+    ],
+    breathe: 'Breathe in as you lower, out as you press.',
+    main: ['chest', 'shoulders'],
+    also: ['triceps'],
+    mistakes: [
+      ['Bench set too upright', 'Keep it at 30 to 45 degrees so your chest does the work.'],
+      ['Back arching off the bench', 'Keep your backside and upper back on the pad.']
+    ],
+    easier: { k: 'chestpress', text: 'Chest press machine: it guides the path for you.' },
+    harder: { k: null, text: 'Pause for one second at the bottom of each rep.' },
+    stress: ['shoulder', 'wrist']
+  },
+  pecdeck: {
+    equip: 'Pec deck, also called the chest fly machine',
+    where: 'Machine area: a seat with two long arms that swing together in front of your chest.',
+    setup: [
+      'Set the seat so your hands and elbows are just below shoulder height.',
+      'If the arms adjust, set them to start in line with your chest, not behind it.',
+      'Put the pin in the weight stack. Sit with your head and back on the pad, feet flat.',
+      'Hold the handles with a soft bend in your elbows.'
+    ],
+    steps: [
+      'Keep your shoulder blades back against the pad.',
+      'Bring your hands together in front of your chest in a wide arc, like hugging a tree.',
+      'Squeeze your chest for one second.',
+      'Open slowly until your hands are in line with your chest.'
+    ],
+    breathe: 'Breathe out as your hands come together, in as you open.',
+    main: ['chest'],
+    also: ['shoulders'],
+    mistakes: [
+      ['Opening too far back', 'Stop when your hands line up with your chest.'],
+      ['Bending your elbows more to push the handles', 'Keep the same soft bend all the way.']
+    ],
+    easier: { k: null, text: 'Use a lighter weight and a smaller opening.' },
+    harder: { k: 'inclinedb', text: 'Incline dumbbell press: you balance the weights yourself.' },
+    stress: ['shoulder']
+  },
+  latraise: {
+    equip: 'Two light dumbbells, start at 10 lb each',
+    where: 'Free-weight area: in front of the dumbbell rack, with room to lift your arms out wide.',
+    setup: [
+      'Stand tall with feet hip-width apart and knees soft.',
+      'Hold the weights at your sides, palms facing your thighs.',
+      'Keep a soft bend in your elbows and tip your chest forward just a little.'
+    ],
+    steps: [
+      'Lift your arms out to the sides, leading with your elbows.',
+      'Stop at shoulder height, with your arms level with the floor.',
+      'Pause for a moment with your shoulders down, away from your ears.',
+      'Lower slowly to your sides. Do not let the weights drop.'
+    ],
+    breathe: 'Breathe out as you lift, in as you lower.',
+    main: ['shoulders'],
+    also: ['traps'],
+    mistakes: [
+      ['Swinging the weights up', 'Go lighter and lift without any body sway.'],
+      ['Lifting above shoulder height with a shrug', 'Stop when your arms are level with the floor.']
+    ],
+    easier: { k: null, text: 'Use lighter weights, or lift one arm at a time.' },
+    harder: { k: 'cablelat', text: 'Cable lateral raise: the cable keeps pulling all the way down.' },
+    stress: ['shoulder', 'neck']
+  },
+  cablelat: {
+    equip: 'Cable station with a single handle',
+    where: 'Cable station: a tall tower with a weight stack and a pulley that slides up and down.',
+    setup: [
+      'Slide the pulley to the bottom of the tower and clip on a single handle.',
+      'Set the pin to a very light weight. This move needs little.',
+      'Stand side-on to the tower and take the handle in the hand farther from it.',
+      'Hold the tower with your near hand. The cable crosses in front of your legs.'
+    ],
+    steps: [
+      'Lift your arm out to the side with a soft elbow.',
+      'Stop at shoulder height, with your arm level with the floor.',
+      'Lower slowly and keep the cable tight.',
+      'Finish your reps, then turn around and do the other arm.'
+    ],
+    breathe: 'Breathe out as you lift, in as you lower.',
+    main: ['shoulders'],
+    also: ['traps'],
+    mistakes: [
+      ['Shoulder shrugging up', 'Keep it down, away from your ear.'],
+      ['Twisting your body to pull', 'Keep your chest facing forward and use a lighter weight.']
+    ],
+    easier: { k: 'latraise', text: 'Dumbbell lateral raise: simpler to set up and lighter at the bottom.' },
+    harder: { k: null, text: 'Pause for two seconds at shoulder height.' },
+    stress: ['shoulder', 'neck']
+  },
+
+  // ----- Pull -----
+  latpull: {
+    equip: 'Lat pulldown machine with the long bar',
+    where: 'Machine area: a seat with thigh pads under a long bar that hangs from a cable overhead.',
+    setup: [
+      'Set the thigh pads so they hold your legs down snugly with your feet flat.',
+      'Put the pin in the weight stack. Stand and grip the bar a little wider than your shoulders.',
+      'Keep your palms facing forward. Sit down with the bar and slide your thighs under the pads.',
+      'Lift your chest and lean back just slightly.'
+    ],
+    steps: [
+      'Start the pull by drawing your shoulder blades down.',
+      'Drive your elbows down and back.',
+      'Bring the bar to your upper chest, just below your collarbone.',
+      'Pause, then let the bar rise slowly until your arms are straight.'
+    ],
+    breathe: 'Breathe out as you pull down, in as the bar rises.',
+    main: ['lats'],
+    also: ['biceps', 'midback', 'reardelts'],
+    mistakes: [
+      ['Leaning far back and yanking', 'Keep only a slight lean and pull smoothly.'],
+      ['Pulling the bar behind your neck', 'Always bring it down in front, to your upper chest.']
+    ],
+    easier: { k: null, text: 'Use a lighter weight, or a shoulder-width grip with palms facing you.' },
+    harder: { k: 'assistpull', text: 'Assisted pull-up machine: you lift part of your own body weight.' },
+    stress: ['shoulder']
+  },
+  assistpull: {
+    equip: 'Assisted pull-up machine with a knee pad',
+    where: 'Machine area: a tall frame with pull-up handles on top and a padded platform for your knees.',
+    setup: [
+      'Put the pin in the weight stack. More weight on the stack means more help, so start heavy.',
+      'Step up on the foot pegs and grip the handles just wider than your shoulders, palms forward.',
+      'Place one knee on the pad, then the other, and let the pad take your weight.',
+      'Hang with your arms straight and your belly tight.'
+    ],
+    steps: [
+      'Start by drawing your shoulder blades down.',
+      'Drive your elbows down and back and pull your chest up toward the handles.',
+      'Stop when your chin is above your hands.',
+      'Lower slowly until your arms are straight.',
+      'After the last rep, put one foot on a peg before you take your knees off the pad.'
+    ],
+    breathe: 'Breathe out as you pull up, in as you lower.',
+    main: ['lats'],
+    also: ['biceps', 'midback', 'abs'],
+    mistakes: [
+      ['Stopping halfway down', 'Lower until your arms are fully straight.'],
+      ['Choosing too little help and jerking up', 'Add weight to the stack until every rep is smooth.']
+    ],
+    easier: { k: 'latpull', text: 'Lat pulldown machine: the same pull, seated, at any weight you like.' },
+    harder: { k: null, text: 'Take one plate off the stack. Less weight means less help.' },
+    stress: ['shoulder']
+  },
+  seatedrow: {
+    equip: 'Seated cable row station with the close two-hand grip handle',
+    where: 'Cable area: a long low bench with foot plates, facing a low pulley.',
+    setup: [
+      'Clip on the close grip handle, the V shaped one, and put the pin in the weight stack.',
+      'Sit on the bench with your feet on the plates and your knees slightly bent.',
+      'Reach forward, take the handle, then sit back until your arms are straight and the weight lifts.',
+      'Sit tall with your chest up and your back flat.'
+    ],
+    steps: [
+      'Keep your torso still and upright. Only your arms and shoulder blades move.',
+      'Drive your elbows straight back, close to your sides.',
+      'Pull the handle to your belly, at about belly button height.',
+      'Squeeze your shoulder blades together for a moment.',
+      'Reach forward slowly until your arms are straight, without rounding your back.'
+    ],
+    breathe: 'Breathe out as you pull, in as you reach forward.',
+    main: ['midback', 'lats'],
+    also: ['biceps', 'reardelts'],
+    mistakes: [
+      ['Rocking back and forth', 'Keep your torso still and let your arms do the work.'],
+      ['Back rounding as you reach forward', 'Keep your chest up and let only your arms go forward.']
+    ],
+    easier: { k: null, text: 'Use a lighter weight and pull only as far as your torso stays still.' },
+    harder: { k: null, text: 'Hold the squeeze for two seconds on every rep.' },
+    stress: ['back', 'shoulder']
+  },
+  dbrow: {
+    equip: 'One dumbbell, start at 30 lb, and a flat bench',
+    where: 'Free-weight area: the flat benches near the dumbbell rack.',
+    setup: [
+      'Put the dumbbell on the floor beside a flat bench.',
+      'Place one knee and the hand on the same side on the bench.',
+      'Plant your other foot on the floor, out to the side, with the knee soft.',
+      'Flatten your back until it is close to level with the floor. Look at the floor just ahead.'
+    ],
+    steps: [
+      'Pick up the weight with your free hand and let that arm hang straight.',
+      'Drive your elbow up and back, pulling the weight toward your hip.',
+      'Stop when the weight reaches your side.',
+      'Lower slowly until your arm is straight.',
+      'Finish your reps, then switch sides.'
+    ],
+    breathe: 'Breathe out as you pull, in as you lower.',
+    main: ['lats', 'midback'],
+    also: ['biceps', 'reardelts'],
+    mistakes: [
+      ['Twisting your body to lift', 'Keep both shoulders level and your chest facing the floor.'],
+      ['Back rounding', 'Lift your chest a little and keep your back flat.']
+    ],
+    easier: { k: 'seatedrow', text: 'Seated cable row: you sit upright and the cable guides the pull.' },
+    harder: { k: null, text: 'Pause for two seconds at the top of each rep.' },
+    stress: ['back', 'shoulder']
+  },
+  dbcurl: {
+    equip: 'Two dumbbells, start at 20 lb each',
+    where: 'Free-weight area: anywhere near the dumbbell rack. A mirror helps you check your form.',
+    setup: [
+      'Stand tall with feet hip-width apart and knees soft.',
+      'Hold the weights at your sides with your palms facing forward.',
+      'Tuck your elbows in beside your ribs.'
+    ],
+    steps: [
+      'Keeping your elbows by your ribs, curl the weights up toward your shoulders.',
+      'Squeeze for a moment at the top.',
+      'Lower slowly until your arms are straight.'
+    ],
+    breathe: 'Breathe out as you curl up, in as you lower.',
+    main: ['biceps'],
+    also: ['forearms'],
+    mistakes: [
+      ['Swinging your body', 'Stand tall and go lighter, or stand with your back against a wall.'],
+      ['Elbows drifting forward', 'Keep them pinned beside your ribs.']
+    ],
+    easier: { k: 'hammer', text: 'Hammer curl: palms face in, which is kinder to the wrists.' },
+    harder: { k: null, text: 'Lower for three seconds on every rep.' },
+    stress: ['wrist']
+  },
+  cablecurl: {
+    equip: 'Cable station with a short straight bar',
+    where: 'Cable station: a tall tower with a weight stack and a pulley that slides up and down.',
+    setup: [
+      'Slide the pulley to the bottom of the tower and clip on the short straight bar.',
+      'Put the pin in the weight stack. Grip the bar palms up, hands shoulder-width apart.',
+      'Stand tall a small step back from the tower with your elbows at your sides.'
+    ],
+    steps: [
+      'Keeping your elbows by your ribs, curl the bar up toward your shoulders.',
+      'Squeeze for a moment at the top.',
+      'Lower slowly until your arms are straight. Keep the cable tight.'
+    ],
+    breathe: 'Breathe out as you curl up, in as you lower.',
+    main: ['biceps'],
+    also: ['forearms'],
+    mistakes: [
+      ['Elbows moving forward', 'Keep them still beside your ribs.'],
+      ['Leaning back to lift', 'Stand tall and use a lighter weight.']
+    ],
+    easier: { k: null, text: 'Use a lighter weight and slow each rep down.' },
+    harder: { k: null, text: 'Pause for two seconds at the top of each rep.' },
+    stress: ['wrist']
+  },
+  hammer: {
+    equip: 'Two dumbbells, start at 20 lb each',
+    where: 'Free-weight area: anywhere near the dumbbell rack. A mirror helps you check your form.',
+    setup: [
+      'Stand tall with feet hip-width apart and knees soft.',
+      'Hold the weights at your sides with your palms facing your thighs.',
+      'Tuck your elbows in beside your ribs.'
+    ],
+    steps: [
+      'Curl the weights up without turning your wrists. Your thumbs lead the way.',
+      'Stop when your thumbs are close to your shoulders.',
+      'Lower slowly until your arms are straight.'
+    ],
+    breathe: 'Breathe out as you curl up, in as you lower.',
+    main: ['biceps', 'forearms'],
+    also: [],
+    mistakes: [
+      ['Leaning back to lift', 'Stand tall and use a lighter weight.'],
+      ['Wrists turning palm up', 'Keep your palms facing each other the whole way.']
+    ],
+    easier: { k: null, text: 'Curl one arm at a time so you can watch each side.' },
+    harder: { k: 'dbcurl', text: 'Dumbbell biceps curl: palms up puts more of the work on the biceps.' },
+    stress: []
+  },
+  facepull: {
+    equip: 'Cable station with the rope handle',
+    where: 'Cable station: a tall tower with a weight stack and a pulley that slides up and down.',
+    setup: [
+      'Slide the pulley to about eye level and clip on the rope.',
+      'Set the pin to a light weight. This move is about control, not load.',
+      'Hold one end of the rope in each hand with your thumbs pointing back toward you.',
+      'Step back until your arms are straight and the weight lifts. Stand tall, one foot back.'
+    ],
+    steps: [
+      'Pull the rope toward your eyes, spreading your hands apart as it comes.',
+      'Keep your elbows high and wide, level with your shoulders.',
+      'Finish with your hands beside your ears and your shoulder blades squeezed together.',
+      'Return slowly until your arms are straight.'
+    ],
+    breathe: 'Breathe out as you pull, in as you return.',
+    main: ['reardelts', 'midback'],
+    also: ['traps'],
+    mistakes: [
+      ['Leaning back to pull', 'Stay upright and use less weight.'],
+      ['Elbows dropping below your shoulders', 'Lift them high and wide so the rope comes to eye level.']
+    ],
+    easier: { k: null, text: 'Use the lightest weight and make every pull smooth.' },
+    harder: { k: null, text: 'Hold the rope at eye level for two seconds on every rep.' },
+    stress: ['shoulder']
+  },
+  reardelt: {
+    equip: 'Two light dumbbells, start at 10 lb each',
+    where: 'Free-weight area: in front of the dumbbell rack, with room to lift your arms out wide.',
+    setup: [
+      'Stand with feet hip-width apart and knees softly bent.',
+      'Hinge at the hips: push your backside back and tip your chest toward the floor, back flat.',
+      'Let the weights hang under your chest, palms facing each other, elbows soft.'
+    ],
+    steps: [
+      'Lift your arms out to the sides, leading with your elbows.',
+      'Stop when your arms are level with your back.',
+      'Squeeze your shoulder blades together for a moment.',
+      'Lower slowly until the weights meet under your chest.'
+    ],
+    breathe: 'Breathe out as you lift, in as you lower.',
+    main: ['reardelts'],
+    also: ['midback', 'traps'],
+    mistakes: [
+      ['Standing up as you lift', 'Keep your chest facing the floor for the whole set.'],
+      ['Swinging the weights up', 'Go lighter and lift slowly.']
+    ],
+    easier: { k: 'facepull', text: 'Cable face pull: you stand upright, so your lower back gets a rest.' },
+    harder: { k: null, text: 'Pause for two seconds at the top of each rep.' },
+    stress: ['back', 'shoulder']
+  },
+
+  // ----- Legs -----
+  legpress: {
+    equip: 'Leg press machine',
+    where: 'Machine area: a reclined seat facing a large foot platform. Some use a pin, some use plates.',
+    setup: [
+      'Set the weight with the pin, or slide equal plates onto both sides.',
+      'Sit with your back and hips flat against the pad.',
+      'Place your feet shoulder-width apart in the middle of the platform, toes turned out a little.',
+      'If the seat slides, set it so your knees start bent to about a right angle.'
+    ],
+    steps: [
+      'Press the platform up a little. If there are safety handles, turn them out to free it.',
+      'Lower slowly until your knees are bent to about a right angle.',
+      'Keep your hips and lower back on the pad and your knees in line with your toes.',
+      'Push through your whole foot, heels down, until your legs are almost straight.',
+      'After the last rep, turn the safety handles back in before you relax your legs.'
+    ],
+    breathe: 'Breathe in as you lower, out as you push.',
+    main: ['quads', 'glutes'],
+    also: ['hamstrings'],
+    mistakes: [
+      ['Snapping your knees straight', 'Stop just short of fully straight.'],
+      ['Hips curling up off the seat at the bottom', 'Do not go as deep. Keep your lower back on the pad.']
+    ],
+    easier: { k: null, text: 'Use a lighter weight and bend your knees a little less.' },
+    harder: { k: 'goblet', text: 'Goblet squat: you stand and balance the weight yourself.' },
+    stress: ['knee', 'back', 'hip']
+  },
+  goblet: {
+    equip: 'One kettlebell or dumbbell, start at 35 lb',
+    where: 'Free-weight area: any open floor near the dumbbell or kettlebell rack.',
+    setup: [
+      'With a dumbbell, stand it on end and cup the top. With a kettlebell, hold the sides of the handle.',
+      'Hold the weight against your chest with your elbows tucked under it.',
+      'Stand with feet a little wider than your shoulders, toes turned out slightly.'
+    ],
+    steps: [
+      'Take a breath and tighten your belly.',
+      'Sit down between your knees, keeping your chest up and your heels down.',
+      'Lower until your thighs are about level with the floor, or as low as your back stays flat.',
+      'Push through your whole foot to stand tall.'
+    ],
+    breathe: 'Breathe in on the way down, out as you stand.',
+    main: ['quads', 'glutes'],
+    also: ['abs', 'hamstrings'],
+    mistakes: [
+      ['Heels lifting', 'Sit back a little more and keep your whole foot down.'],
+      ['Chest dropping forward', 'Keep the weight tight to your chest with your elbows under it.']
+    ],
+    easier: { k: 'legpress', text: 'Leg press machine: the seat supports your back.' },
+    harder: { k: null, text: 'Pause for two seconds at the bottom of each rep.' },
+    stress: ['knee', 'back', 'hip']
+  },
+  legext: {
+    equip: 'Leg extension machine',
+    where: 'Machine area: an upright seat with a padded roller that sits in front of your shins.',
+    setup: [
+      'Set the back pad so your knees line up with the pivot, the round hinge on the side.',
+      'Set the roller pad so it rests on your lower shins, just above your ankles.',
+      'Put the pin in the weight stack, sit back, and hold the side handles.'
+    ],
+    steps: [
+      'Straighten your legs smoothly until they are level.',
+      'Squeeze the front of your thighs for one second.',
+      'Lower slowly. Stop just before the plates touch.'
+    ],
+    breathe: 'Breathe out as you straighten, in as you lower.',
+    main: ['quads'],
+    also: [],
+    mistakes: [
+      ['Kicking the weight up', 'Lift smoothly and pause at the top.'],
+      ['Hips lifting off the seat', 'Hold the handles and keep your backside down.']
+    ],
+    easier: { k: null, text: 'Use a lighter weight, or stop a little short of fully straight.' },
+    harder: { k: 'splitsquat', text: 'Dumbbell split squat: standing, one leg forward, with balance to hold.' },
+    stress: ['knee']
+  },
+  splitsquat: {
+    equip: 'Two dumbbells, start at 20 lb each',
+    where: 'Free-weight area: open floor near the dumbbell rack.',
+    setup: [
+      'Hold a dumbbell in each hand at your sides.',
+      'Take a long step forward. Keep your feet hip-width apart, like standing on train tracks.',
+      'Lift your back heel so you are on the ball of that foot.',
+      'Stand tall with your chest up and most of your weight on the front foot.'
+    ],
+    steps: [
+      'Drop your back knee straight down toward the floor.',
+      'Stop just before it touches. Keep your front heel down and that knee in line with your toes.',
+      'Push through your front foot to stand back up. Your feet stay where they are.',
+      'Finish your reps, then switch legs.'
+    ],
+    breathe: 'Breathe in as you lower, out as you stand.',
+    main: ['quads', 'glutes'],
+    also: ['hamstrings'],
+    mistakes: [
+      ['Front knee caving in', 'Keep it pointing the same way as your toes.'],
+      ['Feet in one line, like on a tightrope', 'Keep them hip-width apart for balance.']
+    ],
+    easier: { k: 'legext', text: 'Leg extension machine: seated, with no balance needed.' },
+    harder: { k: null, text: 'Rest your back foot up on a bench.' },
+    stress: ['knee', 'hip', 'ankle']
+  },
+  legcurl: {
+    equip: 'Leg curl machine, seated or lying',
+    where: 'Machine area. Seated type has a thigh pad. Lying type is a flat pad you lie face down on.',
+    setup: [
+      'Line your knees up with the pivot, the round hinge on the side of the machine.',
+      'Set the roller pad so it rests on the back of your lower legs, just above your heels.',
+      'On the seated type, lower the thigh pad until it holds your legs down snugly.',
+      'Put the pin in the weight stack and hold the handles.'
+    ],
+    steps: [
+      'Keep your hips pressed against the pad.',
+      'Curl your heels toward your backside as far as the machine allows.',
+      'Squeeze the back of your thighs for one second.',
+      'Let the pad return slowly until your legs are almost straight.'
+    ],
+    breathe: 'Breathe out as you curl, in as the pad returns.',
+    main: ['hamstrings'],
+    also: ['calves'],
+    mistakes: [
+      ['Hips lifting off the pad', 'Press them down and go lighter.'],
+      ['Letting the weight drop back', 'Take two to three seconds on the way back.']
+    ],
+    easier: { k: null, text: 'Use a lighter weight and curl only as far as is smooth.' },
+    harder: { k: 'dbrdl', text: 'Dumbbell Romanian deadlift: standing, with your hips and back working too.' },
+    stress: ['knee']
+  },
+  dbrdl: {
+    equip: 'Two dumbbells, start at 30 lb each',
+    where: 'Free-weight area: open floor near the dumbbell rack. Stand side-on to a mirror if you can.',
+    setup: [
+      'Stand tall with feet hip-width apart.',
+      'Hold the weights in front of your thighs, palms facing your legs.',
+      'Bend your knees softly and keep that same bend for the whole rep.',
+      'Pull your shoulders back and tighten your belly.'
+    ],
+    steps: [
+      'Hinge at the hips: push your backside straight back, as if closing a car door with it.',
+      'Let your chest tip forward with a flat back as the weights slide down your thighs.',
+      'Keep the weights close to your legs. Stop at about mid-shin, or sooner if your back rounds.',
+      'Push your hips forward to stand tall and squeeze your backside at the top.'
+    ],
+    breathe: 'Breathe in as you lower, out as you stand.',
+    main: ['hamstrings', 'glutes'],
+    also: ['lowerback', 'forearms'],
+    mistakes: [
+      ['Back rounding', 'Lift your chest and stop where your back is still flat.'],
+      ['Bending the knees more and squatting down', 'Keep the soft bend fixed and send your hips back.']
+    ],
+    easier: { k: 'legcurl', text: 'Leg curl machine: works the back of the thighs with your body supported.' },
+    harder: { k: 'bbrdl', text: 'Barbell Romanian deadlift: the same move with room for more weight.' },
+    stress: ['back', 'hip']
+  },
+  calf: {
+    equip: 'Standing calf raise machine, or a low step and one dumbbell',
+    where: 'Machine area: a frame with shoulder pads above a low step. Or use any low step beside a rail.',
+    setup: [
+      'On the machine, set the shoulder pads so you bend your knees a little to get under them.',
+      'On a step, hold a dumbbell in one hand and a rail in the other for balance.',
+      'Stand with the balls of your feet on the edge of the step and your heels hanging off.',
+      'Stand tall with your legs straight but your knees not locked.'
+    ],
+    steps: [
+      'Rise onto your toes as high as you can.',
+      'Pause for one second at the top.',
+      'Lower your heels slowly until they are just below the step.',
+      'Feel a light stretch in your calves, then rise again.'
+    ],
+    breathe: 'Breathe out as you rise, in as you lower.',
+    main: ['calves'],
+    also: [],
+    mistakes: [
+      ['Bouncing fast', 'Pause at the top and take two seconds to lower.'],
+      ['Bending your knees to help', 'Keep your legs straight and move only at the ankles.']
+    ],
+    easier: { k: null, text: 'Do them on the flat floor with no weight, holding a rail.' },
+    harder: { k: null, text: 'Do one leg at a time on the step.' },
+    stress: ['ankle']
+  },
+  squat: {
+    equip: 'Squat rack, 45 lb Olympic bar, plates, collars',
+    where: 'Free-weight area: the tall steel racks with hooks and long safety bars.',
+    setup: [
+      'Set the hooks so the bar sits at mid-chest height, a little below your shoulders.',
+      'Set the safety pins just below the lowest point the bar reaches. Check with the empty bar first.',
+      'Load the same plates on both sides and clip a collar on each end to hold them.',
+      'Step under the bar and rest it on the muscles of your upper back, not on your neck.'
+    ],
+    steps: [
+      'Grip just wider than your shoulders, stand up with the bar, and take two small steps back.',
+      'Set your feet shoulder-width apart, toes turned out a little. Breathe in and tighten your belly.',
+      'Sit down between your heels. Keep heels down, knees over toes, back and shins leaning the same.',
+      'Go down until your hips are level with your knees or a little below, then push the floor away.',
+      'After the last rep, walk forward until the bar touches the rack, then lower it onto the hooks.'
+    ],
+    breathe: 'Breathe in on the way down, out as you stand.',
+    main: ['quads', 'glutes'],
+    also: ['hamstrings', 'abs', 'lowerback'],
+    mistakes: [
+      ['Knees caving in', 'Push them out so they track over your toes.'],
+      ['Heels lifting', 'Sit back a little and keep the whole foot down.']
+    ],
+    easier: { k: 'goblet', text: 'Goblet squat: the weight in front keeps you upright.' },
+    harder: { k: null, text: 'Pause for two seconds at the bottom of each rep.' },
+    stress: ['knee', 'back', 'hip']
+  },
+  lunge: {
+    equip: 'Two dumbbells, start at 15 lb each',
+    where: 'Any clear strip of floor with room for about ten steps. Turn around at the end.',
+    setup: [
+      'Check that the path ahead of you is clear.',
+      'Hold a dumbbell in each hand at your sides.',
+      'Stand tall with feet hip-width apart and your shoulders back.'
+    ],
+    steps: [
+      'Take a long step forward and plant your whole front foot.',
+      'Lower until both knees are bent to about a right angle. Your back knee stays off the floor.',
+      'Keep your chest up and your front knee in line with your toes.',
+      'Push through your front foot, stand up, and step into the next lunge with the other leg.'
+    ],
+    breathe: 'Breathe in as you lower, out as you step up.',
+    main: ['quads', 'glutes'],
+    also: ['hamstrings', 'calves'],
+    mistakes: [
+      ['Steps too short', 'Step longer so your front heel stays down.'],
+      ['Wobbling side to side', 'Keep your feet hip-width apart, not in one line.']
+    ],
+    easier: { k: 'splitsquat', text: 'Dumbbell split squat: the same move with your feet staying in place.' },
+    harder: { k: null, text: 'Pause for one second at the bottom of every step.' },
+    stress: ['knee', 'hip', 'ankle']
+  },
+  bbrdl: {
+    equip: '45 lb Olympic bar, plates, collars, and a rack to lift it from',
+    where: 'Free-weight area: a squat rack with the hooks set low, or a lifting platform.',
+    setup: [
+      'Set the rack hooks at mid-thigh height so you can lift the bar off without bending far.',
+      'Load the same plates on both sides and clip a collar on each end to hold them.',
+      'Grip the bar just outside your thighs, palms facing you. Lift it and take one step back.',
+      'Stand tall with feet hip-width apart and your knees softly bent.'
+    ],
+    steps: [
+      'Hinge at the hips: push your backside straight back and let your chest tip forward.',
+      'Keep your back flat and the bar sliding down your thighs.',
+      'Keep the same soft knee bend. Stop at about mid-shin, or sooner if your back starts to round.',
+      'Push your hips forward to stand tall. Do not lean back at the top.'
+    ],
+    breathe: 'Breathe in as you lower, out as you stand.',
+    main: ['hamstrings', 'glutes'],
+    also: ['lowerback', 'forearms', 'traps'],
+    mistakes: [
+      ['Bar drifting away from you', 'Keep it brushing your legs all the way down and up.'],
+      ['Back rounding', 'Lift your chest and stop where your back is still flat.']
+    ],
+    easier: { k: 'dbrdl', text: 'Dumbbell Romanian deadlift: lighter, and simpler to set up.' },
+    harder: { k: null, text: 'Lower for three seconds and pause at mid-shin.' },
+    stress: ['back', 'hip']
+  },
+  hipthrust: {
+    equip: 'One dumbbell, start at 30 lb, and a flat bench',
+    where: 'Free-weight area: a flat bench that will not slide, best against a wall or rack.',
+    setup: [
+      'Sit on the floor with your upper back against the long side of the bench.',
+      'Lay the dumbbell across the crease of your hips and hold it with both hands.',
+      'Plant your feet flat, hip-width apart, with your knees bent.',
+      'The bench edge should sit just under your shoulder blades.'
+    ],
+    steps: [
+      'Tuck your chin and tighten your belly.',
+      'Push through your heels and lift your hips until your body is level from shoulders to knees.',
+      'Your shins should be upright at the top. Squeeze your backside for one second.',
+      'Lower your hips slowly toward the floor.'
+    ],
+    breathe: 'Breathe out as you lift, in as you lower.',
+    main: ['glutes'],
+    also: ['hamstrings'],
+    mistakes: [
+      ['Lower back arching at the top', 'Tuck your chin, keep your ribs down, and stop when level.'],
+      ['Feet too far out or too close in', 'Place them so your shins are upright at the top.']
+    ],
+    easier: { k: null, text: 'Use no weight, or lie on the floor and lift your hips from there.' },
+    harder: { k: null, text: 'Use a heavier dumbbell, or hold the top for three seconds.' },
+    stress: ['back', 'hip']
+  },
+
+  // ----- Core, bodyweight -----
+  crunch: {
+    equip: 'Exercise mat',
+    where: 'Stretching area: any open floor with mats.',
+    setup: [
+      'Lie on your back with your knees bent and feet flat, hip-width apart.',
+      'Rest your fingertips lightly by your ears, or cross your arms over your chest.',
+      'Press your lower back gently toward the mat.'
+    ],
+    steps: [
+      'Tighten your belly and curl your head and shoulders off the mat.',
+      'Lift only until your shoulder blades leave the floor. Your lower back stays down.',
+      'Pause for a moment.',
+      'Lower slowly until your shoulders touch the mat.'
+    ],
+    breathe: 'Breathe out as you curl up, in as you lower.',
+    main: ['abs'],
+    also: ['obliques'],
+    mistakes: [
+      ['Pulling on your neck', 'Keep your fingertips light and a fist of space under your chin.'],
+      ['Jerking all the way up to sitting', 'Keep it small and slow. Only your shoulders lift.']
+    ],
+    easier: { k: null, text: 'Slide your hands along your thighs toward your knees as you curl.' },
+    harder: { k: null, text: 'Hold the top for two seconds on every rep.' },
+    stress: ['neck', 'back']
+  },
+  legraise: {
+    equip: 'Exercise mat',
+    where: 'Stretching area: any open floor with mats.',
+    setup: [
+      'Lie flat on your back with your legs straight and together.',
+      'Slide your hands, palms down, under your backside.',
+      'Press your lower back into the mat and keep it there.'
+    ],
+    steps: [
+      'Tighten your belly and lift both legs until they point at the ceiling.',
+      'Keep your legs as straight as you can.',
+      'Lower slowly. Stop just above the floor, or sooner if your lower back starts to lift.',
+      'Lift again without resting your feet on the floor.'
+    ],
+    breathe: 'Breathe out as you lift your legs, in as you lower them.',
+    main: ['abs', 'hips'],
+    also: [],
+    mistakes: [
+      ['Lower back lifting off the mat', 'Stop your legs higher, or bend your knees.'],
+      ['Dropping your legs fast', 'Take three seconds to lower them.']
+    ],
+    easier: { k: null, text: 'Bend your knees, or lower one leg at a time.' },
+    harder: { k: null, text: 'Lift your hips a little off the mat at the top of each rep.' },
+    stress: ['back', 'hip']
+  },
+  benchtuck: {
+    equip: 'Flat bench',
+    where: 'Free-weight area: any flat bench with clear floor in front of it.',
+    setup: [
+      'Sit on the end of the bench with your legs hanging off.',
+      'Hold the sides of the bench just behind your hips.',
+      'Lean back a little with a flat back and lift your feet off the floor.'
+    ],
+    steps: [
+      'Pull your knees in toward your chest and bring your chest forward to meet them.',
+      'Pause for a moment with your belly tight.',
+      'Stretch your legs back out and lean back a little, without touching the floor.'
+    ],
+    breathe: 'Breathe out as your knees come in, in as your legs go out.',
+    main: ['abs', 'hips'],
+    also: [],
+    mistakes: [
+      ['Rushing the reps', 'Move slowly and keep your belly tight.'],
+      ['Slumping with a rounded lower back', 'Sit taller, lean back less, and grip the bench.']
+    ],
+    easier: { k: null, text: 'Tap your toes on the floor between reps, or move one leg at a time.' },
+    harder: { k: null, text: 'Straighten your legs fully on the way out and pause there.' },
+    stress: ['back', 'hip']
+  },
+
+  // ----- Jacquie's circuit stations: light, easy, unhurried -----
+  st_legpress: {
+    equip: 'Leg press machine, set to a light weight',
+    where: 'Machine area: a reclined seat that faces a large foot platform.',
+    setup: [
+      'Choose a light weight. The first few pushes should feel easy.',
+      'Sit back so your hips and back rest fully on the pad.',
+      'Place your feet flat on the platform, about hip-width apart.',
+      'If the seat slides, set it so your knees start comfortably bent, not squeezed up tight.'
+    ],
+    steps: [
+      'Push the platform away gently until your legs are nearly straight. Keep a small bend in your knees.',
+      'Pause, then let it come back slowly, only as far as is comfortable.',
+      'Keep your knees in line with your toes and your back resting on the pad.',
+      'Do one or two easy sets of 10 to 12. Stop if you feel any sharp pain.'
+    ],
+    breathe: 'Breathe out as you push, in as you come back. Keep breathing the whole time.',
+    main: ['quads', 'glutes'],
+    also: ['hamstrings'],
+    mistakes: [
+      ['Locking your knees straight', 'Stop just short, with a small bend left in them.'],
+      ['Bending too deep too soon', 'Come back only as far as feels comfortable today.']
+    ],
+    easier: { k: null, text: 'Take the weight down a step and use a smaller bend.' },
+    harder: { k: null, text: 'When 12 feels easy on two visits, add the smallest weight step.' },
+    stress: ['knee', 'hip', 'back']
+  },
+  st_row: {
+    equip: 'Seated row machine, set to a light weight',
+    where: 'Machine area: a seat facing a chest pad, with two handles to pull toward you.',
+    setup: [
+      'Choose a light weight. The first few pulls should feel easy.',
+      'Set the seat so your arms reach straight ahead to the handles, level with the floor.',
+      'Sit tall with your chest resting lightly on the pad and your feet flat.',
+      'Take the handles with your arms nearly straight and your shoulders relaxed.'
+    ],
+    steps: [
+      'Gently pull the handles toward you, bringing your elbows straight back past your sides.',
+      'Keep your body still and softly squeeze your shoulder blades together.',
+      'Let the handles go forward slowly until your arms are nearly straight.',
+      'Do one or two easy sets of 10 to 12. Stop if you feel any sharp pain.'
+    ],
+    breathe: 'Breathe out as you pull, in as the handles go forward.',
+    main: ['midback', 'lats'],
+    also: ['biceps', 'reardelts'],
+    mistakes: [
+      ['Leaning back to pull', 'Stay tall on the pad and let your arms do the work.'],
+      ['Shoulders creeping up toward your ears', 'Let them drop and pull a little lighter.']
+    ],
+    easier: { k: null, text: 'Take the weight down a step, or pull a shorter distance.' },
+    harder: { k: null, text: 'When 12 feels easy on two visits, add the smallest weight step.' },
+    stress: ['shoulder', 'back']
+  },
+  st_chest: {
+    equip: 'Chest press machine, set to a light weight',
+    where: 'Machine area: a seat with a back pad and two handles at chest height.',
+    setup: [
+      'Choose a light weight. The first few presses should feel easy.',
+      'Set the seat so the handles are level with the middle of your chest.',
+      'Sit back with your head and back resting on the pad and your feet flat.',
+      'Hold the handles with straight wrists. If there is a foot lever, use it to bring them forward.'
+    ],
+    steps: [
+      'Press the handles forward gently until your arms are nearly straight.',
+      'Keep your shoulders relaxed and resting on the pad.',
+      'Bring the handles back slowly, only as far as is comfortable for your shoulders.',
+      'Do one or two easy sets of 10 to 12. Stop if you feel any sharp pain.'
+    ],
+    breathe: 'Breathe out as you press, in as the handles come back.',
+    main: ['chest'],
+    also: ['shoulders', 'triceps'],
+    mistakes: [
+      ['Letting the handles come too far back', 'Stop when your hands are just in front of your chest.'],
+      ['Shoulders lifting off the pad', 'Rest them back and press a little lighter.']
+    ],
+    easier: { k: null, text: 'Take the weight down a step, or press a shorter distance.' },
+    harder: { k: null, text: 'When 12 feels easy on two visits, add the smallest weight step.' },
+    stress: ['shoulder', 'wrist']
+  },
+  st_latpull: {
+    equip: 'Lat pulldown machine with the long bar, set to a light weight',
+    where: 'Machine area: a seat with thigh pads under a long bar that hangs from a cable.',
+    setup: [
+      'Choose a light weight. The first few pulls should feel easy.',
+      'Set the thigh pads so they rest gently on your legs with your feet flat.',
+      'Stand to take the bar, hands a little wider than your shoulders, then sit down with it.',
+      'Sit tall with just a slight lean back.'
+    ],
+    steps: [
+      'Gently pull the bar down toward the top of your chest. Let your elbows travel down and back.',
+      'Keep the bar in front of your face. It never goes behind your neck.',
+      'Pause, then let the bar rise slowly until your arms are nearly straight.',
+      'Do one or two easy sets of 10 to 12. Stop if you feel any sharp pain.'
+    ],
+    breathe: 'Breathe out as you pull down, in as the bar rises.',
+    main: ['lats'],
+    also: ['biceps', 'midback'],
+    mistakes: [
+      ['Leaning far back', 'Sit tall with only a slight lean.'],
+      ['Letting the bar pull your arms up fast', 'Hold on and let it rise slowly.']
+    ],
+    easier: { k: null, text: 'Take the weight down a step, or pull only to chin height.' },
+    harder: { k: null, text: 'When 12 feels easy on two visits, add the smallest weight step.' },
+    stress: ['shoulder', 'neck']
+  },
+
+  // ----- Cool-down stretches, in STRETCHES order: gentle, never forced -----
+  sx_chest: {
+    equip: 'Nothing needed',
+    where: 'Any quiet spot with room to stand, such as the stretching area.',
+    setup: [
+      'Stand tall with feet hip-width apart and knees soft.',
+      'Let your shoulders relax down, away from your ears.'
+    ],
+    steps: [
+      'Clasp your hands behind your back. If that is not comfortable, rest them on your lower back.',
+      'Gently draw your shoulder blades together and lift your chest.',
+      'Hold for about 30 seconds, only as far as is comfortable.'
+    ],
+    breathe: 'Breathe slowly and evenly. Let each breath out soften your shoulders.',
+    main: ['chest', 'shoulders'],
+    also: [],
+    mistakes: [
+      ['Arching your lower back', 'Keep your ribs down and your belly gently firm.'],
+      ['Pushing your head forward', 'Keep your chin level and your neck long.']
+    ],
+    easier: { k: null, text: 'Rest your hands on your hips and gently draw your elbows back.' },
+    harder: { k: null, text: 'Stay for a few more slow breaths. There is no need to go further.' },
+    stress: ['shoulder', 'back']
+  },
+  sx_shoulder: {
+    equip: 'Nothing needed',
+    where: 'Any quiet spot with room to stand, such as the stretching area.',
+    setup: [
+      'Stand tall, or sit if you prefer, with your shoulders relaxed.',
+      'Keep your chest facing forward.'
+    ],
+    steps: [
+      'Bring one arm across your chest, a little below shoulder height.',
+      'Use your other hand to hug it gently toward you. Hold above the elbow, not on it.',
+      'Stop at a mild stretch in the back of your shoulder. Only go as far as is comfortable.',
+      'Hold for about 20 seconds, then switch arms.'
+    ],
+    breathe: 'Breathe slowly and evenly. Let your shoulders soften as you breathe out.',
+    main: ['reardelts', 'shoulders'],
+    also: [],
+    mistakes: [
+      ['Shoulder lifting up toward your ear', 'Let it drop before you hug the arm in.'],
+      ['Twisting your body', 'Keep your chest facing forward.']
+    ],
+    easier: { k: null, text: 'Let the arm sit lower across your body and use a lighter hug.' },
+    harder: { k: null, text: 'Stay for a few more slow breaths on each side.' },
+    stress: ['shoulder']
+  },
+  sx_calf: {
+    equip: 'A wall or sturdy rail to rest your hands on',
+    where: 'Any wall or sturdy rail, such as the edge of the stretching area.',
+    setup: [
+      'Stand facing the wall and rest both hands on it at chest height.',
+      'Step one foot back a comfortable distance. Point both feet straight ahead.'
+    ],
+    steps: [
+      'Bend your front knee and keep your back leg straight.',
+      'Gently press your back heel toward the floor until you feel a mild stretch in that calf.',
+      'Hold for about 20 seconds, then switch legs.'
+    ],
+    breathe: 'Breathe slowly and evenly. Do not hold your breath.',
+    main: ['calves'],
+    also: [],
+    mistakes: [
+      ['Back heel lifting', 'Shorten your step until the heel can rest down.'],
+      ['Back foot turned out', 'Point those toes straight at the wall.']
+    ],
+    easier: { k: null, text: 'Take a shorter step back.' },
+    harder: { k: null, text: 'Stay for a few more slow breaths on each side.' },
+    stress: ['ankle']
+  },
+  sx_reach: {
+    equip: 'Exercise mat',
+    where: 'Stretching area: any open floor with mats.',
+    setup: [
+      'Sit on the mat with your legs out in front and your knees a little bent.',
+      'Sit tall. A folded mat or towel under your hips can make this easier.'
+    ],
+    steps: [
+      'Tip forward from your hips with a long back and slide your hands toward your shins.',
+      'Stop at the first mild stretch behind your thighs. Only go as far as is comfortable.',
+      'Hold still for about 40 seconds. No bouncing.'
+    ],
+    breathe: 'Breathe slowly and evenly. Let each breath out relax your legs.',
+    main: ['hamstrings'],
+    also: ['lowerback', 'calves'],
+    mistakes: [
+      ['Bouncing to reach further', 'Stay still and let the stretch ease on its own.'],
+      ['Rounding hard to touch your toes', 'Reach for your shins and keep your back long.']
+    ],
+    easier: { k: null, text: 'Bend your knees more, or sit on a folded mat.' },
+    harder: { k: null, text: 'Stay for a few more slow breaths. There is no need to reach further.' },
+    stress: ['back', 'hip']
+  },
+  sx_butterfly: {
+    equip: 'Exercise mat',
+    where: 'Stretching area: any open floor with mats.',
+    setup: [
+      'Sit on the mat and bring the soles of your feet together.',
+      'Let your heels rest a comfortable distance from your body. Farther away is gentler.'
+    ],
+    steps: [
+      'Hold your ankles or shins and sit tall.',
+      'Let your knees relax out to the sides under their own weight. Do not press them down.',
+      'Hold for about 30 seconds, only as far as is comfortable.'
+    ],
+    breathe: 'Breathe slowly and evenly. Let your hips soften as you breathe out.',
+    main: ['innerthigh'],
+    also: ['hips'],
+    mistakes: [
+      ['Pressing your knees down with your hands', 'Let them rest wherever they settle.'],
+      ['Slumping forward', 'Sit on a folded mat so it is easier to sit tall.']
+    ],
+    easier: { k: null, text: 'Move your feet farther from your body, or sit with your back to a wall.' },
+    harder: { k: null, text: 'Stay for a few more slow breaths.' },
+    stress: ['hip', 'knee']
+  },
+  sx_figure4: {
+    equip: 'Exercise mat',
+    where: 'Stretching area: any open floor with mats.',
+    setup: [
+      'Lie on your back on the mat with both knees bent and your feet flat.',
+      'Cross one ankle over the other thigh, just above the knee.'
+    ],
+    steps: [
+      'Let the crossed knee relax out to the side. If that is already a stretch, stay right there.',
+      'If you want a little more, lift the bottom foot and hold behind that thigh.',
+      'Draw your legs gently toward you until you feel a mild stretch deep in the hip.',
+      'Hold for about 20 seconds, then switch sides.'
+    ],
+    breathe: 'Breathe slowly and evenly. Keep your head and shoulders resting on the mat.',
+    main: ['glutes', 'hips'],
+    also: [],
+    mistakes: [
+      ['Head and shoulders lifting off the mat', 'Rest them down and loosen your hold.'],
+      ['Pulling on the knee', 'Hold behind the thigh and keep the pull light.']
+    ],
+    easier: { k: null, text: 'Keep the bottom foot on the floor and just let the crossed knee open.' },
+    harder: { k: null, text: 'Stay for a few more slow breaths on each side.' },
+    stress: ['hip', 'knee']
+  },
+  sx_knees: {
+    equip: 'Exercise mat',
+    where: 'Stretching area: any open floor with mats.',
+    setup: [
+      'Lie on your back on the mat with your knees bent and feet flat.',
+      'Rest your head down and let your shoulders relax.'
+    ],
+    steps: [
+      'Bring one knee toward your chest, then the other.',
+      'Hold behind your thighs or over your shins, whichever is kinder on your knees.',
+      'Gently hug your knees in until you feel a mild stretch in your lower back.',
+      'Hold for about 30 seconds, only as far as is comfortable.'
+    ],
+    breathe: 'Breathe slowly into your belly and let your back settle on the mat.',
+    main: ['lowerback', 'glutes'],
+    also: ['hips'],
+    mistakes: [
+      ['Lifting your head to meet your knees', 'Keep your head resting on the mat.'],
+      ['Yanking your knees in', 'Draw them in slowly and stop at a mild stretch.']
+    ],
+    easier: { k: null, text: 'Hug one knee at a time and keep the other foot on the floor.' },
+    harder: { k: null, text: 'Stay for a few more slow breaths.' },
+    stress: ['back', 'knee', 'hip']
+  },
+  sx_child: {
+    equip: 'Exercise mat',
+    where: 'Stretching area: any open floor with mats.',
+    setup: [
+      'Kneel on the mat with your big toes together and your knees hip-width apart or wider.',
+      'Fold the mat double under your knees if they want more padding.'
+    ],
+    steps: [
+      'Sit your hips back toward your heels, only as far as is comfortable.',
+      'Walk your hands forward and let your chest sink toward the mat.',
+      'Rest your forehead on the mat or on your stacked hands.',
+      'Hold for about 40 seconds, then walk your hands back to come up slowly.'
+    ],
+    breathe: 'Breathe slowly into your back and let your arms rest heavy.',
+    main: ['lowerback', 'lats'],
+    also: ['shoulders', 'hips'],
+    mistakes: [
+      ['Forcing your hips down to your heels', 'Stop where your knees feel fine. A gap is okay.'],
+      ['Tensing your shoulders', 'Let your arms rest heavy on the mat.']
+    ],
+    easier: { k: null, text: 'Put a folded towel between your heels and hips, or keep your hips higher.' },
+    harder: { k: null, text: 'Stay for a few more slow breaths.' },
+    stress: ['knee', 'ankle', 'hip']
+  }
+};
 
 /* ---- 60-ui-train.js ---- */
 /* ---------- Train: shared pieces ---------- */
@@ -3092,9 +4499,9 @@ function renderExercise(p, m, date) {
   const nSets = setCount(key, m, date); const sm = exSummary(key, e, nSets);
   const closed = !!m.closed[key]; const menu = state.menu && state.menu.key === key ? state.menu : null;
   let h = '<section class="blk ex" data-ex="' + key + '" aria-label="' + esc(ex.name) + '">';
-  h += '<div class="bhead"><h3>' + esc(ex.name) + (key !== p.base ? ' <span class="chip">swapped</span>' : '') + (ex.optional ? ' <span class="chip" data-optional="' + key + '">if there\'s time</span>' : '') + '</h3>' +
+  h += '<div class="bhead"><h3><button type="button" class="exname" data-a="guide-open" data-k="' + key + '" data-base="' + p.base + '" data-from="lift" aria-label="How to do ' + esc(ex.name) + '">' + esc(ex.name) + '</button>' + (key !== p.base ? ' <span class="chip">swapped</span>' : '') + (ex.optional ? ' <span class="chip" data-optional="' + key + '">if there\'s time</span>' : '') + '</h3>' +
     '<button type="button" class="menubtn" data-menu="' + key + '" aria-label="Options for ' + esc(ex.name) + '" aria-haspopup="menu" aria-expanded="' + (menu ? 'true' : 'false') + '">···</button>' + renderMenu(key, p, m, date, menu) + '</div>';
-  h += stallHTML(p, date);
+  h += mySetLine(me(), key) + stallHTML(p, date);
   if (closed) {
     h += '<div class="collapsed-sum"><span data-sum="' + key + '">' + (sm.line ? '<b>' + esc(sm.line) + '</b> · ' + sm.loggedN + '/' + nSets + ' logged' : 'Nothing logged') + '</span><button type="button" class="quiet" data-expand="' + key + '">Expand</button></div></section>';
     return h;
@@ -3142,6 +4549,7 @@ function renderMenu(key, p, m, date, menu) {
     opts.forEach(k => { h += '<button type="button" role="menuitem" data-act="swapto" data-key="' + key + '" data-base="' + p.base + '" data-to="' + k + '">' + esc(EX[k].name) + (k === p.base ? '<span class="sub">back to the planned exercise</span>' : '<span class="sub">' + esc(EX[k].equip) + (EX[k].per ? ' · lb per hand' : '') + '</span>') + '</button>'; });
     h += '<button type="button" role="menuitem" data-act="back" data-key="' + key + '">Cancel</button>';
   } else {
+    h += '<button type="button" role="menuitem" data-act="howto" data-key="' + key + '" data-base="' + p.base + '">How to<span class="sub">the move, the equipment, your settings</span></button>';
     h += '<button type="button" role="menuitem" data-act="swap" data-key="' + key + '"' + (opts.length ? '' : ' disabled') + '>Swap exercise<span class="sub">' + (opts.length ? 'this workout only' : alts(p.base).length ? 'unavailable: its alternates are already in today\'s workout' : 'no alternate for this one') + '</span></button>';
     if (!ex.bw) h += '<button type="button" role="menuitem" data-act="hold" data-key="' + key + '">' + (maxed ? 'Allow weight increases' : 'Can\'t go higher') + '<span class="sub">' + (maxed ? 'resume weight suggestions' : 'hold weight, progress by reps') + '</span></button>';
     const stand = key === p.base ? defaultSwapOption(p.base) : null; // "Not at my gym": the free stand-in becomes the default for every future workout
@@ -3259,7 +4667,7 @@ function renderProgram() {
   const fullSplit = splitOf() === 'full', rot = rotation(), lg = liveGoals(me()).liftGoal;
   let h = gymBannerHTML() + '<section class="card stack" id="splitCard"><div class="row between"><h3>Split</h3><span class="tiny muted">changes the next lift, never your history</span></div>' +
     '<div class="seg" aria-label="Split"><button type="button" data-a="split-set" data-v="full" class="' + (fullSplit ? 'on' : '') + '" aria-pressed="' + fullSplit + '">Full body A/B</button><button type="button" data-a="split-set" data-v="ppl" class="' + (fullSplit ? '' : 'on') + '" aria-pressed="' + !fullSplit + '">Push / Pull / Legs</button></div>' +
-    '<p class="tiny muted">' + (fullSplit ? 'Two sessions train everything, so a week with only two lifts still covers the whole body. A and B alternate after each counted lift day.' : 'Three sessions train everything. Each day repeats once the other two are done.') + '</p></section>' + renderMorning(phase, kindFor(t, model(t)) === 'rest' ? 'rest' : liftKindFor(t)) + gymCardHTML() +
+    '<p class="tiny muted">' + (fullSplit ? 'Two sessions train everything, so a week with only two lifts still covers the whole body. A and B alternate after each counted lift day.' : 'Three sessions train everything. Each day repeats once the other two are done.') + '</p></section>' + guideLibHTML() + renderMorning(phase, kindFor(t, model(t)) === 'rest' ? 'rest' : liftKindFor(t)) + gymCardHTML() +
     '<section class="card"><div class="eyebrow">How the rotation works</div><h2>' + (fullSplit ? 'Full Body A → B, repeat' : 'Push → Pull → Legs, repeat') + '</h2>' +
     '<p style="margin-top:8px">Days aren\'t tied to weekdays. The next lift is the one after your last <b>counted</b> lift day. Skip a morning and nothing goes out of sync. ' + (fullSplit ? 'Every session opens with a 5 to 10 minute warm-up on the track, treadmill or bike.' : 'Every session opens with a Fitness+ treadmill workout.') + ' Aim for ' + ws.goal + ' activity days a week: ' + ws.liftGoal + ' lifts, the rest treadmill-only or any ' + minMin(me()) + '-minute activity.</p></section>';
   const upcoming = nextDayKey(addDays(t, 1)); const lastL = lastLift(addDays(t, 1));
@@ -3327,6 +4735,7 @@ function renderPlanChoice() {
     '<p class="tiny muted">Set these where you can win most weeks. The competition scores each of you against your own goal, so an honest goal you hit beats an ambitious one you miss. Raise it after two or three good weeks.</p></section>';
   h += '<section class="card stack"><h3>Go easy on</h3><p class="tiny muted">Mark any area with an old injury. Activities that load it are flagged and sorted lower, and Surprise me skips them.</p><div class="chips wrapc">' +
     Object.keys(AREAS).map(k => { const on = (p.move.protect || []).includes(k); return '<button type="button" data-a="protect" data-k="' + k + '" class="' + (on ? 'on' : '') + '" aria-pressed="' + on + '">' + AREAS[k] + '</button>'; }).join('') + '</div></section>';
+  h += guideLibHTML();
   h += '<section class="card"><h3>One way to fill a ' + g + '-day week</h3><div class="plan" style="margin-top:6px"><ul>' +
     (WEEK_SLOTS[g] || WEEK_SLOTS[3]).map((d, i) => { const a = ACTS[pool[i % pool.length] || 'walkeasy']; return '<li><span><b>' + days[d] + '</b> · ' + a.icon + ' ' + esc(a.name) + '</span><span class="muted num">' + Math.max(a.min, mm) + ' min</span></li>'; }).join('') +
     '</ul></div><p class="tiny muted" style="margin-top:8px">Only a suggestion. Any day, any activity on your list.</p></section>';
@@ -3992,6 +5401,7 @@ const wmElapsed = () => wm.ms + (Date.now() - wm.started);
 function wmOpen(plan, fromEl, resume) {
   if (wm) return;
   const held = state.ov ? state.ovQ.slice() : []; // a badge or a week's result waiting behind the sheet: shown when the session closes
+  if (state.guide) { state.guide = null; renderGuide(); }
   if (state.ov) { state.ov = null; state.ovQ = []; renderOv(); }
   wm = { pid: me(), date: state.selDate, plan, held, view: 'start', before: scoreSnapshot(), started: Date.now(), ms: 0, stale: false, i: -1, edit: null, quit: 0 };
   if (plan.kind === 'lift') wmLiftInit(resume); else wmStagesInit(resume);
@@ -4050,8 +5460,24 @@ function wmDraw() {
   if (wm.view === 'start') { wmEl.innerHTML = '<button type="button" class="wm-start" id="wmStartSeq" data-a="wm-go" aria-label="Skip the start"><span class="wm-lights" aria-hidden="true"><i></i><i></i><i></i></span>' + wmFlag('green', false) + '<b class="wm-gotext">GO</b><span class="tiny">' + esc(wm.plan.title) + ' · tap to skip</span></button>'; return; }
   if (wm.view === 'quit') { wmEl.innerHTML = wmQuitHTML(); return; }
   if (wm.view === 'finish') { wmEl.innerHTML = (motionOf() === 'full' ? '' : '<div class="wm-stripe" id="wmStripe" aria-hidden="true"></div>') + (wm.plan.kind === 'lift' ? wmLiftFinishHTML() : wmStagesFinishHTML()); wmCountUp(); return; }
+  // every screen keeps its own place: back from a rest, an exercise with "How to" open is where it was left
+  const scr = wm.view + ':' + wm.plan.kind + ':' + (wm.plan.kind === 'lift' ? wm.i + ':' + ((wmSlots()[wm.i] || {}).key || '') : wm.si), body = wmEl.querySelector('.wm-body'); wm.tops = wm.tops || {};
+  if (body && wmEl.dataset.scr) wm.tops[wmEl.dataset.scr] = body.scrollTop;
   wmEl.innerHTML = wm.plan.kind === 'lift' ? (wm.view === 'rest' ? wmRestHTML() : wmLiftHTML()) : wmStageHTML();
+  wmEl.dataset.scr = scr; const b2 = wmEl.querySelector('.wm-body'), top = wmEl.querySelector('#wmHow') || wm.view !== 'main' ? wm.tops[scr] || 0 : 0; if (b2 && top) b2.scrollTop = top;
+  figKick();
 }
+// "How to" under the logging controls: the full card opens below them, so nothing above it moves
+const wmHowHTML = (key, open) => '<button type="button" class="wm-btn sm wm-howbtn" id="wmHowBtn" data-a="wm-howto" data-k="' + key + '" aria-expanded="' + !!open + '" aria-controls="wmHow">' + (open ? 'Hide how to' : 'How to') + '</button>' +
+  (open ? '<div class="wm-howcard" id="wmHow">' + guideCardHTML(key, { pid: wm.pid, from: 'live', swap: wm.plan.kind === 'lift' ? swapOptions(wmSlots(), wmSlots()[wm.i]) : [] }) + '</div>' : '');
+// When the card opens off the bottom of the screen, the screen moves up just far enough that the logging controls
+// (or the stretch, or the list of machines) sit at the top with the card right under them: still one tap from a set.
+function wmHowReveal(anchor) {
+  const c = $('#wmHow'), b = wmEl.querySelector('.wm-body'), a = anchor && wmEl.querySelector(anchor); if (!c || !b) return;
+  const br = b.getBoundingClientRect(), r = c.getBoundingClientRect(); if (r.top < br.top + br.height * 0.5) return;
+  b.scrollTop += Math.max(0, (a ? a.getBoundingClientRect().top : r.top - 56) - br.top - 6);
+}
+ACT['wm-howto'] = el => { const k = el.dataset.k; wm.howKey = wm.howKey === k ? null : k; wmDraw(); if (wm.howKey) wmHowReveal(wm.plan.kind === 'lift' ? (wmEl.querySelector('.wm-steps') ? '.wm-steps' : '#wmPips') : '#wmStretchName'); };
 // Finish numbers count up once, in Subtle only (Full has its flag and burst; Off shows them still).
 function wmCountUp() {
   if (!wm || wm.counted || motionOf() !== 'subtle') return;
@@ -4126,13 +5552,12 @@ function wmLiftHTML() {
       '<button type="button" class="primary wm-log" id="wmWarmLog" data-a="wm-warmlog">Log warm-up</button></div>' +
       '<div class="wm-nav"><button type="button" class="wm-btn" data-a="wm-next">Skip warm-up</button></div>';
   }
-  const p = slots[wm.i], key = p.key, ex = EX[key], sp = specFor(key, wm.date), sg = suggest(key, wm.date), s = wmSets(p), how = (typeof HOWTO === 'object' && HOWTO[key]) || { cues: [], mistake: '' };
+  const p = slots[wm.i], key = p.key, ex = EX[key], sp = specFor(key, wm.date), sg = suggest(key, wm.date), s = wmSets(p);
   const editing = wm.edit != null, idx = editing ? wm.edit : s.next, done = s.next < 0 && !editing, stand = key === p.base ? defaultSwapOption(p.base) : null, opts = swapOptions(slots, p);
-  h += '<div class="wm-body"><div class="eyebrow">Lift ' + (wm.i + 1) + ' of ' + n + ' · ' + esc(day.name) + '</div><h2 id="wmName">' + esc(ex.name) + (sp.optional ? ' <span class="chip">if there\'s time</span>' : '') + (key !== p.base ? ' <span class="chip">swapped</span>' : '') + '</h2>' +
+  h += '<div class="wm-body"><div class="wm-demo" id="wmDemo">' + figHTML(key, 'wm', ex.name, true) + '</div>' +
+    '<div class="eyebrow">Lift ' + (wm.i + 1) + ' of ' + n + ' · ' + esc(day.name) + '</div><h2 id="wmName">' + esc(ex.name) + (sp.optional ? ' <span class="chip">if there\'s time</span>' : '') + (key !== p.base ? ' <span class="chip">swapped</span>' : '') + '</h2>' + mySetLine(wm.pid, key) +
     '<p class="wm-target" id="wmTarget"><b>' + (sg.deload ? 2 : sp.sets) + ' × ' + sp.lo + '–' + sp.hi + '</b>' + (ex.bw ? ' · bodyweight' : ' · ' + sg.w + ' lb' + (ex.per ? ' each hand' : '')) + (sg.deload ? ' · deload' : sg.reset ? ' · reset' : '') + '</p>' +
     '<p class="tiny muted" id="wmLast">' + (sg.last ? 'Last · ' + nice(sg.last.date) + ': ' + esc((sg.last.w != null ? fmtW(key, sg.last.w) + ' × ' : '') + fmtReps(sg.last.reps)) : 'First time. ' + esc(sg.why)) + '</p>' +
-    '<div class="wm-how"><div class="wm-demo" id="wmDemo">' + (typeof demoSVG === 'function' ? demoSVG(MOVE_OF[key]) : '') + '</div><ol class="wm-cues" id="wmCues">' + how.cues.map(c => '<li>' + esc(c) + '</li>').join('') + '</ol></div>' +
-    (how.mistake ? '<p class="wm-mistake" id="wmMistake"><b>Watch for:</b> ' + esc(how.mistake) + '</p>' : '') +
     '<p class="tiny muted" id="wmEquip">' + esc(ex.equip) + (ex.per ? ' · weight is one dumbbell' : '') + '</p>' +
     '<div class="row wm-tools"><button type="button" class="wm-btn sm" data-a="wm-swap"' + (opts.length ? '' : ' disabled') + ' aria-expanded="' + !!wm.swap + '">Swap</button><button type="button" class="wm-btn sm" id="wmNotGym" data-a="wm-notgym"' + (stand ? '' : ' disabled') + '>Not at my gym</button></div>';
   if (wm.swap) h += '<div class="wm-swaps" id="wmSwaps">' + opts.map(k => '<button type="button" class="wm-btn" data-a="wm-swapto" data-base="' + p.base + '" data-to="' + k + '">' + esc(EX[k].name) + (k === p.base ? ' <span class="tiny muted">(planned)</span>' : '') + '</button>').join('') + '</div>';
@@ -4143,6 +5568,7 @@ function wmLiftHTML() {
     '<div class="wm-step"><span class="eyebrow">Reps</span><div><button type="button" data-a="wm-r" data-d="-1" aria-label="One rep fewer">−</button><b class="num" id="wmR">' + wm.r + '</b><button type="button" data-a="wm-r" data-d="1" aria-label="One rep more">+</button></div></div></div>' +
     '<button type="button" class="primary wm-log" id="wmLog" data-a="wm-log">' + (editing ? 'Update set ' + (idx + 1) : 'Log set ' + (idx + 1)) + '</button>' +
     (editing ? '<div class="row"><button type="button" class="wm-btn sm danger" id="wmDel" data-a="wm-del">Delete set ' + (idx + 1) + '</button><button type="button" class="wm-btn sm" data-a="wm-editx">Cancel</button></div>' : '');
+  h += wmHowHTML(key, wm.howKey === key);
   h += '</div><div class="wm-nav"><button type="button" class="wm-btn" data-a="wm-prev">‹ ' + (wm.i === 0 ? 'Warm-up' : 'Back') + '</button>' +
     (wm.i < n - 1 ? '<button type="button" class="wm-btn' + (done ? ' on' : '') + '" id="wmNext" data-a="wm-next">Next lift ›</button>' : '') + '<button type="button" class="wm-btn' + (wm.i === n - 1 || wmLiftAny() ? ' on' : '') + '" id="wmFinish" data-a="wm-finish">Finish</button></div>';
   return h;
@@ -4262,12 +5688,17 @@ function wmStageHTML() {
       '<div class="wm-stat"><div><b class="num" id="wmLaps">' + s.laps + '</b><span>lengths</span></div><div><b class="num" id="wmMiles">' + s.laps * POOL_YARDS + '</b><span>yards</span></div></div>' +
       '<button type="button" class="primary wm-tap" id="wmLap" data-a="wm-lap">Length done</button><div class="row" style="justify-content:center">' + toggle + '<button type="button" class="wm-btn" id="wmLapUndo" data-a="wm-lapundo"' + (s.laps ? '' : ' disabled') + '>−1 length</button></div>';
   } else if (g.type === 'circuit') {
+    const gk = clamp(Number(s.gk) || 0, 0, CIRCUIT.length - 1), gkey = GD_STATIONS[gk];
+    h = h.replace('<div class="wm-body wm-center">', '<div class="wm-body wm-center wm-hasdemo"><div class="wm-demo" id="wmDemo" data-station="' + gk + '">' + figHTML(gkey, 'wm', CIRCUIT[gk], true) + '</div>');
     h += '<p class="wm-target">One or two easy sets of 10 to 12 on each machine. Tap a machine after each set.</p>' + big + '<div class="wm-stations" id="wmStations">' +
-      CIRCUIT.map((name, k) => '<button type="button" class="wm-btn" data-a="wm-station" data-k="' + k + '"><span>' + name + '</span><b class="num">' + (s.sets[k] || 0) + ' set' + ((s.sets[k] || 0) === 1 ? '' : 's') + '</b></button>').join('') + '</div><div class="row" style="justify-content:center">' + toggle + '</div>';
+      CIRCUIT.map((name, k) => '<div class="wm-strow' + (k === gk ? ' cur' : '') + '"><button type="button" class="wm-btn" data-a="wm-station" data-k="' + k + '"><span>' + name + mySetLine(wm.pid, GD_STATIONS[k]) + '</span><b class="num">' + (s.sets[k] || 0) + ' set' + ((s.sets[k] || 0) === 1 ? '' : 's') + '</b></button>' +
+        '<button type="button" class="wm-btn sm" data-a="wm-sthow" data-k="' + k + '" aria-expanded="' + (wm.howKey === GD_STATIONS[k]) + '" aria-label="How to use the ' + name.toLowerCase() + ' machine">How to</button></div>').join('') + '</div><div class="row" style="justify-content:center">' + toggle + '</div>' +
+      (GD_STATIONS.includes(wm.howKey) ? '<div class="wm-howcard" id="wmHow">' + guideCardHTML(wm.howKey, { pid: wm.pid, from: 'live' }) + '</div>' : '');
   } else if (g.type === 'stretch') {
     const at = stretchAt(g, ms);
+    if (at.x) h = h.replace('<div class="wm-body wm-center">', '<div class="wm-body wm-center wm-hasdemo"><div class="wm-demo" id="wmDemo">' + figHTML(at.x.g, 'wm', at.x.name, true) + '</div>');
     h += at.x ? '<p class="wm-target" id="wmStretchN">Stretch ' + (at.i + 1) + ' of ' + at.n + '</p><div class="wm-bigtime num" id="wmStageTime">' + wmTime(at.left + 999) + '</div><h3 id="wmStretchName">' + esc(at.x.name) + '</h3><p class="wm-cue" id="wmStretchCue">' + esc(at.x.cue) + '</p>' +
-      '<div class="row" style="justify-content:center">' + toggle + '<button type="button" class="wm-btn" id="wmStretchNext" data-a="wm-stretchnext">Next stretch ›</button></div>'
+      '<div class="row" style="justify-content:center">' + toggle + '<button type="button" class="wm-btn" id="wmStretchNext" data-a="wm-stretchnext">Next stretch ›</button></div>' + wmHowHTML(at.x.g, wm.howKey === at.x.g)
       : '<p class="wm-done" id="wmStretchDone">Stretching done. Nice and loose.</p>';
   } else if (g.type === 'heat') {
     const left = s.min * 60000 - ms, over = left <= 0 && ms > 0;
@@ -4299,7 +5730,9 @@ function wmRun(on) { const s = wm.st[wm.si]; if (on === s.on) return; if (on) { 
 ACT['wm-toggle'] = () => { const s = wm.st[wm.si]; wmRun(!s.on); wmStore(); wmDraw(); };
 ACT['wm-lap'] = () => { const s = wm.st[wm.si]; s.laps++; wmRun(true); wmStore(); state.wmLogs = (state.wmLogs || 0) + 1; wmDraw(); }; // the first lap starts the clock
 ACT['wm-lapundo'] = () => { const s = wm.st[wm.si]; if (s.laps > 0) { s.laps--; wmStore(); wmDraw(); } };
-ACT['wm-station'] = el => { const s = wm.st[wm.si], k = el.dataset.k; s.sets[k] = (s.sets[k] || 0) + 1; wmRun(true); wmStore(); wmDraw(); };
+ACT['wm-station'] = el => { const s = wm.st[wm.si], k = el.dataset.k; s.sets[k] = (s.sets[k] || 0) + 1; s.gk = Number(k); if (GD_STATIONS.includes(wm.howKey)) wm.howKey = GD_STATIONS[s.gk]; wmRun(true); wmStore(); wmDraw(); };
+ACT['wm-sthow'] = el => { const s = wm.st[wm.si], k = Number(el.dataset.k), key = GD_STATIONS[k]; wm.howKey = wm.howKey === key ? null : key; s.gk = k; wmStore(); wmDraw(); // the picture switches to that machine and its card opens under the list
+  if (wm.howKey) wmHowReveal('#wmStations'); };
 ACT['wm-iv'] = () => { const s = wm.st[wm.si]; s.iv = !s.iv; wmStore(); wmDraw(); };
 ACT['wm-stretchnext'] = () => { const g = wm.plan.stages[wm.si], s = wm.st[wm.si], at = stretchAt(g, wmStageMs(wm.si)); if (!at.x) return; s.ms = at.start + at.len; if (s.on) s.at = Date.now(); wmStore(); wmDraw(); };
 ACT['wm-room'] = el => { wm.st[wm.si].room = el.dataset.k; wmStore(); wmDraw(); };
@@ -4366,6 +5799,179 @@ ACT['wm-stagelog'] = async () => { // the same logging as the activity menu, or 
   if (!ok) { wm.err = 'Not logged. Try again.'; wm.view = 'finish'; wmDraw(); return; }
   lsSet(WM_KEY, null); wm.out = o; wm.saved = true; wm.after = scoreSnapshot(); wm.view = 'finish'; wm.err = ''; wmDraw();
 };
+
+/* ---- 66-guide.js ---- */
+/* ---------- 66-guide.js: the guide for every move ---------- */
+// One guide per exercise, circuit station and stretch: the moving picture (58-figure.js, 59-figures.js), the how-to
+// card (59-guide-text.js), and "My settings", a short note per person per move that is kept on that person's profile.
+// The guide opens in its own sheet (#gd) above whatever is on screen, so the lift sheet under it keeps its typed sets,
+// its place and its rest timer. Live mode shows the same card inside its own screen. Nothing here changes a score.
+const GD_STATIONS = ['st_legpress', 'st_row', 'st_chest', 'st_latpull']; // in CIRCUIT order
+const gdKind = key => EX[key] ? 'lift' : GD_STATIONS.includes(key) ? 'station' : 'stretch';
+function gdName(key) {
+  if (EX[key]) return EX[key].name;
+  const i = GD_STATIONS.indexOf(key); if (i >= 0) return CIRCUIT[i] + ' (light circuit)';
+  const s = STRETCHES.find(x => x.g === key); return s ? s.name : key;
+}
+const gdSub = key => EX[key] ? EX[key].equip : gdKind(key) === 'station' ? 'Healthplex machine circuit' : 'Cool-down stretch';
+const gdAnd = a => a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1];
+
+/* --- "Feel it in": a small front and back body with the working muscles filled in --- */
+const MM_NAME = { chest: 'chest', shoulders: 'shoulders', reardelts: 'back of the shoulders', biceps: 'biceps', triceps: 'triceps', forearms: 'forearms', abs: 'abs', obliques: 'side abs', lats: 'lats', traps: 'upper back and neck', midback: 'middle of the back',
+  lowerback: 'lower back', glutes: 'glutes', quads: 'front of the thighs', hamstrings: 'back of the thighs', calves: 'calves', innerthigh: 'inner thighs', hips: 'front of the hips' };
+function mmBody(cx, back, cls) {
+  const n = v => Math.round(v * 10) / 10, both = fn => fn(1) + fn(-1);
+  const line = (c, x1, y1, x2, y2, w) => both(s => '<path class="' + c + ' mml" stroke-width="' + w + '" d="M' + n(cx + s * x1) + ' ' + y1 + 'L' + n(cx + s * x2) + ' ' + y2 + '"/>');
+  const oval = (c, x, y, rx, ry) => both(s => '<ellipse class="' + c + ' mmf" cx="' + n(cx + s * x) + '" cy="' + y + '" rx="' + rx + '" ry="' + ry + '"/>');
+  const box = (c, w, y, h) => '<rect class="' + c + ' mmf" x="' + n(cx - w / 2) + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="3"/>';
+  const poly = (c, pts) => '<path class="' + c + ' mmf" d="M' + pts.map(p => n(cx + p[0]) + ' ' + p[1]).join('L') + 'Z"/>';
+  // the body itself, in a quiet tone
+  let h = '<circle class="mmb mmf" cx="' + cx + '" cy="9" r="6.5"/><path class="mmb mml" stroke-width="5" d="M' + cx + ' 15V19"/>' +
+    '<path class="mmb mmf mmo" d="M' + n(cx - 15) + ' 20H' + n(cx + 15) + 'L' + n(cx + 11) + ' 57L' + n(cx + 12.5) + ' 68H' + n(cx - 12.5) + 'L' + n(cx - 11) + ' 57Z"/>' +
+    line('mmb', 17.5, 23, 20.5, 44, 7) + line('mmb', 20.5, 44, 22.5, 63, 5.6) + oval('mmb', 23, 67.5, 3, 3) + line('mmb', 7.6, 69, 8, 96, 10.6) + line('mmb', 8, 96, 8, 121, 7.2) + oval('mmb', 8.6, 125.6, 3.8, 2.3);
+  if (!back) h += oval(cls('shoulders'), 16.5, 24.5, 4.8, 5.2) + oval(cls('chest'), 6.2, 29.5, 5.8, 4.8) + line(cls('biceps'), 18.3, 31.5, 19.8, 41.5, 5.4) + line(cls('forearms'), 20.9, 47.5, 22.2, 60.5, 4.6) +
+    box(cls('abs'), 8.8, 36.5, 21.5) + line(cls('obliques'), 8.6, 39, 7.8, 56.5, 4) + oval(cls('hips'), 7.2, 65, 4.2, 3) + line(cls('quads'), 8.6, 74, 8.3, 93, 8.2) + line(cls('innerthigh'), 2.9, 72, 3.8, 85, 3);
+  else h += poly(cls('traps'), [[0, 15.5], [11, 22.5], [0, 28], [-11, 22.5]]) + oval(cls('reardelts'), 16.5, 24.5, 4.8, 5.2) + box(cls('midback'), 12, 29.5, 11) +
+    both(s => poly(cls('lats'), [[s * 13.6, 30], [s * 7.4, 31], [s * 6, 53], [s * 10.8, 55.5]])) + box(cls('lowerback'), 9.6, 42.5, 15) + line(cls('triceps'), 18.3, 31.5, 19.8, 41.5, 5.4) + line(cls('forearms'), 20.9, 47.5, 22.2, 60.5, 4.6) +
+    oval(cls('glutes'), 6.3, 66, 6, 5.4) + line(cls('hamstrings'), 8.3, 77, 8.2, 93, 8.2) + line(cls('calves'), 8, 101, 8, 113, 6.4);
+  return h + '<text class="mmt" x="' + cx + '" y="137" text-anchor="middle">' + (back ? 'Back' : 'Front') + '</text>';
+}
+function mmHTML(main, also) {
+  main = (main || []).filter(k => MM_NAME[k]); also = (also || []).filter(k => MM_NAME[k] && !main.includes(k));
+  const cls = k => 'mm' + (main.includes(k) ? ' on' : also.includes(k) ? ' also' : ''), words = a => a.map(k => MM_NAME[k]).join(', ');
+  return '<div class="mmwrap"><svg class="mmap" viewBox="0 0 132 140" role="img" aria-label="Front and back of the body. Working most: ' + esc(words(main)) + (also.length ? '. Helping: ' + esc(words(also)) : '') + '.">' + mmBody(33, false, cls) + mmBody(99, true, cls) + '</svg>' +
+    '<div class="mmkey"><p><i class="mmdot on"></i><span><b>Mostly</b> ' + esc(words(main)) + '</span></p>' + (also.length ? '<p><i class="mmdot also"></i><span><b>Also</b> ' + esc(words(also)) + '</span></p>' : '') + '</div></div>';
+}
+
+/* --- "My settings": one short line per person per move, kept on the profile --- */
+const gdDraft = {}; // typed and not saved yet, so a redraw never drops it
+const gearOf = (pid, key) => (P(pid).gear || {})[key] || {};
+const mySetLine = (pid, key) => { const n = gearOf(pid, key).note; return n ? '<div class="myset" data-myset="' + key + '"><span class="muted">My settings:</span> ' + esc(n) + '</div>' : ''; };
+// an example of what is worth writing down, for the equipment this move uses
+function gdHint(key) {
+  const e = EX[key] ? EX[key].equip.toLowerCase() : '';
+  if (gdKind(key) === 'station' || (/machine/.test(e) && !/cable/.test(e))) return 'Seat 4 · back pad 2 · handles middle';
+  if (/cable/.test(e)) return 'Pulley at 12 · pin at 40';
+  if (/rack|barbell/.test(e)) return 'Rack 2 · hooks at 14 · safeties at 6';
+  if (/bench/.test(e)) return 'Bench notch 3 · by the mirror';
+  if (/mat/.test(e)) return 'Mat by the window';
+  return 'Dumbbell rack, left end';
+}
+function mySetHTML(key, pid) {
+  const dk = pid + ':' + key, v = dk in gdDraft ? gdDraft[dk] : gearOf(pid, key).note || '';
+  return '<section class="gsec gmine" data-mine="' + key + '"><h4>My settings</h4><div class="gset"><input type="text" class="gsetin" id="gdSet" data-gk="' + key + '" data-pid="' + pid + '" maxlength="60" value="' + esc(v) + '" placeholder="' + esc(gdHint(key)) + '" aria-label="My settings for ' + esc(gdName(key)) + '" enterkeyhint="done" autocomplete="off">' +
+    '<button type="button" class="small" id="gdSetSave" data-a="guide-set-save" data-k="' + key + '">Save</button></div><p class="tiny muted">Only for you. It shows under the name when you log this.</p></section>';
+}
+document.addEventListener('input', e => { const el = e.target; if (el.classList && el.classList.contains('gsetin')) gdDraft[el.dataset.pid + ':' + el.dataset.gk] = el.value; });
+document.addEventListener('keydown', e => { const el = e.target; if (e.key === 'Enter' && el.classList && el.classList.contains('gsetin')) { e.preventDefault(); const b = el.parentNode.querySelector('[data-a="guide-set-save"]'); if (b) b.click(); } });
+ACT['guide-set-save'] = async el => {
+  const key = el.dataset.k, inp = el.parentNode.querySelector('.gsetin'), pid = (inp && inp.dataset.pid) || me(), v = String(inp ? inp.value : '').replace(/\s+/g, ' ').trim().slice(0, 60);
+  if ((gearOf(pid, key).note || '') === v) { delete gdDraft[pid + ':' + key]; toast(v ? 'Already saved.' : 'Type your settings first, like "Seat 4".'); return; }
+  const all = Object.assign({}, (state.data[pid].profile || {}).gear), cur = Object.assign({}, all[key]);
+  if (v) cur.note = v; else delete cur.note;
+  if (Object.keys(cur).length) all[key] = cur; else delete all[key];
+  if (!(await saveProfile(pid, { gear: all }))) return;
+  delete gdDraft[pid + ':' + key];
+  toast(v ? 'Settings saved.' : 'Settings cleared.');
+  if (wm) wmDraw(); else { render(); renderGuide(); }
+};
+
+/* --- the how-to card --- */
+// ctx: { pid, from: 'lift' | 'live' | 'lib', swap: [the exercises this slot of the open workout can swap to] }
+function guideCardHTML(key, ctx) {
+  const G = GUIDE[key]; if (!G) return '';
+  ctx = ctx || {}; const pid = ctx.pid || me(), kind = gdKind(key), swap = ctx.swap || [];
+  const hit = (G.stress || []).filter(a => AREAS[a] && (P(pid).move.protect || []).includes(a));
+  const sec = (id, title, body) => '<section class="gsec" data-sec="' + id + '"><h4>' + title + '</h4>' + body + '</section>', ol = a => '<ol>' + a.map(x => '<li>' + esc(x) + '</li>').join('') + '</ol>';
+  const alt = (label, a) => { if (!a) return '';
+    const ok = a.k && EX[a.k], btn = ok && swap.includes(a.k) ? '<button type="button" class="small" data-a="guide-swap" data-to="' + a.k + '">Swap to it</button>' : ok && ctx.from !== 'live' ? '<button type="button" class="small" data-a="guide-open" data-k="' + a.k + '" data-from="' + (ctx.from === 'lift' ? 'lift' : 'lib') + '">See it</button>' : '';
+    return '<div class="galt" data-alt="' + label.toLowerCase() + '"><div><span class="eyebrow">' + label + '</span><p>' + esc(a.text) + '</p></div>' + btn + '</div>'; };
+  let h = '<div class="gcard" data-guide="' + key + '">';
+  if (hit.length) h += '<p class="banner geasy" data-easy="' + hit.join(',') + '"><span><b>Go easy on your ' + esc(gdAnd(hit.map(a => AREAS[a].toLowerCase()))) + '.</b> This move loads ' + (hit.length > 1 || /s$/.test(AREAS[hit[0]]) ? 'them' : 'it') + '. ' +
+    (kind === 'stretch' ? 'Stay well short of any pain, and ease out slowly.' : 'Keep the weight light, move slowly, and stop if anything feels sharp.') + '</span></p>';
+  h += sec('equip', 'Equipment', '<p><b>' + esc(G.equip) + '</b>' + (EX[key] && EX[key].per ? ' <span class="muted">The weight you log is one dumbbell, not the pair.</span>' : '') + '</p><p class="muted">' + esc(G.where) + '</p>');
+  if (kind !== 'stretch') h += mySetHTML(key, pid);
+  h += sec('setup', 'Set up', ol(G.setup)) + sec('steps', 'Do it', ol(G.steps)) + sec('breathe', 'Breathe', '<p>' + esc(G.breathe) + '</p>') +
+    sec('feel', 'Feel it in', mmHTML(G.main, G.also)) +
+    sec('mistakes', 'Common mistakes', G.mistakes.map(m => '<div class="gmis"><b>' + esc(m[0]) + '</b><span>' + esc(m[1]) + '</span></div>').join('')) +
+    sec('alt', 'Easier and harder', alt('Easier', G.easier) + alt('Harder', G.harder));
+  return h + '</div>';
+}
+
+/* --- the guide sheet --- */
+const gdEl = $('#gd');
+// What a swap from this guide would change: the slot of the workout open in the lift sheet, if the guide came from one.
+function guideCtx(g) {
+  if (g.from === 'lift' && g.base && liftOpen()) {
+    const date = state.selDate, m = model(date), kind = kindFor(date, m);
+    if (DAYS[kind]) { const planned = plannedFor(date, kind, m), all = planned.concat(m.checkin === 'short' ? plannedFor(date, kind, m, true) : []), p = all.find(x => x.base === g.base && x.key === g.key);
+      if (p) return { from: 'lift', slot: p, swap: swapOptions(planned, p) }; }
+  }
+  return { from: g.from === 'lift' ? 'lift' : 'lib', swap: [] };
+}
+function renderGuide(fresh) {
+  const g = state.guide;
+  if (!g || !GUIDE[g.key]) { state.guide = null; gdEl.hidden = true; gdEl.innerHTML = ''; if (!state.ov) document.body.style.overflow = ''; return; }
+  const sc = gdEl.querySelector('.gd-body'), top = !fresh && sc ? sc.scrollTop : 0, name = gdName(g.key), ctx = guideCtx(g);
+  gdEl.hidden = false;
+  gdEl.innerHTML = '<div class="ov tall gd' + (fresh ? ' gdin' : '') + '" role="dialog" aria-modal="true" aria-label="How to: ' + esc(name) + '" id="guideSheet" data-guide="' + g.key + '"><div class="ls-head"><div class="ls-t"><h2 id="guideTitle">' + esc(name) + '</h2><div class="tiny muted" id="guideSub">' + esc(gdSub(g.key)) + '</div></div>' +
+    '<button type="button" class="xbtn" id="guideClose" data-a="guide-close" aria-label="Close the guide">×</button></div>' +
+    '<div class="gd-body" data-scroll>' + figHTML(g.key, 'gd', name) + guideCardHTML(g.key, ctx) + '</div></div>';
+  document.body.style.overflow = 'hidden'; figKick();
+  const s2 = gdEl.querySelector('.gd-body'); if (s2 && top) s2.scrollTop = top;
+  if (fresh) { const x = $('#guideClose'); if (x) x.focus({ preventScroll: true }); }
+}
+function guideOpen(key, ctx) { if (!GUIDE[key]) return; state.guide = Object.assign({ key }, ctx); renderGuide(true); }
+function guideClose() {
+  const g = state.guide; if (!g) return; state.guide = null; renderGuide();
+  const back = g.sel ? document.querySelector(g.sel) : null; if (back) back.focus({ preventScroll: true });
+}
+ACT['guide-open'] = el => { const k = el.dataset.k, cur = state.guide;
+  if (cur && gdEl.contains(el)) { guideOpen(k, { from: cur.from, base: null, sel: cur.sel }); return; } // "See it" inside the guide: on to that move, and Close still goes back to where the guide was opened
+  guideOpen(k, { from: el.dataset.from || 'lib', base: el.dataset.base || null, sel: el.dataset.from === 'lift' ? '[data-a="guide-open"][data-base="' + (el.dataset.base || k) + '"]' : '[data-a="guide-open"][data-k="' + k + '"]' }); };
+ACT['guide-close'] = () => guideClose();
+gdEl.addEventListener('click', e => { if (e.target === gdEl) guideClose(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && state.guide) { guideClose(); e.preventDefault(); e.stopImmediatePropagation(); } });
+// One tap on "Swap to it": this workout only, exactly as Swap in the exercise's own menu does it.
+ACT['guide-swap'] = el => {
+  const to = el.dataset.to; if (!EX[to]) return;
+  if (wm) { const slots = wmSlots(), p = slots[wm.i]; if (!p || !swapOptions(slots, p).includes(to)) return;
+    const d = draft(wm.date); d.swaps[p.base] = to; d.recovered = false; persistDrafts(); wmLoadEx(); wm.howKey = to; wmDraw(); toast('Swapped to ' + EX[to].name + ' for this workout.'); return; }
+  const g = state.guide, c = g ? guideCtx(g) : null; if (!c || !c.slot || !c.swap.includes(to)) return;
+  const d = draft(state.selDate); d.swaps[c.slot.base] = to; d.recovered = false; state.menu = null; persistDrafts();
+  g.key = to; render(); renderGuide(true); toast('Swapped to ' + EX[to].name + ' for this workout.');
+};
+
+/* --- the library: every move, grouped, with a search box --- */
+function guideGroups() {
+  const a = Object.keys(DAYS.fba.slots), b = Object.keys(DAYS.fbb.slots), used = {}; a.concat(b).forEach(k => { used[k] = 1; });
+  return [['fba', 'Full Body A', a], ['fbb', 'Full Body B', b], ['lifts', 'Other lifts', Object.keys(EX).filter(k => !used[k])], ['stretch', 'Stretches', STRETCHES.map(s => s.g)], ['hp', 'Healthplex activities', GD_STATIONS]]
+    .map(g => [g[0], g[1], g[2].filter(k => GUIDE[k])]);
+}
+const guideWords = (key, group) => (gdName(key) + ' ' + gdSub(key) + ' ' + group + ' ' + (GUIDE[key].main || []).concat(GUIDE[key].also || []).map(k => MM_NAME[k] || '').join(' ')).toLowerCase();
+const guideMatch = (words, q) => q.split(/\s+/).every(t => !t || words.indexOf(t) >= 0);
+function guideLibHTML() {
+  const q = String((state.forms.guide || {}).q || '').trim().toLowerCase(), groups = guideGroups(), total = groups.reduce((t, g) => t + g[2].length, 0); let shown = 0;
+  let h = '<section class="card stack" id="guideLib"><div><h3>Exercise guide</h3><p class="tiny muted">How to do every move, and which equipment to use. Tap one to see it.</p></div>' +
+    '<input type="search" id="glQ" data-form="guide" data-k="q" value="' + esc((state.forms.guide || {}).q || '') + '" placeholder="Search ' + total + ' moves" aria-label="Search the exercise guide" autocomplete="off" enterkeyhint="search">';
+  groups.forEach(g => {
+    const rows = g[2].map(k => { const w = guideWords(k, g[1]), ok = guideMatch(w, q); if (ok) shown++;
+      return '<button type="button" class="glrow" data-a="guide-open" data-k="' + k + '" data-from="lib" data-n="' + esc(w) + '"' + (ok ? '' : ' hidden') + '><span class="gln">' + esc(gdName(k)) + '</span><span class="tiny muted">' + esc(gdSub(k)) + '</span></button>'; }).join('');
+    const any = g[2].some(k => guideMatch(guideWords(k, g[1]), q));
+    h += '<details class="plain glgroup" data-dk="gl-' + g[0] + '" data-group="' + g[0] + '"' + (q && any ? ' open' : '') + (any ? '' : ' hidden') + '><summary>' + g[1] + ' <span class="chip">' + g[2].length + '</span></summary><div class="gllist">' + rows + '</div></details>';
+  });
+  return h + '<p class="tiny muted" id="glNone"' + (shown ? ' hidden' : '') + '>No move matches that. Try a body part, like "shoulders", or a machine.</p></section>';
+}
+// typing in the search box filters in place: the page is not drawn again under the keyboard
+function guideFilter() {
+  const inp = $('#glQ'), lib = $('#guideLib'); if (!inp || !lib) return;
+  const q = inp.value.trim().toLowerCase(); let shown = 0;
+  lib.querySelectorAll('.glgroup').forEach(d => { let any = 0;
+    d.querySelectorAll('.glrow').forEach(r => { const ok = guideMatch(r.dataset.n, q); r.hidden = !ok; if (ok) any++; });
+    d.hidden = !any; d.open = !!q && any > 0; shown += any; });
+  const none = $('#glNone'); if (none) none.hidden = shown > 0;
+}
+document.addEventListener('input', e => { if (e.target.id === 'glQ') guideFilter(); });
 
 /* ---- 70-ui-fuel.js ---- */
 /* ---------- Fuel: calories, water, food log ---------- */
@@ -5582,7 +7188,7 @@ document.addEventListener('change', onFormInput);
 // one click handler for every data-a action, in the page and in overlays
 // Actions that save one thing per tap. A second tap while the first is still saving is dropped, so a slow
 // connection cannot log the same food or activity twice. Water is left out on purpose: tapping it twice means two glasses.
-const ONE_AT_A_TIME = ['act-log', 'act-del', 'rest', 'food-save', 'food-again', 'food-del', 'quick-save', 'custom-save', 'custom-del', 'hk-import', 'hk-off', 'body-save', 'weigh-save', 'name-save', 'gym-save', 'stakes-save', 'cd-save', 'cd-clear', 'meal-copy', 'meal-save', 'meal-add', 'meal-rename', 'meal-del', 'iou-toggle', 'undo', 'scan-digits', 'scan-link-pick', 'describe-go', 'describe-log', 'backup-all', 'backup-workouts', 'backup-food', 'backup-copy', 'wm-save', 'wm-stagelog', 'wm-water', 'wm-notgym', 'water-bottle', 'ci-rest', 'gym-hp', 'split-set', 'lift-goal', 'mode-set', 'motion-set', 'cilog-save', 'add-rest', 'rem-save', 'nudge-yes', 'nudge-no', 'stall-reset', 'stall-swap', 'deload-take'];
+const ONE_AT_A_TIME = ['guide-set-save', 'act-log', 'act-del', 'rest', 'food-save', 'food-again', 'food-del', 'quick-save', 'custom-save', 'custom-del', 'hk-import', 'hk-off', 'body-save', 'weigh-save', 'name-save', 'gym-save', 'stakes-save', 'cd-save', 'cd-clear', 'meal-copy', 'meal-save', 'meal-add', 'meal-rename', 'meal-del', 'iou-toggle', 'undo', 'scan-digits', 'scan-link-pick', 'describe-go', 'describe-log', 'backup-all', 'backup-workouts', 'backup-food', 'backup-copy', 'wm-save', 'wm-stagelog', 'wm-water', 'wm-notgym', 'water-bottle', 'ci-rest', 'gym-hp', 'split-set', 'lift-goal', 'mode-set', 'motion-set', 'cilog-save', 'add-rest', 'rem-save', 'nudge-yes', 'nudge-no', 'stall-reset', 'stall-swap', 'deload-take'];
 const busy = {};
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-a]'); if (!el || el.disabled) return;
@@ -5635,6 +7241,7 @@ document.addEventListener('keydown', e => {
 function onCollapse(ev) { const key = ev.currentTarget.dataset.collapse; const d = draft(state.selDate); d.closed[key] = true; persistDrafts(); render('[data-menu="' + key + '"]'); }
 function menuAction(act, b) {
   const key = b.dataset.key; const date = state.selDate;
+  if (act === 'howto') { state.menu = null; render(); guideOpen(key, { from: 'lift', base: b.dataset.base || key, sel: '[data-menu="' + key + '"]' }); return; }
   if (act === 'swap') { state.menu = { key, view: 'swap' }; render('.menu [role="menuitem"]'); return; }
   if (act === 'back') { state.menu = { key, view: 'main' }; render('.menu [role="menuitem"]'); return; }
   if (act === 'swapto') { const d = draft(date); d.swaps[b.dataset.base] = b.dataset.to; d.recovered = false; state.menu = null; persistDrafts(); render('[data-menu="' + b.dataset.to + '"]'); return; }
@@ -5727,7 +7334,7 @@ function route() {
 window.MorningLaps = { state, P, weekScore, coach, goalsFor, badgesFor, searchFoods, loadFoods, dayTotals, compWeeks, parseHealthPaste, foodCount: () => foodDb.list ? foodDb.list.length : 0,
   EX, DAYS, normalize, dayInfo, weekFacts, scoreFacts, weekGoals, liveGoals, fuelParts, plannedFor, planSlots, swapOptions, defaultSwapOption, alts, teamStats, stakesFor, phaseFor, restT,
   caps, normBarcode, backupDocs, workoutsCsv, foodCsv, canon,
-  ACTS, specFor, splitOf, rotation, nextDayKey, deloadWeeks, checkinSuggest, ciPreview, atHealthplex, lapMiles, wmState: () => wm, wmResumable, motionOf, milestone, modeOf, plannedFor, liftOpen, openLift, todayRows, quickActs, addCardioOptions, MOVE_OF, HOWTO, STRETCHES, demoSVG,
+  ACTS, specFor, splitOf, rotation, nextDayKey, deloadWeeks, checkinSuggest, ciPreview, atHealthplex, lapMiles, wmState: () => wm, wmResumable, motionOf, milestone, modeOf, plannedFor, liftOpen, openLift, todayRows, FIG, FIG_ALIAS, GUIDE, fgSVG, fgDef, fgViewOf, fgKeyPos, fgAt, fgSolve, fgFrontSolve, figSt, quickActs, addCardioOptions, STRETCHES, CIRCUIT, GD_STATIONS, MM_NAME, gdName, gdKind, gearOf, guideOpen, guideClose, guideGroups, guideCardHTML, mmHTML, figHTML,
   suggest, stallFor, deloadOn, deloadState, completedWeeks, easier, weekRecap, lastWeek, ious, goalNudge, painNotes, painFlag, actList, surpriseActivity, savedMeals, mealItems };
 (function boot() {
   const saved = lsGet('ml.me', null);

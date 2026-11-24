@@ -128,7 +128,7 @@ document.addEventListener('change', onFormInput);
 // one click handler for every data-a action, in the page and in overlays
 // Actions that save one thing per tap. A second tap while the first is still saving is dropped, so a slow
 // connection cannot log the same food or activity twice. Water is left out on purpose: tapping it twice means two glasses.
-const ONE_AT_A_TIME = ['act-log', 'act-del', 'rest', 'food-save', 'food-again', 'food-del', 'quick-save', 'custom-save', 'custom-del', 'hk-import', 'hk-off', 'body-save', 'weigh-save', 'name-save', 'gym-save', 'stakes-save', 'cd-save', 'cd-clear', 'meal-copy', 'meal-save', 'meal-add', 'meal-rename', 'meal-del', 'iou-toggle', 'undo', 'scan-digits', 'scan-link-pick', 'describe-go', 'describe-log', 'backup-all', 'backup-workouts', 'backup-food', 'backup-copy', 'wm-save', 'wm-stagelog', 'wm-water', 'wm-notgym', 'water-bottle', 'ci-rest', 'gym-hp', 'split-set', 'lift-goal', 'mode-set', 'motion-set', 'cilog-save', 'add-rest', 'rem-save', 'nudge-yes', 'nudge-no', 'stall-reset', 'stall-swap', 'deload-take'];
+const ONE_AT_A_TIME = ['guide-set-save', 'act-log', 'act-del', 'rest', 'food-save', 'food-again', 'food-del', 'quick-save', 'custom-save', 'custom-del', 'hk-import', 'hk-off', 'body-save', 'weigh-save', 'name-save', 'gym-save', 'stakes-save', 'cd-save', 'cd-clear', 'meal-copy', 'meal-save', 'meal-add', 'meal-rename', 'meal-del', 'iou-toggle', 'undo', 'scan-digits', 'scan-link-pick', 'describe-go', 'describe-log', 'backup-all', 'backup-workouts', 'backup-food', 'backup-copy', 'wm-save', 'wm-stagelog', 'wm-water', 'wm-notgym', 'water-bottle', 'ci-rest', 'gym-hp', 'split-set', 'lift-goal', 'mode-set', 'motion-set', 'cilog-save', 'add-rest', 'rem-save', 'nudge-yes', 'nudge-no', 'stall-reset', 'stall-swap', 'deload-take'];
 const busy = {};
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-a]'); if (!el || el.disabled) return;
@@ -181,6 +181,7 @@ document.addEventListener('keydown', e => {
 function onCollapse(ev) { const key = ev.currentTarget.dataset.collapse; const d = draft(state.selDate); d.closed[key] = true; persistDrafts(); render('[data-menu="' + key + '"]'); }
 function menuAction(act, b) {
   const key = b.dataset.key; const date = state.selDate;
+  if (act === 'howto') { state.menu = null; render(); guideOpen(key, { from: 'lift', base: b.dataset.base || key, sel: '[data-menu="' + key + '"]' }); return; }
   if (act === 'swap') { state.menu = { key, view: 'swap' }; render('.menu [role="menuitem"]'); return; }
   if (act === 'back') { state.menu = { key, view: 'main' }; render('.menu [role="menuitem"]'); return; }
   if (act === 'swapto') { const d = draft(date); d.swaps[b.dataset.base] = b.dataset.to; d.recovered = false; state.menu = null; persistDrafts(); render('[data-menu="' + b.dataset.to + '"]'); return; }
@@ -273,7 +274,7 @@ function route() {
 window.MorningLaps = { state, P, weekScore, coach, goalsFor, badgesFor, searchFoods, loadFoods, dayTotals, compWeeks, parseHealthPaste, foodCount: () => foodDb.list ? foodDb.list.length : 0,
   EX, DAYS, normalize, dayInfo, weekFacts, scoreFacts, weekGoals, liveGoals, fuelParts, plannedFor, planSlots, swapOptions, defaultSwapOption, alts, teamStats, stakesFor, phaseFor, restT,
   caps, normBarcode, backupDocs, workoutsCsv, foodCsv, canon,
-  ACTS, specFor, splitOf, rotation, nextDayKey, deloadWeeks, checkinSuggest, ciPreview, atHealthplex, lapMiles, wmState: () => wm, wmResumable, motionOf, milestone, modeOf, plannedFor, liftOpen, openLift, todayRows, quickActs, addCardioOptions, MOVE_OF, HOWTO, STRETCHES, demoSVG,
+  ACTS, specFor, splitOf, rotation, nextDayKey, deloadWeeks, checkinSuggest, ciPreview, atHealthplex, lapMiles, wmState: () => wm, wmResumable, motionOf, milestone, modeOf, plannedFor, liftOpen, openLift, todayRows, FIG, FIG_ALIAS, GUIDE, fgSVG, fgDef, fgViewOf, fgKeyPos, fgAt, fgSolve, fgFrontSolve, figSt, quickActs, addCardioOptions, STRETCHES, CIRCUIT, GD_STATIONS, MM_NAME, gdName, gdKind, gearOf, guideOpen, guideClose, guideGroups, guideCardHTML, mmHTML, figHTML,
   suggest, stallFor, deloadOn, deloadState, completedWeeks, easier, weekRecap, lastWeek, ious, goalNudge, painNotes, painFlag, actList, surpriseActivity, savedMeals, mealItems };
 (function boot() {
   const saved = lsGet('ml.me', null);

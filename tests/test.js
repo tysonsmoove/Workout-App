@@ -57,9 +57,9 @@ async function details(page, key) { await menu(page, key, 'details'); await page
 
   // Menu keyboard + outside click
   await page.click('[data-menu="chestpress"]'); await page.waitForSelector('.menu[data-menufor="chestpress"]');
-  check('menu opens with focus on first item', await page.evaluate(() => document.activeElement.getAttribute('role') === 'menuitem'));
+  check('menu opens with focus on first item', await page.evaluate(() => document.activeElement.getAttribute('role') === 'menuitem' && document.activeElement.textContent.startsWith('How to')));
   await page.keyboard.press('ArrowDown');
-  check('arrow moves focus', await page.evaluate(() => document.activeElement.textContent.startsWith("Can't go higher")));
+  check('arrow moves focus', await page.evaluate(() => document.activeElement.textContent.startsWith('Swap exercise')));
   await page.keyboard.press('Escape'); await page.waitForSelector('.menu', { state: 'detached' });
   check('escape closes and returns focus', await page.evaluate(() => document.activeElement.dataset.menu === 'chestpress'));
   check('values intact after menu open/close', await val(page, '#w-chestpress') === '75' && await val(page, '#r-chestpress-2') === '8');

@@ -20,7 +20,11 @@ A phone-first fitness tracker for two people, Tyson and Jacquie: workouts, nutri
 | `src/50-fx.js` | Overlays, confetti, celebrations |
 | `src/55-rest.js` | Rest timer: a bar in the foot of the lift sheet, patched in place, never part of the render loop |
 | `src/60…80-ui-*.js` | Screens: Train, Fuel, Compete, Me |
-| `src/57-moves.js` | Workout-mode content: one line-figure demo per movement pattern, form cues for every exercise, the stretch sequence |
+| `src/57-moves.js` | The cool-down stretch sequence |
+| `src/58-figure.js` | The articulated figure: joint solver, tempo, equipment shapes, the player (play, pause, slider, front view) |
+| `src/59-figures.js` | One animation per exercise, circuit station and stretch |
+| `src/59-guide-text.js` | The how-to card text for every move (`GUIDE`) |
+| `src/66-guide.js` | The guide: the card, the muscle map, the guide sheet (`#gd`), the library, "My settings" |
 | `src/61-ui-today.js` | Train: the Today card, the date sheet, the Add sheet, "Something else", the lift sheet |
 | `src/62-ui-checkin.js` | Daily check-in, Healthplex cards and gym info, split and lift-goal settings, "Not at my gym" |
 | `src/65-workout.js` | Workout mode: the full-screen guided session (`#wm`, outside `#main`) |
@@ -183,7 +187,7 @@ Activities with `cat: 'healthplex'` show only when `atHealthplex(pid)` (the gym 
 - **Lifts** write into the same draft as the lifting log (`draft.ex`, `draft.tm`), plus `draft.wm` to mark a session in progress, and finish through the same `save()`.
 - **Cardio, guided and recovery sessions** are stages (`laps`, `lengths`, `timer`, `circuit`, `stretch`, `heat`). Progress is kept on the phone in `ml.wm`. Finishing logs every moving stage as one activity through `logActivity()`, with laps, miles or station sets in the note, and a recovery room as its own recovery entry. The treadmill finishes as the lifting log's own treadmill day.
 - Start tries the Fullscreen API and a screen wake lock and ignores a refusal.
-- `prefers-reduced-motion` skips the start sequence, shows the demos as a still frame and turns off bursts and pick animations.
+- `prefers-reduced-motion` skips the start sequence, shows each demo as a still of its key position and turns off bursts and pick animations.
 
 ## Version 17: log it or go live, calmer animations, a tidier Train
 
@@ -249,6 +253,46 @@ The typed-in lift log (`liftLogHTML` in `src/60-ui-train.js`) is drawn in a full
 
 Suites written before version 18 set `legacyDefault` in `tests/helpers.js`: a call that names a control which now lives in a sheet opens that sheet first. The version 18 suite runs without it and goes through the real buttons.
 
+## Version 19: a guide for every move
+
+The app said what to do. Now it also shows how, and with which equipment. Scoring and saving are unchanged: the guide reads the program and writes one thing only, a person's own "My settings" line on their profile.
+
+### The figure (`src/58-figure.js`, `src/59-figures.js`)
+
+One animation per move in `FIG`: all 33 exercises in `EX`, the circuit's row machine, and the 8 stretches. The other three circuit stations use their lift's picture (`FIG_ALIAS`).
+
+- **Drawn from joint angles.** A pose is a few numbers: where the body is anchored (foot, hip, hand, shoulder or toe), the lean of the torso, and for each limb either its two directions or the point its hand or foot must reach (`fgIK` solves the elbow or knee). `fgSolve` returns every joint; limb lengths never change. The box is 200 x 150 units, 1 unit is about 1.77 cm.
+- **Tempo.** `FG_TEMPO`: about 2 s lowering, a 0.5 s pause, about 1 s lifting, 0.5 s before the next rep. Pulls, curls and raises lift first. A stretch eases in, holds, eases out. Each phase has a label ("Lower", "Drive up").
+- **Views.** Side view by default. Front view only where the move is judged that way (lateral raise, cable lateral raise, face pull, pec deck, two stretches). Squats, lunges and the rear-delt fly have both, with a toggle.
+- **Equipment** is drawn from a few shapes in `EQ`, to scale: bench, incline back, rack with safety bar, plate, dumbbell, kettlebell, cable with its attachment, weight stack, pads and rollers where they sit on the machine.
+- **Markers.** One or two numbered dots on the body at the key position, with their text in a legend that is always listed and lights up when the dots show, so nothing changes height during a rep.
+- **The player** (`figHTML`): play or pause, a slider to drag through the rep, the view toggle. One `requestAnimationFrame` loop repaints the players on screen at about 30 frames a second and stops when there are none. With Animations off, or the phone's reduce-motion setting, a player opens paused on the key position with its markers; the slider and Play still work by hand.
+
+To check poses after a change, render the first, middle and key frame of every view on contact sheets and look at them.
+
+### The how-to card (`GUIDE` in `src/59-guide-text.js`, `guideCardHTML` in `src/66-guide.js`)
+
+Every move has: Equipment (what to grab and where it usually is), Set up (2 to 4 steps), Do it (3 to 5 steps), Breathe, Feel it in, Common mistakes (2, each with its fix), Easier and harder.
+
+- **Feel it in** is a front and back body outline (`mmHTML`) with the main muscles filled and the helpers lighter, and the same in words.
+- **Easier and harder** name an exercise from that exercise's own `alt` list where there is one. In an open workout the button is "Swap to it": this workout only, the same `draft.swaps` write as Swap in the exercise's menu. Elsewhere it is "See it".
+- **Go easy on.** When a move's `stress` list meets an area the person marked under "Go easy on", the card opens with a note naming it.
+- The four circuit stations (`st_*`) and the eight stretches (`sx_*`) have their own cards, written gently.
+
+### Where it shows
+
+- **Lift sheet.** The exercise name is a button, and the ··· menu starts with "How to". Both open the guide sheet (`#gd`, its own element above `#ov`), so the lift sheet under it keeps its typed sets, its place and its rest timer. Escape, the close button or a tap outside closes the guide only.
+- **Live mode.** The demo is the first thing on every exercise, circuit and stretch screen. "How to" sits under the logging controls and opens the full card below them, so no logging control moves. Each screen keeps its own scroll position across redraws and rests. In the machine circuit the demo follows the machine last tapped, and each machine has its own "How to".
+- **Program tab (Plan for a pick-your-own profile).** "Exercise guide" (`guideLibHTML`): every move in five groups (Full Body A, Full Body B, other lifts, stretches, Healthplex activities) with a search box that filters in place by name, equipment or body part.
+
+### My settings
+
+A text field on every exercise and station guide, up to 60 characters, for example "Seat 4 · back pad 2 · handles middle". Saved by the Save button or Enter with `saveProfile(pid, { gear })` as `profiles/<pid>.gear[<move>].note`, so it is per person. Once set it shows in one line under the exercise name in the lift sheet and in live mode. Clearing the field and saving removes it.
+
+### Not built yet
+
+A photo of the machine next to "My settings" needs the `assets` capability. It is not in this version.
+
 ## Apple Health and Apple Watch
 
 A web page cannot read Apple Health. A Shortcut on the iPhone copies the day's Exercise Minutes, steps, active calories, water and weight as text, and the user pastes it into the app. The steps to build the Shortcut are in `docs/apple-health-shortcut.md` and inside the app under Me. Imports are idempotent: Exercise Minutes become one entry holding only the minutes not already logged by hand.
@@ -260,7 +304,7 @@ One path-addressed document store, backed by the artifact database when signed i
 | Path | Contents |
 |---|---|
 | `sessions/<date>`, `settings/program` | Tyson's lifting log and program settings (original location, kept) |
-| `profiles/<pid>` | Profile |
+| `profiles/<pid>` | Profile. Since version 19 also `gear`: that person's "My settings" line per move |
 | `profiles/<pid>/sessions/<date>` | Other profile's workout log |
 | `profiles/<pid>/food/<date>` | Food items and water for a day |
 | `profiles/<pid>/health/<date>` | Steps, exercise minutes, active calories and distance imported from Apple Health |
@@ -294,6 +338,7 @@ node tests/account.test.js # account memory: profile choice, weekly result and b
 node tests/v12.test.js     # version 12: swaps, weekly locks, provisional/final results, Watch top-up, combined days, gym, stakes, custom foods, team, set shortcuts, rest timer, protein scoring, smoke of every tab (135 checks)
 node tests/v13.test.js     # version 13: saved meals, stalled lifts, deload weeks, reminders, weekly recap, IOUs, goal nudge, pain notes, smoke of every tab (98 checks)
 node tests/v16.test.js     # version 16: check-in rules, Full Body A/B, Healthplex activities, lift goal, gym info, Not at my gym, Jacquie's check-in, workout mode, animations, smoke of every tab and workout-mode screen
+node tests/v19.test.js     # version 19: every animation's joints, tempo, views, equipment and markers; the player; the 45 how-to cards; the guide in the lift sheet, live mode and the library; My settings; records identical to before
 node tests/v18.test.js     # version 18: the Today card at 390 x 844, the lift sheet and its rest timer, the Add sheet in both modes, Jacquie's Train, past days, records identical to version 17's, smoke of every tab, sheet and live screen
 node tests/v17.test.js     # version 17: the top of Train at 390 x 844, the Log it / Go live switch, logging every kind of session without live mode, live finish edits, Subtle / Full / Off animations, smoke of every tab, live screen and Log it sheet
 ML_ZXING=/path/to/zxing/umd/index.min.js node tests/v15.test.js   # version 15: Health paste box, reset plus deload, stuck-lift lines, barcode scanning, meal estimates, undo, backup, smoke of every tab

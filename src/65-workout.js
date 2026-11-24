@@ -21,6 +21,7 @@ const wmElapsed = () => wm.ms + (Date.now() - wm.started);
 function wmOpen(plan, fromEl, resume) {
   if (wm) return;
   const held = state.ov ? state.ovQ.slice() : []; // a badge or a week's result waiting behind the sheet: shown when the session closes
+  if (state.guide) { state.guide = null; renderGuide(); }
   if (state.ov) { state.ov = null; state.ovQ = []; renderOv(); }
   wm = { pid: me(), date: state.selDate, plan, held, view: 'start', before: scoreSnapshot(), started: Date.now(), ms: 0, stale: false, i: -1, edit: null, quit: 0 };
   if (plan.kind === 'lift') wmLiftInit(resume); else wmStagesInit(resume);
@@ -79,8 +80,24 @@ function wmDraw() {
   if (wm.view === 'start') { wmEl.innerHTML = '<button type="button" class="wm-start" id="wmStartSeq" data-a="wm-go" aria-label="Skip the start"><span class="wm-lights" aria-hidden="true"><i></i><i></i><i></i></span>' + wmFlag('green', false) + '<b class="wm-gotext">GO</b><span class="tiny">' + esc(wm.plan.title) + ' · tap to skip</span></button>'; return; }
   if (wm.view === 'quit') { wmEl.innerHTML = wmQuitHTML(); return; }
   if (wm.view === 'finish') { wmEl.innerHTML = (motionOf() === 'full' ? '' : '<div class="wm-stripe" id="wmStripe" aria-hidden="true"></div>') + (wm.plan.kind === 'lift' ? wmLiftFinishHTML() : wmStagesFinishHTML()); wmCountUp(); return; }
+  // every screen keeps its own place: back from a rest, an exercise with "How to" open is where it was left
+  const scr = wm.view + ':' + wm.plan.kind + ':' + (wm.plan.kind === 'lift' ? wm.i + ':' + ((wmSlots()[wm.i] || {}).key || '') : wm.si), body = wmEl.querySelector('.wm-body'); wm.tops = wm.tops || {};
+  if (body && wmEl.dataset.scr) wm.tops[wmEl.dataset.scr] = body.scrollTop;
   wmEl.innerHTML = wm.plan.kind === 'lift' ? (wm.view === 'rest' ? wmRestHTML() : wmLiftHTML()) : wmStageHTML();
+  wmEl.dataset.scr = scr; const b2 = wmEl.querySelector('.wm-body'), top = wmEl.querySelector('#wmHow') || wm.view !== 'main' ? wm.tops[scr] || 0 : 0; if (b2 && top) b2.scrollTop = top;
+  figKick();
 }
+// "How to" under the logging controls: the full card opens below them, so nothing above it moves
+const wmHowHTML = (key, open) => '<button type="button" class="wm-btn sm wm-howbtn" id="wmHowBtn" data-a="wm-howto" data-k="' + key + '" aria-expanded="' + !!open + '" aria-controls="wmHow">' + (open ? 'Hide how to' : 'How to') + '</button>' +
+  (open ? '<div class="wm-howcard" id="wmHow">' + guideCardHTML(key, { pid: wm.pid, from: 'live', swap: wm.plan.kind === 'lift' ? swapOptions(wmSlots(), wmSlots()[wm.i]) : [] }) + '</div>' : '');
+// When the card opens off the bottom of the screen, the screen moves up just far enough that the logging controls
+// (or the stretch, or the list of machines) sit at the top with the card right under them: still one tap from a set.
+function wmHowReveal(anchor) {
+  const c = $('#wmHow'), b = wmEl.querySelector('.wm-body'), a = anchor && wmEl.querySelector(anchor); if (!c || !b) return;
+  const br = b.getBoundingClientRect(), r = c.getBoundingClientRect(); if (r.top < br.top + br.height * 0.5) return;
+  b.scrollTop += Math.max(0, (a ? a.getBoundingClientRect().top : r.top - 56) - br.top - 6);
+}
+ACT['wm-howto'] = el => { const k = el.dataset.k; wm.howKey = wm.howKey === k ? null : k; wmDraw(); if (wm.howKey) wmHowReveal(wm.plan.kind === 'lift' ? (wmEl.querySelector('.wm-steps') ? '.wm-steps' : '#wmPips') : '#wmStretchName'); };
 // Finish numbers count up once, in Subtle only (Full has its flag and burst; Off shows them still).
 function wmCountUp() {
   if (!wm || wm.counted || motionOf() !== 'subtle') return;
@@ -155,13 +172,12 @@ function wmLiftHTML() {
       '<button type="button" class="primary wm-log" id="wmWarmLog" data-a="wm-warmlog">Log warm-up</button></div>' +
       '<div class="wm-nav"><button type="button" class="wm-btn" data-a="wm-next">Skip warm-up</button></div>';
   }
-  const p = slots[wm.i], key = p.key, ex = EX[key], sp = specFor(key, wm.date), sg = suggest(key, wm.date), s = wmSets(p), how = (typeof HOWTO === 'object' && HOWTO[key]) || { cues: [], mistake: '' };
+  const p = slots[wm.i], key = p.key, ex = EX[key], sp = specFor(key, wm.date), sg = suggest(key, wm.date), s = wmSets(p);
   const editing = wm.edit != null, idx = editing ? wm.edit : s.next, done = s.next < 0 && !editing, stand = key === p.base ? defaultSwapOption(p.base) : null, opts = swapOptions(slots, p);
-  h += '<div class="wm-body"><div class="eyebrow">Lift ' + (wm.i + 1) + ' of ' + n + ' · ' + esc(day.name) + '</div><h2 id="wmName">' + esc(ex.name) + (sp.optional ? ' <span class="chip">if there\'s time</span>' : '') + (key !== p.base ? ' <span class="chip">swapped</span>' : '') + '</h2>' +
+  h += '<div class="wm-body"><div class="wm-demo" id="wmDemo">' + figHTML(key, 'wm', ex.name, true) + '</div>' +
+    '<div class="eyebrow">Lift ' + (wm.i + 1) + ' of ' + n + ' · ' + esc(day.name) + '</div><h2 id="wmName">' + esc(ex.name) + (sp.optional ? ' <span class="chip">if there\'s time</span>' : '') + (key !== p.base ? ' <span class="chip">swapped</span>' : '') + '</h2>' + mySetLine(wm.pid, key) +
     '<p class="wm-target" id="wmTarget"><b>' + (sg.deload ? 2 : sp.sets) + ' × ' + sp.lo + '–' + sp.hi + '</b>' + (ex.bw ? ' · bodyweight' : ' · ' + sg.w + ' lb' + (ex.per ? ' each hand' : '')) + (sg.deload ? ' · deload' : sg.reset ? ' · reset' : '') + '</p>' +
     '<p class="tiny muted" id="wmLast">' + (sg.last ? 'Last · ' + nice(sg.last.date) + ': ' + esc((sg.last.w != null ? fmtW(key, sg.last.w) + ' × ' : '') + fmtReps(sg.last.reps)) : 'First time. ' + esc(sg.why)) + '</p>' +
-    '<div class="wm-how"><div class="wm-demo" id="wmDemo">' + (typeof demoSVG === 'function' ? demoSVG(MOVE_OF[key]) : '') + '</div><ol class="wm-cues" id="wmCues">' + how.cues.map(c => '<li>' + esc(c) + '</li>').join('') + '</ol></div>' +
-    (how.mistake ? '<p class="wm-mistake" id="wmMistake"><b>Watch for:</b> ' + esc(how.mistake) + '</p>' : '') +
     '<p class="tiny muted" id="wmEquip">' + esc(ex.equip) + (ex.per ? ' · weight is one dumbbell' : '') + '</p>' +
     '<div class="row wm-tools"><button type="button" class="wm-btn sm" data-a="wm-swap"' + (opts.length ? '' : ' disabled') + ' aria-expanded="' + !!wm.swap + '">Swap</button><button type="button" class="wm-btn sm" id="wmNotGym" data-a="wm-notgym"' + (stand ? '' : ' disabled') + '>Not at my gym</button></div>';
   if (wm.swap) h += '<div class="wm-swaps" id="wmSwaps">' + opts.map(k => '<button type="button" class="wm-btn" data-a="wm-swapto" data-base="' + p.base + '" data-to="' + k + '">' + esc(EX[k].name) + (k === p.base ? ' <span class="tiny muted">(planned)</span>' : '') + '</button>').join('') + '</div>';
@@ -172,6 +188,7 @@ function wmLiftHTML() {
     '<div class="wm-step"><span class="eyebrow">Reps</span><div><button type="button" data-a="wm-r" data-d="-1" aria-label="One rep fewer">−</button><b class="num" id="wmR">' + wm.r + '</b><button type="button" data-a="wm-r" data-d="1" aria-label="One rep more">+</button></div></div></div>' +
     '<button type="button" class="primary wm-log" id="wmLog" data-a="wm-log">' + (editing ? 'Update set ' + (idx + 1) : 'Log set ' + (idx + 1)) + '</button>' +
     (editing ? '<div class="row"><button type="button" class="wm-btn sm danger" id="wmDel" data-a="wm-del">Delete set ' + (idx + 1) + '</button><button type="button" class="wm-btn sm" data-a="wm-editx">Cancel</button></div>' : '');
+  h += wmHowHTML(key, wm.howKey === key);
   h += '</div><div class="wm-nav"><button type="button" class="wm-btn" data-a="wm-prev">‹ ' + (wm.i === 0 ? 'Warm-up' : 'Back') + '</button>' +
     (wm.i < n - 1 ? '<button type="button" class="wm-btn' + (done ? ' on' : '') + '" id="wmNext" data-a="wm-next">Next lift ›</button>' : '') + '<button type="button" class="wm-btn' + (wm.i === n - 1 || wmLiftAny() ? ' on' : '') + '" id="wmFinish" data-a="wm-finish">Finish</button></div>';
   return h;
@@ -291,12 +308,17 @@ function wmStageHTML() {
       '<div class="wm-stat"><div><b class="num" id="wmLaps">' + s.laps + '</b><span>lengths</span></div><div><b class="num" id="wmMiles">' + s.laps * POOL_YARDS + '</b><span>yards</span></div></div>' +
       '<button type="button" class="primary wm-tap" id="wmLap" data-a="wm-lap">Length done</button><div class="row" style="justify-content:center">' + toggle + '<button type="button" class="wm-btn" id="wmLapUndo" data-a="wm-lapundo"' + (s.laps ? '' : ' disabled') + '>−1 length</button></div>';
   } else if (g.type === 'circuit') {
+    const gk = clamp(Number(s.gk) || 0, 0, CIRCUIT.length - 1), gkey = GD_STATIONS[gk];
+    h = h.replace('<div class="wm-body wm-center">', '<div class="wm-body wm-center wm-hasdemo"><div class="wm-demo" id="wmDemo" data-station="' + gk + '">' + figHTML(gkey, 'wm', CIRCUIT[gk], true) + '</div>');
     h += '<p class="wm-target">One or two easy sets of 10 to 12 on each machine. Tap a machine after each set.</p>' + big + '<div class="wm-stations" id="wmStations">' +
-      CIRCUIT.map((name, k) => '<button type="button" class="wm-btn" data-a="wm-station" data-k="' + k + '"><span>' + name + '</span><b class="num">' + (s.sets[k] || 0) + ' set' + ((s.sets[k] || 0) === 1 ? '' : 's') + '</b></button>').join('') + '</div><div class="row" style="justify-content:center">' + toggle + '</div>';
+      CIRCUIT.map((name, k) => '<div class="wm-strow' + (k === gk ? ' cur' : '') + '"><button type="button" class="wm-btn" data-a="wm-station" data-k="' + k + '"><span>' + name + mySetLine(wm.pid, GD_STATIONS[k]) + '</span><b class="num">' + (s.sets[k] || 0) + ' set' + ((s.sets[k] || 0) === 1 ? '' : 's') + '</b></button>' +
+        '<button type="button" class="wm-btn sm" data-a="wm-sthow" data-k="' + k + '" aria-expanded="' + (wm.howKey === GD_STATIONS[k]) + '" aria-label="How to use the ' + name.toLowerCase() + ' machine">How to</button></div>').join('') + '</div><div class="row" style="justify-content:center">' + toggle + '</div>' +
+      (GD_STATIONS.includes(wm.howKey) ? '<div class="wm-howcard" id="wmHow">' + guideCardHTML(wm.howKey, { pid: wm.pid, from: 'live' }) + '</div>' : '');
   } else if (g.type === 'stretch') {
     const at = stretchAt(g, ms);
+    if (at.x) h = h.replace('<div class="wm-body wm-center">', '<div class="wm-body wm-center wm-hasdemo"><div class="wm-demo" id="wmDemo">' + figHTML(at.x.g, 'wm', at.x.name, true) + '</div>');
     h += at.x ? '<p class="wm-target" id="wmStretchN">Stretch ' + (at.i + 1) + ' of ' + at.n + '</p><div class="wm-bigtime num" id="wmStageTime">' + wmTime(at.left + 999) + '</div><h3 id="wmStretchName">' + esc(at.x.name) + '</h3><p class="wm-cue" id="wmStretchCue">' + esc(at.x.cue) + '</p>' +
-      '<div class="row" style="justify-content:center">' + toggle + '<button type="button" class="wm-btn" id="wmStretchNext" data-a="wm-stretchnext">Next stretch ›</button></div>'
+      '<div class="row" style="justify-content:center">' + toggle + '<button type="button" class="wm-btn" id="wmStretchNext" data-a="wm-stretchnext">Next stretch ›</button></div>' + wmHowHTML(at.x.g, wm.howKey === at.x.g)
       : '<p class="wm-done" id="wmStretchDone">Stretching done. Nice and loose.</p>';
   } else if (g.type === 'heat') {
     const left = s.min * 60000 - ms, over = left <= 0 && ms > 0;
@@ -328,7 +350,9 @@ function wmRun(on) { const s = wm.st[wm.si]; if (on === s.on) return; if (on) { 
 ACT['wm-toggle'] = () => { const s = wm.st[wm.si]; wmRun(!s.on); wmStore(); wmDraw(); };
 ACT['wm-lap'] = () => { const s = wm.st[wm.si]; s.laps++; wmRun(true); wmStore(); state.wmLogs = (state.wmLogs || 0) + 1; wmDraw(); }; // the first lap starts the clock
 ACT['wm-lapundo'] = () => { const s = wm.st[wm.si]; if (s.laps > 0) { s.laps--; wmStore(); wmDraw(); } };
-ACT['wm-station'] = el => { const s = wm.st[wm.si], k = el.dataset.k; s.sets[k] = (s.sets[k] || 0) + 1; wmRun(true); wmStore(); wmDraw(); };
+ACT['wm-station'] = el => { const s = wm.st[wm.si], k = el.dataset.k; s.sets[k] = (s.sets[k] || 0) + 1; s.gk = Number(k); if (GD_STATIONS.includes(wm.howKey)) wm.howKey = GD_STATIONS[s.gk]; wmRun(true); wmStore(); wmDraw(); };
+ACT['wm-sthow'] = el => { const s = wm.st[wm.si], k = Number(el.dataset.k), key = GD_STATIONS[k]; wm.howKey = wm.howKey === key ? null : key; s.gk = k; wmStore(); wmDraw(); // the picture switches to that machine and its card opens under the list
+  if (wm.howKey) wmHowReveal('#wmStations'); };
 ACT['wm-iv'] = () => { const s = wm.st[wm.si]; s.iv = !s.iv; wmStore(); wmDraw(); };
 ACT['wm-stretchnext'] = () => { const g = wm.plan.stages[wm.si], s = wm.st[wm.si], at = stretchAt(g, wmStageMs(wm.si)); if (!at.x) return; s.ms = at.start + at.len; if (s.on) s.at = Date.now(); wmStore(); wmDraw(); };
 ACT['wm-room'] = el => { wm.st[wm.si].room = el.dataset.k; wmStore(); wmDraw(); };

@@ -172,9 +172,9 @@ function renderExercise(p, m, date) {
   const nSets = setCount(key, m, date); const sm = exSummary(key, e, nSets);
   const closed = !!m.closed[key]; const menu = state.menu && state.menu.key === key ? state.menu : null;
   let h = '<section class="blk ex" data-ex="' + key + '" aria-label="' + esc(ex.name) + '">';
-  h += '<div class="bhead"><h3>' + esc(ex.name) + (key !== p.base ? ' <span class="chip">swapped</span>' : '') + (ex.optional ? ' <span class="chip" data-optional="' + key + '">if there\'s time</span>' : '') + '</h3>' +
+  h += '<div class="bhead"><h3><button type="button" class="exname" data-a="guide-open" data-k="' + key + '" data-base="' + p.base + '" data-from="lift" aria-label="How to do ' + esc(ex.name) + '">' + esc(ex.name) + '</button>' + (key !== p.base ? ' <span class="chip">swapped</span>' : '') + (ex.optional ? ' <span class="chip" data-optional="' + key + '">if there\'s time</span>' : '') + '</h3>' +
     '<button type="button" class="menubtn" data-menu="' + key + '" aria-label="Options for ' + esc(ex.name) + '" aria-haspopup="menu" aria-expanded="' + (menu ? 'true' : 'false') + '">···</button>' + renderMenu(key, p, m, date, menu) + '</div>';
-  h += stallHTML(p, date);
+  h += mySetLine(me(), key) + stallHTML(p, date);
   if (closed) {
     h += '<div class="collapsed-sum"><span data-sum="' + key + '">' + (sm.line ? '<b>' + esc(sm.line) + '</b> · ' + sm.loggedN + '/' + nSets + ' logged' : 'Nothing logged') + '</span><button type="button" class="quiet" data-expand="' + key + '">Expand</button></div></section>';
     return h;
@@ -222,6 +222,7 @@ function renderMenu(key, p, m, date, menu) {
     opts.forEach(k => { h += '<button type="button" role="menuitem" data-act="swapto" data-key="' + key + '" data-base="' + p.base + '" data-to="' + k + '">' + esc(EX[k].name) + (k === p.base ? '<span class="sub">back to the planned exercise</span>' : '<span class="sub">' + esc(EX[k].equip) + (EX[k].per ? ' · lb per hand' : '') + '</span>') + '</button>'; });
     h += '<button type="button" role="menuitem" data-act="back" data-key="' + key + '">Cancel</button>';
   } else {
+    h += '<button type="button" role="menuitem" data-act="howto" data-key="' + key + '" data-base="' + p.base + '">How to<span class="sub">the move, the equipment, your settings</span></button>';
     h += '<button type="button" role="menuitem" data-act="swap" data-key="' + key + '"' + (opts.length ? '' : ' disabled') + '>Swap exercise<span class="sub">' + (opts.length ? 'this workout only' : alts(p.base).length ? 'unavailable: its alternates are already in today\'s workout' : 'no alternate for this one') + '</span></button>';
     if (!ex.bw) h += '<button type="button" role="menuitem" data-act="hold" data-key="' + key + '">' + (maxed ? 'Allow weight increases' : 'Can\'t go higher') + '<span class="sub">' + (maxed ? 'resume weight suggestions' : 'hold weight, progress by reps') + '</span></button>';
     const stand = key === p.base ? defaultSwapOption(p.base) : null; // "Not at my gym": the free stand-in becomes the default for every future workout
@@ -339,7 +340,7 @@ function renderProgram() {
   const fullSplit = splitOf() === 'full', rot = rotation(), lg = liveGoals(me()).liftGoal;
   let h = gymBannerHTML() + '<section class="card stack" id="splitCard"><div class="row between"><h3>Split</h3><span class="tiny muted">changes the next lift, never your history</span></div>' +
     '<div class="seg" aria-label="Split"><button type="button" data-a="split-set" data-v="full" class="' + (fullSplit ? 'on' : '') + '" aria-pressed="' + fullSplit + '">Full body A/B</button><button type="button" data-a="split-set" data-v="ppl" class="' + (fullSplit ? '' : 'on') + '" aria-pressed="' + !fullSplit + '">Push / Pull / Legs</button></div>' +
-    '<p class="tiny muted">' + (fullSplit ? 'Two sessions train everything, so a week with only two lifts still covers the whole body. A and B alternate after each counted lift day.' : 'Three sessions train everything. Each day repeats once the other two are done.') + '</p></section>' + renderMorning(phase, kindFor(t, model(t)) === 'rest' ? 'rest' : liftKindFor(t)) + gymCardHTML() +
+    '<p class="tiny muted">' + (fullSplit ? 'Two sessions train everything, so a week with only two lifts still covers the whole body. A and B alternate after each counted lift day.' : 'Three sessions train everything. Each day repeats once the other two are done.') + '</p></section>' + guideLibHTML() + renderMorning(phase, kindFor(t, model(t)) === 'rest' ? 'rest' : liftKindFor(t)) + gymCardHTML() +
     '<section class="card"><div class="eyebrow">How the rotation works</div><h2>' + (fullSplit ? 'Full Body A → B, repeat' : 'Push → Pull → Legs, repeat') + '</h2>' +
     '<p style="margin-top:8px">Days aren\'t tied to weekdays. The next lift is the one after your last <b>counted</b> lift day. Skip a morning and nothing goes out of sync. ' + (fullSplit ? 'Every session opens with a 5 to 10 minute warm-up on the track, treadmill or bike.' : 'Every session opens with a Fitness+ treadmill workout.') + ' Aim for ' + ws.goal + ' activity days a week: ' + ws.liftGoal + ' lifts, the rest treadmill-only or any ' + minMin(me()) + '-minute activity.</p></section>';
   const upcoming = nextDayKey(addDays(t, 1)); const lastL = lastLift(addDays(t, 1));
@@ -407,6 +408,7 @@ function renderPlanChoice() {
     '<p class="tiny muted">Set these where you can win most weeks. The competition scores each of you against your own goal, so an honest goal you hit beats an ambitious one you miss. Raise it after two or three good weeks.</p></section>';
   h += '<section class="card stack"><h3>Go easy on</h3><p class="tiny muted">Mark any area with an old injury. Activities that load it are flagged and sorted lower, and Surprise me skips them.</p><div class="chips wrapc">' +
     Object.keys(AREAS).map(k => { const on = (p.move.protect || []).includes(k); return '<button type="button" data-a="protect" data-k="' + k + '" class="' + (on ? 'on' : '') + '" aria-pressed="' + on + '">' + AREAS[k] + '</button>'; }).join('') + '</div></section>';
+  h += guideLibHTML();
   h += '<section class="card"><h3>One way to fill a ' + g + '-day week</h3><div class="plan" style="margin-top:6px"><ul>' +
     (WEEK_SLOTS[g] || WEEK_SLOTS[3]).map((d, i) => { const a = ACTS[pool[i % pool.length] || 'walkeasy']; return '<li><span><b>' + days[d] + '</b> · ' + a.icon + ' ' + esc(a.name) + '</span><span class="muted num">' + Math.max(a.min, mm) + ' min</span></li>'; }).join('') +
     '</ul></div><p class="tiny muted" style="margin-top:8px">Only a suggestion. Any day, any activity on your list.</p></section>';

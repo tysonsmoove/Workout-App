@@ -439,11 +439,6 @@ textarea.plaintext { font-family: var(--body); min-height: 88px; }
 .wm-body h2 { font-size: 1.75rem; }
 .wm-body h3 { font-size: 1.375rem; }
 .wm-target { font-size: 1.125rem; }
-.wm-how { display: grid; grid-template-columns: 112px 1fr; gap: 10px; align-items: center; }
-.wm-demo { background: var(--card); border: 1px solid var(--line); border-radius: 12px; aspect-ratio: 1; display: grid; place-items: center; overflow: hidden; }
-.wm-demo svg { width: 100%; height: 100%; display: block; }
-.wm-cues { margin: 0; padding-left: 20px; display: grid; gap: 4px; font-size: .9375rem; line-height: 1.25; }
-.wm-mistake { font-size: .875rem; background: var(--warn-soft); border-radius: 8px; padding: 6px 10px; }
 .wm-btn { min-height: 48px; padding: 8px 16px; font-size: 1rem; font-weight: 600; border-radius: 12px; }
 .wm-btn.sm { min-height: 44px; font-size: .875rem; padding: 6px 12px; }
 .wm-btn.on { background: var(--fg); color: var(--bg); border-color: var(--fg); }
@@ -605,3 +600,100 @@ span.wm-pip { display: inline-grid; place-items: center; height: 48px; }
 .ls-foot { flex: none; display: grid; gap: 6px; border-top: 1px solid var(--line); background: var(--card); padding: 6px max(16px, env(safe-area-inset-right, 0px)) calc(8px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
 .ls-foot .savebar { position: static; background: transparent; padding: 0; }
 .ov-root[data-type="lift"]:not([hidden]) ~ .toast { bottom: auto; top: calc(64px + env(safe-area-inset-top, 0px)); }
+
+/* ---------- Version 19: the figure, the guide ---------- */
+.figs { display: block; width: 100%; height: auto; background: var(--card); border: 1px solid var(--line); border-radius: 12px; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.figs .fgb { stroke: var(--fg); }
+.figs .fgb.fgfill { fill: var(--fg); stroke: none; }
+.figs .fgfar { stroke: color-mix(in srgb, var(--fg) 42%, var(--card)); }
+.figs .fgfar.fgfill { fill: color-mix(in srgb, var(--fg) 42%, var(--card)); stroke: none; }
+.figs .fgh { stroke: var(--card); }
+.figs .fge { stroke: var(--muted); }
+.figs .fge.fgfill { fill: var(--muted); stroke: none; }
+.figs .fgpad { stroke: color-mix(in srgb, var(--muted) 62%, var(--card)); }
+.figs .fgpad.fgfill { fill: color-mix(in srgb, var(--muted) 62%, var(--card)); stroke: none; }
+.figs .fgsoft { opacity: .45; }
+.figs .fgw { stroke: var(--accent); stroke-width: 2.4; }
+.figs .fgw.fgfill { fill: var(--accent); stroke: none; }
+.figs .fgc { stroke: var(--muted); }
+.figs .fgl { stroke: var(--line); stroke-width: 1.5; }
+.figs .fgm { fill: var(--accent); stroke: var(--card); stroke-width: 1.2; }
+.figs .fgmt { fill: var(--accent-ink); font: 700 6px var(--body); stroke: none; }
+
+/* --- v19: the figure player --- */
+.fig { display: grid; gap: 6px; min-width: 0; }
+.fig .figs { max-height: 44vh; }
+.figinfo { display: grid; gap: 4px; min-width: 0; align-content: start; }
+.figphase { font-family: var(--display); font-size: 1.0625rem; font-weight: 600; text-transform: var(--caps); letter-spacing: var(--track); min-height: 1.3em; line-height: 1.3; }
+.figlegend { display: grid; gap: 3px; font-size: .8125rem; line-height: 1.25; color: var(--muted); }
+.figlegend span { display: flex; gap: 6px; align-items: flex-start; text-align: left; }
+.figlegend b { flex: none; width: 1.4em; height: 1.4em; border-radius: 50%; background: var(--soft); color: var(--muted); font-size: .6875rem; display: inline-grid; place-items: center; }
+.figlegend span.on { color: var(--fg); }
+.figlegend span.on b { background: var(--accent); color: var(--accent-ink); }
+.figbar { display: flex; align-items: center; gap: 8px; min-height: 44px; }
+.figplay { flex: none; width: 44px; min-height: 44px; padding: 0; border-radius: 50%; font-size: .8125rem; line-height: 1; }
+.figscrub { flex: 1 1 auto; min-width: 0; height: 44px; margin: 0; padding: 0; border: 0; background: transparent; accent-color: var(--accent); }
+.fig .figview { flex: none; min-height: 44px; }
+.fig.compact { grid-template-columns: minmax(0, 46%) minmax(0, 1fr); column-gap: 10px; align-items: center; text-align: left; }
+.fig.compact .figs { max-height: 132px; }
+.fig.compact .figbar { grid-column: 1 / -1; }
+.fig.compact .figlegend { font-size: .75rem; }
+.wm-demo { width: 100%; }
+/* --- v19: the how-to card --- */
+.gcard { display: grid; gap: 14px; text-align: left; }
+.gsec { display: grid; gap: 6px; min-width: 0; }
+.gsec h4 { font-family: var(--display); font-size: .8125rem; font-weight: 600; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); margin: 0; }
+.gsec p { margin: 0; }
+.gsec ol { margin: 0; padding-left: 22px; display: grid; gap: 5px; }
+.gsec ol li::marker { font-weight: 700; color: var(--accent); }
+.gmis { display: grid; gap: 1px; padding: 8px 10px; background: var(--soft); border-radius: 8px; font-size: .9375rem; }
+.gmis span::before { content: "Fix: "; font-weight: 600; color: var(--good); }
+.galt { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); }
+.galt:first-of-type { border-top: 0; padding-top: 0; }
+.galt p { font-size: .9375rem; }
+.galt button { flex: none; min-height: 40px; }
+.gset { display: flex; gap: 8px; align-items: center; }
+.gset input { flex: 1 1 auto; min-width: 0; font-size: 1rem; }
+.gset button { flex: none; min-height: 44px; }
+.geasy { background: var(--warn-soft); }
+.mmwrap { display: grid; grid-template-columns: minmax(0, 150px) 1fr; gap: 12px; align-items: center; }
+.mmap { display: block; width: 100%; height: auto; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.mmap .mmb { --c: var(--soft); }
+.mmap .mm { --c: color-mix(in srgb, var(--muted) 34%, var(--card)); }
+.mmap .mm.also { --c: color-mix(in srgb, var(--accent) 48%, var(--card)); }
+.mmap .mm.on { --c: var(--accent); }
+.mmap .mmf { fill: var(--c); stroke: none; }
+.mmap .mmo { stroke: var(--c); stroke-width: 3; }
+.mmap .mml { stroke: var(--c); }
+.mmap .mmt { fill: var(--muted); font: 600 7.5px var(--body); stroke: none; }
+.mmkey { display: grid; gap: 6px; font-size: .9375rem; }
+.mmkey p { display: flex; gap: 8px; align-items: baseline; }
+.mmdot { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+.mmdot.also { background: color-mix(in srgb, var(--accent) 48%, var(--card)); }
+/* --- v19: the guide sheet, above the lift sheet and below live mode --- */
+.gd-root { z-index: 32; }
+.ov.gd { display: flex; flex-direction: column; gap: 0; padding: 0; overflow: hidden; }
+.ov.gd.gdin { animation: mlRise .2s ease-out both; }
+.gd-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: grid; gap: 14px; align-content: start; padding: 12px max(16px, env(safe-area-inset-right, 0px)) calc(20px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+/* --- v19: the guide in the lift sheet and in live mode --- */
+.exname { border: 0; background: transparent; padding: 0; min-height: 0; font: inherit; color: inherit; text-align: left; border-radius: 4px; text-decoration: underline dotted color-mix(in srgb, var(--muted) 70%, transparent); text-underline-offset: 4px; }
+.blk .bhead h3 .exname { padding: 6px 0; margin: -6px 0; }
+.myset { font-size: .8125rem; line-height: 1.3; min-height: 1.3em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; } /* the least height keeps a clipped line from folding to nothing in a full grid */
+.wm-body > .myset { font-size: .875rem; }
+.wm-howbtn { justify-self: start; }
+.wm-center .wm-howbtn { justify-self: center; }
+.wm-howcard { justify-self: stretch; width: 100%; border-top: 1px solid var(--line); padding-top: 12px; }
+.wm-strow { display: flex; gap: 8px; align-items: stretch; }
+.wm-strow > .wm-btn:first-child { flex: 1 1 auto; min-width: 0; }
+.wm-strow > .wm-btn.sm { flex: none; }
+.wm-strow .wm-btn > span { text-align: left; min-width: 0; }
+.wm-strow .myset { display: block; font-weight: 400; }
+/* a screen with a picture starts at the top: centred content taller than the screen would lose its top */
+.wm-body.wm-hasdemo { align-content: start; }
+/* --- v19: the exercise guide library --- */
+.glgroup { border-top: 1px solid var(--line); padding-top: 8px; }
+.glgroup > summary { min-height: 36px; color: var(--fg); font-size: .9375rem; font-weight: 600; }
+.gllist { display: grid; }
+.glrow { display: grid; gap: 1px; text-align: left; border: 0; border-top: 1px solid var(--line); border-radius: 0; background: transparent; padding: 8px 0; min-height: 48px; width: 100%; }
+.glrow:first-child { border-top: 0; }
+.glrow .gln { font-weight: 500; }
