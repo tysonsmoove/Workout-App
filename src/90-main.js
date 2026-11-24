@@ -134,7 +134,7 @@ document.addEventListener('click', e => {
   const el = e.target.closest('[data-a]'); if (!el || el.disabled) return;
   const a = el.dataset.a, fn = ACT[a]; if (!fn) return;
   if (el.tagName === 'A') e.preventDefault();
-  if (main.contains(el) || ovRoot.contains(el)) typing = false;
+  if ((main.contains(el) || ovRoot.contains(el)) && !el.closest('#rest')) typing = false; // the rest bar's buttons leave the field being typed in alone
   if (!ONE_AT_A_TIME.includes(a)) { fn(el, e); return; }
   if (busy[a]) return;
   busy[a] = true;
@@ -236,7 +236,9 @@ function save() {
     state.formError[date] = r.errors[0]; refreshLive(date); toast(r.errors[0], 3200);
     const k = Object.keys(EX).find(k => r.errors[0].startsWith(EX[k].name)); const inp = k ? document.getElementById('w-' + k) : null; if (inp) inp.focus(); return;
   }
-  delete state.formError[date]; state.menu = null; typing = false;
+  delete state.formError[date]; state.menu = null;
+  if (document.activeElement && ovRoot.contains(document.activeElement) && document.activeElement.blur) document.activeElement.blur(); // a field that kept the cursor would hold back the redraw after a failed save
+  typing = false;
   const note = saveNote(date, m), before = scoreSnapshot();
   // a weight above last time's is a milestone (assisted pull-up: less assistance)
   const up = r.kind === 'strength' && Object.keys(r.doc.ex).some(k => { const l = lastLog(k, date), w = r.doc.ex[k].w; return !EX[k].bw && l && l.w != null && isNum(w) && (EX[k].inc < 0 ? w < l.w : w > l.w); });

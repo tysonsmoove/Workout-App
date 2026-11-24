@@ -20,8 +20,9 @@ const wmElapsed = () => wm.ms + (Date.now() - wm.started);
 /* --- opening and closing --- */
 function wmOpen(plan, fromEl, resume) {
   if (wm) return;
+  const held = state.ov ? state.ovQ.slice() : []; // a badge or a week's result waiting behind the sheet: shown when the session closes
   if (state.ov) { state.ov = null; state.ovQ = []; renderOv(); }
-  wm = { pid: me(), date: state.selDate, plan, view: 'start', before: scoreSnapshot(), started: Date.now(), ms: 0, stale: false, i: -1, edit: null, quit: 0 };
+  wm = { pid: me(), date: state.selDate, plan, held, view: 'start', before: scoreSnapshot(), started: Date.now(), ms: 0, stale: false, i: -1, edit: null, quit: 0 };
   if (plan.kind === 'lift') wmLiftInit(resume); else wmStagesInit(resume);
   if (motionOf() !== 'full' || resume) wm.view = 'main'; // the start lights belong to Full animations, and never play when coming back
   if (fromEl && fromEl.getBoundingClientRect) { const r = fromEl.getBoundingClientRect(); wmEl.style.transformOrigin = Math.round(r.left + r.width / 2) + 'px ' + Math.round(r.top + r.height / 2) + 'px'; }
@@ -41,8 +42,10 @@ function wmClose() {
   clearInterval(wm.tick); clearTimeout(wm.go);
   try { if (wm.lock) wm.lock.release(); } catch (e) { /* already gone */ }
   try { if (wm.fs && (document.fullscreenElement || document.webkitFullscreenElement)) { const x = document.exitFullscreen || document.webkitExitFullscreen; if (x) { const pr = x.call(document); if (pr && pr.catch) pr.catch(() => {}); } } } catch (e) { /* not in full screen */ }
+  const held = wm.held || [];
   wm = null; wmEl.hidden = true; wmEl.innerHTML = ''; wmEl.classList.remove('zoom'); document.body.style.overflow = '';
   render();
+  held.forEach(o => queueOv(o));
 }
 // Leaving keeps everything: the lift draft is already saved as typed; a timed session is paused and remembered.
 function wmKeep() {

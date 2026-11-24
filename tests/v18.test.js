@@ -254,6 +254,9 @@ const FULLA = [['squat', 3], ['dbbench', 3], ['latpull', 3], ['dbshoulder', 2], 
     check('F "Go live" in the head starts live mode on the same draft and closes the sheet', (await txt(page, '#wmName')) === 'Barbell back squat' && same(await page.$$eval('#wmPips .wm-pip', els => els.map(p => p.className.includes(' on') ? p.textContent : '-')), ['9', '-', '-']) && (await page.evaluate(() => !document.getElementById('liftSheet') && window.MorningLaps.restT.end === 0)));
     await page.click('#wmLog'); if (await wmv() === 'rest') { await page.click('#wmRestSkip'); await waitView('main'); }
     await page.click('[data-a="wm-quit"]'); await page.click('#wmQuitKeep'); await page.waitForSelector('#wm', { state: 'hidden' });
+    await tap('#addBtn'); await page.waitForSelector('#addGrid');
+    check('F with sets typed and not saved, the Add sheet does not offer a rest day (it would discard them)', !(await has(page, '#addRest')));
+    await page.click('#ov [data-a="ov-close"]'); await noOv();
     check('F a live session in progress shows on the Today card with "Resume workout"', (await txt(page, '#wmGoing')).includes('Workout in progress') && (await txt(page, '#wmResume')) === 'Resume workout');
     await tap('[data-row="draft"]'); await page.waitForSelector('#liftSheet');
     check('F and the sheet head offers "Resume workout", with the live sets in the form', (await txt(page, '#wmStart')) === 'Resume workout' && await val(page, '#r-squat-1') === '9');
@@ -326,6 +329,13 @@ const FULLA = [['squat', 3], ['dbbench', 3], ['latpull', 3], ['dbshoulder', 2], 
     await page.click('#wmDoneBtn'); await page.waitForSelector('#wm', { state: 'hidden' });
     const lr = await ses(page, WED);
     check('A a finished live walk comes back to Today as a row, saved with no check-in', lr.kind === 'activity' && lr.acts[0].a === 'hptrack' && lr.acts[0].min === 12 && lr.acts[0].note === '8 laps (1.0 mi)' && !lr.checkin && same(await rows(), ['Track walk | 12 min · 1.0 mi']), JSON.stringify([lr.acts, await rows()]));
+    // a timed session left in progress is resumed from Add, never replaced
+    await tap('#addBtn'); await tap('#addCardio'); await page.click('[data-a="add-cardio-live"][data-k="hpswim"]'); await page.waitForSelector('#wm:not([hidden])'); await waitView('main');
+    for (let i = 0; i < 3; i++) await page.click('#wmLap'); await page.click('[data-a="wm-quit"]'); await page.click('#wmQuitKeep'); await page.waitForSelector('#wm', { state: 'hidden' });
+    await tap('#addBtn'); await tap('#addCardio'); await page.click('[data-a="add-cardio-live"][data-k="hptrack"]'); await page.waitForSelector('#wm:not([hidden])'); await waitView('main');
+    const keep = await page.evaluate(() => { const w = window.MorningLaps.wmState(); return [w.plan.stages[0].act, w.st[0].laps]; });
+    check('A with a timed session in progress, starting another from Add resumes the one in progress with its laps', same(keep, ['hpswim', 3]), JSON.stringify(keep));
+    await page.click('#wmFinish'); await waitView('finish'); await page.click('#wmSave'); await page.waitForSelector('#wmDoneBtn'); await page.click('#wmDoneBtn'); await page.waitForSelector('#wm', { state: 'hidden' });
     await tap('#addBtn'); await page.waitForSelector('#addGrid'); await tap('#addRecovery'); await page.waitForSelector('#wm:not([hidden])'); await waitView('main');
     const l3 = await page.evaluate(() => window.MorningLaps.wmState().plan.stages.map(s => s.type));
     check('A Recovery starts the live recovery session: easy walk, stretch, then a room', same(l3, ['laps', 'stretch', 'heat']), JSON.stringify(l3));

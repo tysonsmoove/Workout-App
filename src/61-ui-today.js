@@ -83,10 +83,17 @@ function recoveryStages(pid) {
   return [stageFor(k, 10), { type: 'stretch', act: k, name: 'Stretch', min: 5, rounds: 1 }].concat(heat);
 }
 const machineKey = pid => atHealthplex(pid) ? 'hpcircuit' : 'machines';
+// Start a timed live session from the Add sheet. One already in progress on this day is resumed, never replaced:
+// starting another would overwrite its laps and its clock.
+function addLive(plan, el) {
+  const r = wmResumable(me(), state.selDate);
+  if (r && r.kind === 'stages') { ACT['wm-resume'](el); toast('Back in the workout already in progress. Finish or leave it first.', 3600); return; }
+  wmOpen(plan, el);
+}
 OV.add = {
   html: o => {
     const pid = me(), date = o.date, program = P(pid).plan === 'program', live = modeOf(pid) === 'live', hp = atHealthplex(pid), isToday = date === todayIso();
-    const rec = state.sessions[date], n = rec ? normalize(rec) : null, logged = !!(n && (n.program || n.kind === 'rest' || n.acts.length));
+    const rec = state.sessions[date], n = rec ? normalize(rec) : null, logged = !!(n && (n.program || n.kind === 'rest' || n.acts.length)) || (program && draftTyped(state.drafts[date])); // a typed draft counts: a rest day would discard it
     const big = (id, a, icon, title, sub) => '<button type="button" class="addc" id="' + id + '" data-a="' + a + '"><span class="ai" aria-hidden="true">' + icon + '</span><span class="tr-t"><b>' + title + '</b><span class="tiny muted">' + sub + '</span></span></button>';
     let h = '<div class="ov addsheet" role="dialog" aria-modal="true" aria-label="Add to ' + (isToday ? 'today' : nice(date)) + '">' + ovHead('Add to ' + (isToday ? 'today' : nice(date)), live ? 'Go live is on: Lift, Cardio and Recovery start a live session' : 'Log it is on: each one opens a short sheet');
     if (o.step === 'cardio') // Go live: which cardio, then straight into the session
@@ -114,7 +121,7 @@ ACT['add-lift'] = el => {
   const pid = me(), date = state.selDate, live = modeOf(pid) === 'live';
   if (P(pid).plan !== 'program') { // the machine circuit, logged as minutes
     const k = machineKey(pid), a = ACTS[k];
-    if (live) wmOpen(stagePlan(a.name, null, [stageFor(k)]), el);
+    if (live) addLive(stagePlan(a.name, null, [stageFor(k)]), el);
     else openOv({ type: 'act', k, date, min: String(a.min), feel: null, hurt: false, note: '', name: '' });
     return;
   }
@@ -128,14 +135,15 @@ ACT['add-cardio'] = () => {
   if (modeOf(pid) === 'live') { state.ov.step = 'cardio'; renderOv(); return; }
   openCilog(state.selDate, null, 'Cardio', [{ opts, k: opts[0][0], min: 25 }], false, 'add');
 };
-ACT['add-cardio-live'] = el => { const k = el.dataset.k; if (k !== 'treadmill' && !ACTS[k]) return; wmOpen(stagePlan('Cardio', null, [cardioStage(k)]), el); };
+ACT['add-cardio-live'] = el => { const k = el.dataset.k; if (k !== 'treadmill' && !ACTS[k]) return; addLive(stagePlan('Cardio', null, [cardioStage(k)]), el); };
 ACT['add-recovery'] = el => {
   const pid = me();
-  if (modeOf(pid) === 'live') { wmOpen(stagePlan('Recovery', null, recoveryStages(pid)), el); return; }
+  if (modeOf(pid) === 'live') { addLive(stagePlan('Recovery', null, recoveryStages(pid)), el); return; }
   openCilog(state.selDate, null, 'Recovery', STRETCH_PART, atHealthplex(pid), 'add');
 };
 ACT['add-rest'] = async () => {
   const pid = me(), date = state.selDate, before = scoreSnapshot();
+  if (P(pid).plan === 'program' && draftTyped(state.drafts[date])) { closeOv(); toast('There are unsaved sets for this day. Save or discard them first.', 3600); return; }
   if (P(pid).plan === 'program') { const d = draft(date); d.kindSel = 'rest'; persistDrafts(); closeOv(); const ok = await save(); if (!ok) render(); return; }
   const ok = await logRest(date); if (!ok) return;
   markRow(date, 'prog'); closeOv(); render(); celebrate('Rest day logged. Recovery is part of the plan.', { before });

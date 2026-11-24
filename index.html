@@ -3259,7 +3259,7 @@ function renderProgram() {
   const fullSplit = splitOf() === 'full', rot = rotation(), lg = liveGoals(me()).liftGoal;
   let h = gymBannerHTML() + '<section class="card stack" id="splitCard"><div class="row between"><h3>Split</h3><span class="tiny muted">changes the next lift, never your history</span></div>' +
     '<div class="seg" aria-label="Split"><button type="button" data-a="split-set" data-v="full" class="' + (fullSplit ? 'on' : '') + '" aria-pressed="' + fullSplit + '">Full body A/B</button><button type="button" data-a="split-set" data-v="ppl" class="' + (fullSplit ? '' : 'on') + '" aria-pressed="' + !fullSplit + '">Push / Pull / Legs</button></div>' +
-    '<p class="tiny muted">' + (fullSplit ? 'Two sessions train everything, so a week with only two lifts still covers the whole body. A and B alternate after each counted lift day.' : 'Three sessions train everything. Each day repeats once the other two are done.') + '</p></section>' + renderMorning(phase, liftKindFor(t)) + gymCardHTML() +
+    '<p class="tiny muted">' + (fullSplit ? 'Two sessions train everything, so a week with only two lifts still covers the whole body. A and B alternate after each counted lift day.' : 'Three sessions train everything. Each day repeats once the other two are done.') + '</p></section>' + renderMorning(phase, kindFor(t, model(t)) === 'rest' ? 'rest' : liftKindFor(t)) + gymCardHTML() +
     '<section class="card"><div class="eyebrow">How the rotation works</div><h2>' + (fullSplit ? 'Full Body A → B, repeat' : 'Push → Pull → Legs, repeat') + '</h2>' +
     '<p style="margin-top:8px">Days aren\'t tied to weekdays. The next lift is the one after your last <b>counted</b> lift day. Skip a morning and nothing goes out of sync. ' + (fullSplit ? 'Every session opens with a 5 to 10 minute warm-up on the track, treadmill or bike.' : 'Every session opens with a Fitness+ treadmill workout.') + ' Aim for ' + ws.goal + ' activity days a week: ' + ws.liftGoal + ' lifts, the rest treadmill-only or any ' + minMin(me()) + '-minute activity.</p></section>';
   const upcoming = nextDayKey(addDays(t, 1)); const lastL = lastLift(addDays(t, 1));
@@ -3523,10 +3523,17 @@ function recoveryStages(pid) {
   return [stageFor(k, 10), { type: 'stretch', act: k, name: 'Stretch', min: 5, rounds: 1 }].concat(heat);
 }
 const machineKey = pid => atHealthplex(pid) ? 'hpcircuit' : 'machines';
+// Start a timed live session from the Add sheet. One already in progress on this day is resumed, never replaced:
+// starting another would overwrite its laps and its clock.
+function addLive(plan, el) {
+  const r = wmResumable(me(), state.selDate);
+  if (r && r.kind === 'stages') { ACT['wm-resume'](el); toast('Back in the workout already in progress. Finish or leave it first.', 3600); return; }
+  wmOpen(plan, el);
+}
 OV.add = {
   html: o => {
     const pid = me(), date = o.date, program = P(pid).plan === 'program', live = modeOf(pid) === 'live', hp = atHealthplex(pid), isToday = date === todayIso();
-    const rec = state.sessions[date], n = rec ? normalize(rec) : null, logged = !!(n && (n.program || n.kind === 'rest' || n.acts.length));
+    const rec = state.sessions[date], n = rec ? normalize(rec) : null, logged = !!(n && (n.program || n.kind === 'rest' || n.acts.length)) || (program && draftTyped(state.drafts[date])); // a typed draft counts: a rest day would discard it
     const big = (id, a, icon, title, sub) => '<button type="button" class="addc" id="' + id + '" data-a="' + a + '"><span class="ai" aria-hidden="true">' + icon + '</span><span class="tr-t"><b>' + title + '</b><span class="tiny muted">' + sub + '</span></span></button>';
     let h = '<div class="ov addsheet" role="dialog" aria-modal="true" aria-label="Add to ' + (isToday ? 'today' : nice(date)) + '">' + ovHead('Add to ' + (isToday ? 'today' : nice(date)), live ? 'Go live is on: Lift, Cardio and Recovery start a live session' : 'Log it is on: each one opens a short sheet');
     if (o.step === 'cardio') // Go live: which cardio, then straight into the session
@@ -3554,7 +3561,7 @@ ACT['add-lift'] = el => {
   const pid = me(), date = state.selDate, live = modeOf(pid) === 'live';
   if (P(pid).plan !== 'program') { // the machine circuit, logged as minutes
     const k = machineKey(pid), a = ACTS[k];
-    if (live) wmOpen(stagePlan(a.name, null, [stageFor(k)]), el);
+    if (live) addLive(stagePlan(a.name, null, [stageFor(k)]), el);
     else openOv({ type: 'act', k, date, min: String(a.min), feel: null, hurt: false, note: '', name: '' });
     return;
   }
@@ -3568,14 +3575,15 @@ ACT['add-cardio'] = () => {
   if (modeOf(pid) === 'live') { state.ov.step = 'cardio'; renderOv(); return; }
   openCilog(state.selDate, null, 'Cardio', [{ opts, k: opts[0][0], min: 25 }], false, 'add');
 };
-ACT['add-cardio-live'] = el => { const k = el.dataset.k; if (k !== 'treadmill' && !ACTS[k]) return; wmOpen(stagePlan('Cardio', null, [cardioStage(k)]), el); };
+ACT['add-cardio-live'] = el => { const k = el.dataset.k; if (k !== 'treadmill' && !ACTS[k]) return; addLive(stagePlan('Cardio', null, [cardioStage(k)]), el); };
 ACT['add-recovery'] = el => {
   const pid = me();
-  if (modeOf(pid) === 'live') { wmOpen(stagePlan('Recovery', null, recoveryStages(pid)), el); return; }
+  if (modeOf(pid) === 'live') { addLive(stagePlan('Recovery', null, recoveryStages(pid)), el); return; }
   openCilog(state.selDate, null, 'Recovery', STRETCH_PART, atHealthplex(pid), 'add');
 };
 ACT['add-rest'] = async () => {
   const pid = me(), date = state.selDate, before = scoreSnapshot();
+  if (P(pid).plan === 'program' && draftTyped(state.drafts[date])) { closeOv(); toast('There are unsaved sets for this day. Save or discard them first.', 3600); return; }
   if (P(pid).plan === 'program') { const d = draft(date); d.kindSel = 'rest'; persistDrafts(); closeOv(); const ok = await save(); if (!ok) render(); return; }
   const ok = await logRest(date); if (!ok) return;
   markRow(date, 'prog'); closeOv(); render(); celebrate('Rest day logged. Recovery is part of the plan.', { before });
@@ -3983,8 +3991,9 @@ const wmElapsed = () => wm.ms + (Date.now() - wm.started);
 /* --- opening and closing --- */
 function wmOpen(plan, fromEl, resume) {
   if (wm) return;
+  const held = state.ov ? state.ovQ.slice() : []; // a badge or a week's result waiting behind the sheet: shown when the session closes
   if (state.ov) { state.ov = null; state.ovQ = []; renderOv(); }
-  wm = { pid: me(), date: state.selDate, plan, view: 'start', before: scoreSnapshot(), started: Date.now(), ms: 0, stale: false, i: -1, edit: null, quit: 0 };
+  wm = { pid: me(), date: state.selDate, plan, held, view: 'start', before: scoreSnapshot(), started: Date.now(), ms: 0, stale: false, i: -1, edit: null, quit: 0 };
   if (plan.kind === 'lift') wmLiftInit(resume); else wmStagesInit(resume);
   if (motionOf() !== 'full' || resume) wm.view = 'main'; // the start lights belong to Full animations, and never play when coming back
   if (fromEl && fromEl.getBoundingClientRect) { const r = fromEl.getBoundingClientRect(); wmEl.style.transformOrigin = Math.round(r.left + r.width / 2) + 'px ' + Math.round(r.top + r.height / 2) + 'px'; }
@@ -4004,8 +4013,10 @@ function wmClose() {
   clearInterval(wm.tick); clearTimeout(wm.go);
   try { if (wm.lock) wm.lock.release(); } catch (e) { /* already gone */ }
   try { if (wm.fs && (document.fullscreenElement || document.webkitFullscreenElement)) { const x = document.exitFullscreen || document.webkitExitFullscreen; if (x) { const pr = x.call(document); if (pr && pr.catch) pr.catch(() => {}); } } } catch (e) { /* not in full screen */ }
+  const held = wm.held || [];
   wm = null; wmEl.hidden = true; wmEl.innerHTML = ''; wmEl.classList.remove('zoom'); document.body.style.overflow = '';
   render();
+  held.forEach(o => queueOv(o));
 }
 // Leaving keeps everything: the lift draft is already saved as typed; a timed session is paused and remembered.
 function wmKeep() {
@@ -5577,7 +5588,7 @@ document.addEventListener('click', e => {
   const el = e.target.closest('[data-a]'); if (!el || el.disabled) return;
   const a = el.dataset.a, fn = ACT[a]; if (!fn) return;
   if (el.tagName === 'A') e.preventDefault();
-  if (main.contains(el) || ovRoot.contains(el)) typing = false;
+  if ((main.contains(el) || ovRoot.contains(el)) && !el.closest('#rest')) typing = false; // the rest bar's buttons leave the field being typed in alone
   if (!ONE_AT_A_TIME.includes(a)) { fn(el, e); return; }
   if (busy[a]) return;
   busy[a] = true;
@@ -5679,7 +5690,9 @@ function save() {
     state.formError[date] = r.errors[0]; refreshLive(date); toast(r.errors[0], 3200);
     const k = Object.keys(EX).find(k => r.errors[0].startsWith(EX[k].name)); const inp = k ? document.getElementById('w-' + k) : null; if (inp) inp.focus(); return;
   }
-  delete state.formError[date]; state.menu = null; typing = false;
+  delete state.formError[date]; state.menu = null;
+  if (document.activeElement && ovRoot.contains(document.activeElement) && document.activeElement.blur) document.activeElement.blur(); // a field that kept the cursor would hold back the redraw after a failed save
+  typing = false;
   const note = saveNote(date, m), before = scoreSnapshot();
   // a weight above last time's is a milestone (assisted pull-up: less assistance)
   const up = r.kind === 'strength' && Object.keys(r.doc.ex).some(k => { const l = lastLog(k, date), w = r.doc.ex[k].w; return !EX[k].bw && l && l.w != null && isNum(w) && (EX[k].inc < 0 ? w < l.w : w > l.w); });
