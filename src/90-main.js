@@ -181,7 +181,7 @@ document.addEventListener('keydown', e => {
 function onCollapse(ev) { const key = ev.currentTarget.dataset.collapse; const d = draft(state.selDate); d.closed[key] = true; persistDrafts(); render('[data-menu="' + key + '"]'); }
 function menuAction(act, b) {
   const key = b.dataset.key; const date = state.selDate;
-  if (act === 'howto') { state.menu = null; render(); guideOpen(key, { from: 'lift', base: b.dataset.base || key, sel: '[data-menu="' + key + '"]' }); return; }
+  if (act === 'howto') { state.menu = null; render(); guideOpen(key, { from: 'lift', base: b.dataset.base || key, sel: '[data-a="guide-open"][data-base="' + (b.dataset.base || key) + '"]' }); return; }
   if (act === 'swap') { state.menu = { key, view: 'swap' }; render('.menu [role="menuitem"]'); return; }
   if (act === 'back') { state.menu = { key, view: 'main' }; render('.menu [role="menuitem"]'); return; }
   if (act === 'swapto') { const d = draft(date); d.swaps[b.dataset.base] = b.dataset.to; d.recovered = false; state.menu = null; persistDrafts(); render('[data-menu="' + b.dataset.to + '"]'); return; }
@@ -266,6 +266,7 @@ function route() {
   const h = (location.hash || '#train').slice(1), tab = TABS.includes(h) ? h : 'train', changed = tab !== state.tab;
   state.tab = tab; state.confirmRemove = null; state.menu = null; typing = false;
   const jump = state.scrollTo, then = state.afterRoute; state.afterRoute = null;
+  if (changed && state.guide) guideClose(); // a guide belongs to the screen it was opened from
   if (changed && liftOpen()) closeOv(); // the lift sheet belongs to Train
   render();
   if (changed && !jump) window.scrollTo(0, 0);

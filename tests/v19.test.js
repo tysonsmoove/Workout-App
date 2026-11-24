@@ -295,7 +295,7 @@ const FULLA = [['squat', 3], ['dbbench', 3], ['latpull', 3], ['dbshoulder', 2], 
     check('C the station and stretch cards are written gently', ge.gentle.length === 0, JSON.stringify(ge.gentle));
     await openLib('hp', 'st_legpress');
     const onScreen = await page.evaluate(() => { const e = document.querySelector('#guideSheet .geasy'), f = document.querySelector('#guideSheet .fig'); return e ? { text: e.textContent, afterFig: !!(f.compareDocumentPosition(e) & 4), firstInCard: e.parentNode.firstElementChild === e } : null; });
-    check('C on screen the note sits right under the picture, before the equipment', onScreen && onScreen.afterFig && onScreen.firstInCard && /knees/.test(onScreen.text), JSON.stringify(onScreen));
+    check('C on screen the note sits right under the picture, before the demo link and the equipment', onScreen && onScreen.afterFig && onScreen.firstInCard && /knees/.test(onScreen.text) && (await page.evaluate(() => { const e = document.querySelector('#guideSheet .geasy'); return e.nextElementSibling.classList.contains('gwatch') && e.nextElementSibling.nextElementSibling.dataset.sec === 'equip'; })), JSON.stringify(onScreen));
   });
 
   // ---------- L: the guide in the lift sheet ----------
@@ -626,8 +626,8 @@ const FULLA = [['squat', 3], ['dbbench', 3], ['latpull', 3], ['dbshoulder', 2], 
     check('Y the search is for the exact exercise', q('dbrdl') === 'dumbbell romanian deadlift proper form' && q('squat') === 'barbell back squat proper form' && q('pecdeck') === 'pec deck chest fly machine proper form' && q('st_legpress') === 'leg press machine proper form' && q('sx_calf') === 'standing calf stretch how to' && q('sx_child') === 'child\'s pose stretch how to' && new Set(links.map(l => l.q)).size >= 42, JSON.stringify(['dbrdl', 'pecdeck', 'st_legpress', 'sx_calf', 'sx_child'].map(q)));
     await ctx.route(/youtube\.com/, r => r.fulfill({ status: 200, contentType: 'text/html', body: '<title>stub</title>' })); // the test never reaches the real site
     await openLib('fbb', 'dbrdl');
-    const on = await page.evaluate(() => { const a = document.querySelector('#guideSheet a[data-watch]'), r = a.getBoundingClientRect(); return { href: a.getAttribute('href'), h: r.height, note: a.parentNode.textContent, embeds: document.querySelectorAll('iframe, video, embed, object, audio').length, firstInCard: a.closest('.gcard').firstElementChild === a.parentNode }; });
-    check('Y on screen it is the first thing on the card, a 44 px tap target, and says where it goes', on.href === 'https://www.youtube.com/results?search_query=dumbbell+romanian+deadlift+proper+form' && on.h >= 44 && /outside the app/.test(on.note) && on.firstInCard, JSON.stringify(on));
+    const on = await page.evaluate(() => { const a = document.querySelector('#guideSheet a[data-watch]'), r = a.getBoundingClientRect(); return { href: a.getAttribute('href'), h: r.height, note: a.parentNode.textContent, embeds: document.querySelectorAll('iframe, video, embed, object, audio').length, firstInCard: a.closest('.gcard').firstElementChild === a.parentNode, beforeEquip: a.parentNode.nextElementSibling.dataset.sec === 'equip' }; });
+    check('Y on screen it is the first thing on the card, a 44 px tap target, and says where it goes', on.href === 'https://www.youtube.com/results?search_query=dumbbell+romanian+deadlift+proper+form' && on.h >= 44 && /outside the app/.test(on.note) && on.firstInCard && on.beforeEquip, JSON.stringify(on));
     const here = page.url();
     const [pop] = await Promise.all([ctx.waitForEvent('page'), page.click('#guideSheet a[data-watch]')]);
     await pop.waitForLoadState('domcontentloaded').catch(() => {});
@@ -746,6 +746,59 @@ const FULLA = [['squat', 3], ['dbbench', 3], ['latpull', 3], ['dbshoulder', 2], 
     check('S every sheet and live-mode screen was shown: ' + screens.length, screens.length >= 170 && ['tyson date sheet', 'tyson add sheet', 'tyson health sheet', 'tyson cardio sheet', 'tyson recovery sheet', 'tyson something else', 'tyson show all', 'tyson activity sheet', 'tyson class or game', 'lift sheet', 'lift sheet, treadmill', 'lift sheet, rest', 'lift sheet, exercise menu', 'lift sheet guide, from the menu', 'lift sheet guide, from the name', 'warm-up', 'lift', 'lift how to', 'lift, front view', 'swap', 'lift finish', 'quit', 'laps', 'lengths', 'timer', 'recovery', 'stretch', 'stretch how to', 'heat', 'jacquie date sheet', 'jacquie add sheet', 'jacquie something else', 'her machine circuit', 'her log sheet', 'her laps', 'circuit', 'circuit how to 0', 'circuit how to 3', 'her finish', 'her stretch', 'her stretch how to', 'her heat', 'tyson library search', 'jacquie library search'].every(s => screens.includes(s)), screens.filter(s => !/ guide /.test(s)).join(', '));
     check('S at 390 px wide nothing scrolls sideways', wide.length === 0, wide.join(' '));
     check('S showing screens, sheets and guides writes nothing', (await writes(page)).length === 0, JSON.stringify(await writes(page)));
+  });
+
+  // ---------- R: found in review ----------
+  await section('R', async () => {
+    await open({ me: 'tyson', init: local(seedDocs()) });
+    const uneven = await page.evaluate(() => { const F = window.MorningLaps.FIG, out = []; Object.keys(F).forEach(k => { [F[k].keys ? F[k] : null, F[k].front].forEach(v => { if (!v) return; const all = new Set(); v.keys.forEach(p => Object.keys(p).forEach(f => all.add(f)));
+      all.forEach(f => { const n = v.keys.filter(p => p[f] != null).length; if (n !== v.keys.length && v.keys.some(p => typeof p[f] === 'number' || Array.isArray(p[f]))) out.push(k + ':' + f); }); }); }); return out; });
+    check('R every number of a pose is in all poses of its animation, so nothing jumps where a rep starts', uneven.length === 0, uneven.join(' '));
+    const jump = await page.evaluate(() => { const M = window.MorningLaps, v = M.fgViewOf(M.fgDef('squat'), 'front'), a = M.fgFrontSolve(M.fgAt(v, 0).pose), b = M.fgFrontSolve(M.fgAt(v, 0.004).pose); return Math.abs(a.S[1] - b.S[1]); });
+    check('R the squat seen from the front starts moving smoothly: its shoulders do not jump on the first frame', jump < 0.2, String(jump));
+    // the guide over the lift sheet keeps the focus when the page is drawn again
+    await pick('strong'); await page.click('#ciLog'); await page.waitForSelector('#liftSheet');
+    await page.click('.exname[data-k="latpull"]'); await page.waitForSelector('#guideSheet'); await page.click('#gdSet'); await page.keyboard.type('Seat 4');
+    await page.evaluate(() => window.dispatchEvent(new HashChangeEvent('hashchange'))); // the same tab again: the page and the lift sheet under the guide are drawn again
+    const f1 = await page.evaluate(() => ({ id: document.activeElement.id, v: document.activeElement.value, guide: !!document.getElementById('guideSheet'), lift: !!document.getElementById('liftSheet') }));
+    check('R a redraw of the page under an open guide leaves the cursor in the settings field', f1.id === 'gdSet' && f1.v === 'Seat 4' && f1.guide && f1.lift, JSON.stringify(f1));
+    await page.keyboard.type(' · pad 3'); await page.keyboard.press('Enter'); await page.waitForFunction(() => (((JSON.parse(localStorage.getItem('ml.kv'))['profiles/tyson'] || {}).gear || {}).latpull || {}).note === 'Seat 4 · pad 3');
+    const f2 = await page.evaluate(() => ({ id: document.activeElement.id, inGuide: document.getElementById('gd').contains(document.activeElement), start: [document.activeElement.selectionStart, document.activeElement.value.length] }));
+    check('R after Save the cursor is still in the field, at the same place, not on a button of the sheet behind', f2.id === 'gdSet' && f2.inGuide && f2.start[0] === f2.start[1], JSON.stringify(f2));
+    // the picture starts over each time a guide opens
+    await page.click('#guideSheet .figplay'); check('R (paused by hand)', await page.evaluate(() => window.MorningLaps.figSt.gd.paused));
+    await page.click('#guideClose'); await page.waitForSelector('#guideSheet', { state: 'detached' }); await page.click('.exname[data-k="latpull"]'); await page.waitForSelector('#guideSheet');
+    const a0 = await svgOf('#guideSheet'); await page.clock.runFor(500);
+    check('R a guide that was paused opens playing again the next time', !(await page.evaluate(() => window.MorningLaps.figSt.gd.paused)) && (await svgOf('#guideSheet')) !== a0);
+    // Close after a swap from a menu-opened guide goes back to the exercise's name
+    await page.click('#guideClose'); await page.click('[data-menu="legcurl"]'); await page.click('.menu [data-act="howto"]'); await page.waitForSelector('#guideSheet[data-guide="legcurl"]');
+    await page.click('#guideSheet [data-a="guide-swap"]'); await page.waitForSelector('#guideSheet[data-guide="dbrdl"]'); await page.click('#guideClose'); await page.waitForSelector('#guideSheet', { state: 'detached' });
+    const f3 = await page.evaluate(() => ({ cls: document.activeElement.className, k: document.activeElement.dataset.k }));
+    check('R closing a guide opened from the menu, after a swap, puts the focus on the swapped exercise\'s name', f3.cls === 'exname' && f3.k === 'dbrdl', JSON.stringify(f3));
+    // leaving the tab with a guide open over the lift sheet closes both and unlocks the page
+    await page.click('.exname[data-k="squat"]'); await page.waitForSelector('#guideSheet'); await go(page, 'fuel');
+    const lv = await page.evaluate(() => ({ guide: window.MorningLaps.state.guide, gd: document.getElementById('gd').hidden, ov: window.MorningLaps.state.ov, lock: document.body.style.overflow, tab: window.MorningLaps.state.tab }));
+    check('R going to another tab closes the guide and the lift sheet under it, and the page scrolls again', lv.guide === null && lv.gd && !lv.ov && lv.lock === '' && lv.tab === 'fuel', JSON.stringify(lv));
+    await ctx.close();
+    // Animations Off: a guide that was played by hand opens as a still again
+    await open({ me: 'tyson', init: local(seedDocs({ tProfile: { motion: 'off' } })) });
+    await openLib('fba', 'squat'); await page.click('#guideSheet .figplay'); await page.clock.runFor(300); await page.click('#guideClose'); await openLib('fba', 'squat');
+    const st = await page.evaluate(() => ({ paused: window.MorningLaps.figSt.gd.paused, marks: document.querySelectorAll('#guideSheet svg.figs .fgm').length }));
+    check('R with Animations off, a guide played by hand opens as a still of the key position the next time', st.paused && st.marks === 2, JSON.stringify(st));
+    await ctx.close();
+    // live mode: a screen with "How to" open is where it was left after the End early screen and after Finish
+    await open({ me: 'tyson', init: local(seedDocs({ tProfile: { trainMode: 'live' } })) });
+    await pick('strong'); await page.click('#ciStart'); await page.waitForSelector('#wm:not([hidden])'); if (await wmv() === 'start') await page.click('#wmStartSeq'); await waitView('main');
+    await page.click('#wmWarmLog'); await page.click('#wmHowBtn'); await page.waitForSelector('#wmHow');
+    await page.evaluate(() => { document.querySelector('#wm .wm-body').scrollTop = 640; }); const top0 = await page.evaluate(() => document.querySelector('#wm .wm-body').scrollTop);
+    await page.click('[data-a="wm-quit"]'); await page.waitForSelector('#wmQuitBack'); await page.click('#wmQuitBack'); await page.waitForSelector('#wmHow');
+    const top1 = await page.evaluate(() => document.querySelector('#wm .wm-body').scrollTop);
+    await page.click('#wmFinish'); await waitView('finish'); await page.click('[data-a="wm-unfinish"]'); await page.waitForSelector('#wmHow');
+    const top2 = await page.evaluate(() => document.querySelector('#wm .wm-body').scrollTop);
+    check('R back from "End early?" and back from Finish, the lift with How to open is at the place it was left', top0 > 500 && top1 === top0 && top2 === top0, JSON.stringify([top0, top1, top2]));
+    await page.click('#wmHow .gsetin'); await page.keyboard.type('Rack 2'); await page.evaluate(() => window.MorningLaps.wmState() && document.querySelector('[data-a="fig-view"]') && document.querySelector('#wm .figview').click());
+    await page.click('#wmHow .gsetin'); await page.keyboard.press('End'); await page.keyboard.type(' · hooks 14'); await page.click('#wmHow [data-a="guide-set-save"]'); await page.waitForFunction(() => (((JSON.parse(localStorage.getItem('ml.kv'))['profiles/tyson'] || {}).gear || {}).squat || {}).note === 'Rack 2 · hooks 14');
+    check('R in live mode a settings line typed across a redraw is saved whole', (await txt(page, '#wm .myset')) === 'My settings: Rack 2 · hooks 14');
   });
 
   // ---------- D: nothing else changed ----------

@@ -69,7 +69,11 @@ async function saveGear(pid, key, patch) {
   if (Object.keys(cur).length) all[key] = cur; else delete all[key];
   return saveProfile(pid, { gear: all });
 }
-const gdRefresh = page => { if (wm) wmDraw(); else { if (page) render(); renderGuide(); } };
+// The settings field keeps the cursor, and its place in the text, when the card around it is drawn again (a photo
+// finishing its upload, a save from the other phone).
+const gdFocus = root => { const a = document.activeElement; return a && a.id && root.contains(a) && a.classList.contains('gsetin') ? { id: a.id, s: a.selectionStart, e: a.selectionEnd } : null; };
+function gdRefocus(k) { const el = k && document.getElementById(k.id); if (!el) return; el.focus({ preventScroll: true }); try { el.setSelectionRange(k.s, k.e); } catch (e) { /* not a text field any more */ } }
+const gdRefresh = page => { if (wm) { const k = gdFocus(wmEl); wmDraw(); gdRefocus(k); } else { if (page) render(); renderGuide(); } };
 ACT['guide-set-save'] = async el => {
   const key = el.dataset.k, inp = el.parentNode.querySelector('.gsetin'), pid = (inp && inp.dataset.pid) || me(), v = String(inp ? inp.value : '').replace(/\s+/g, ' ').trim().slice(0, 60);
   if ((gearOf(pid, key).note || '') === v) { delete gdDraft[pid + ':' + key]; toast(v ? 'Already saved.' : 'Type your settings first, like "Seat 4".'); return; }
@@ -149,9 +153,10 @@ function guideCardHTML(key, ctx) {
   const alt = (label, a) => { if (!a) return '';
     const ok = a.k && EX[a.k], btn = ok && swap.includes(a.k) ? '<button type="button" class="small" data-a="guide-swap" data-to="' + a.k + '">Swap to it</button>' : ok && ctx.from !== 'live' ? '<button type="button" class="small" data-a="guide-open" data-k="' + a.k + '" data-from="' + (ctx.from === 'lift' ? 'lift' : 'lib') + '">See it</button>' : '';
     return '<div class="galt" data-alt="' + label.toLowerCase() + '"><div><span class="eyebrow">' + label + '</span><p>' + esc(a.text) + '</p></div>' + btn + '</div>'; };
-  let h = '<div class="gcard" data-guide="' + key + '">' + watchHTML(key);
+  let h = '<div class="gcard" data-guide="' + key + '">';
   if (hit.length) h += '<p class="banner geasy" data-easy="' + hit.join(',') + '"><span><b>Go easy on your ' + esc(gdAnd(hit.map(a => AREAS[a].toLowerCase()))) + '.</b> This move loads ' + (hit.length > 1 || /s$/.test(AREAS[hit[0]]) ? 'them' : 'it') + '. ' +
     (kind === 'stretch' ? 'Stay well short of any pain, and ease out slowly.' : 'Keep the weight light, move slowly, and stop if anything feels sharp.') + '</span></p>';
+  h += watchHTML(key); // after the "Go easy on" note, which always comes first
   h += sec('equip', 'Equipment', '<p><b>' + esc(G.equip) + '</b>' + (EX[key] && EX[key].per ? ' <span class="muted">The weight you log is one dumbbell, not the pair.</span>' : '') + '</p><p class="muted">' + esc(G.where) + '</p>');
   if (kind !== 'stretch') h += mySetHTML(key, pid);
   h += sec('setup', 'Set up', ol(G.setup)) + sec('steps', 'Do it', ol(G.steps)) + sec('breathe', 'Breathe', '<p>' + esc(G.breathe) + '</p>') +
@@ -175,16 +180,16 @@ function guideCtx(g) {
 function renderGuide(fresh) {
   const g = state.guide;
   if (!g || !GUIDE[g.key]) { state.guide = null; gdEl.hidden = true; gdEl.innerHTML = ''; if (!state.ov) document.body.style.overflow = ''; return; }
-  const sc = gdEl.querySelector('.gd-body'), top = !fresh && sc ? sc.scrollTop : 0, name = gdName(g.key), ctx = guideCtx(g);
+  const sc = gdEl.querySelector('.gd-body'), top = !fresh && sc ? sc.scrollTop : 0, name = gdName(g.key), ctx = guideCtx(g), keep = fresh ? null : gdFocus(gdEl);
   gdEl.hidden = false;
   gdEl.innerHTML = '<div class="ov tall gd' + (fresh ? ' gdin' : '') + '" role="dialog" aria-modal="true" aria-label="How to: ' + esc(name) + '" id="guideSheet" data-guide="' + g.key + '"><div class="ls-head"><div class="ls-t"><h2 id="guideTitle">' + esc(name) + '</h2><div class="tiny muted" id="guideSub">' + esc(gdSub(g.key)) + '</div></div>' +
     '<button type="button" class="xbtn" id="guideClose" data-a="guide-close" aria-label="Close the guide">×</button></div>' +
     '<div class="gd-body" data-scroll>' + figHTML(g.key, 'gd', name) + guideCardHTML(g.key, ctx) + '</div></div>';
   document.body.style.overflow = 'hidden'; figKick();
   const s2 = gdEl.querySelector('.gd-body'); if (s2 && top) s2.scrollTop = top;
-  if (fresh) { const x = $('#guideClose'); if (x) x.focus({ preventScroll: true }); }
+  if (fresh) { const x = $('#guideClose'); if (x) x.focus({ preventScroll: true }); } else gdRefocus(keep);
 }
-function guideOpen(key, ctx) { if (!GUIDE[key]) return; state.guide = Object.assign({ key }, ctx); renderGuide(true); }
+function guideOpen(key, ctx) { if (!GUIDE[key]) return; delete figSt.gd; state.guide = Object.assign({ key }, ctx); renderGuide(true); } // the picture starts over: playing, or a still when animations are off
 function guideClose() {
   const g = state.guide; if (!g) return; state.guide = null; renderGuide();
   const back = g.sel ? document.querySelector(g.sel) : null; if (back) back.focus({ preventScroll: true });

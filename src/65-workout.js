@@ -23,6 +23,7 @@ function wmOpen(plan, fromEl, resume) {
   const held = state.ov ? state.ovQ.slice() : []; // a badge or a week's result waiting behind the sheet: shown when the session closes
   if (state.guide) { state.guide = null; renderGuide(); }
   if (state.ov) { state.ov = null; state.ovQ = []; renderOv(); }
+  delete figSt.wm; delete wmEl.dataset.scr;
   wm = { pid: me(), date: state.selDate, plan, held, view: 'start', before: scoreSnapshot(), started: Date.now(), ms: 0, stale: false, i: -1, edit: null, quit: 0 };
   if (plan.kind === 'lift') wmLiftInit(resume); else wmStagesInit(resume);
   if (motionOf() !== 'full' || resume) wm.view = 'main'; // the start lights belong to Full animations, and never play when coming back
@@ -77,12 +78,14 @@ const wmFlag = (cls, checkered) => '<svg class="wm-flag ' + cls + '" viewBox="0 
 function wmDraw() {
   if (!wm) return;
   wmEl.dataset.view = wm.view; wmEl.dataset.kind = wm.plan.kind;
+  // every exercise or stage screen keeps its own place; the start, quit and finish screens have none
+  wm.tops = wm.tops || {}; const body0 = wmEl.querySelector('.wm-body'); if (body0 && wmEl.dataset.scr) wm.tops[wmEl.dataset.scr] = body0.scrollTop;
+  if (wm.view === 'start' || wm.view === 'quit' || wm.view === 'finish') delete wmEl.dataset.scr;
   if (wm.view === 'start') { wmEl.innerHTML = '<button type="button" class="wm-start" id="wmStartSeq" data-a="wm-go" aria-label="Skip the start"><span class="wm-lights" aria-hidden="true"><i></i><i></i><i></i></span>' + wmFlag('green', false) + '<b class="wm-gotext">GO</b><span class="tiny">' + esc(wm.plan.title) + ' · tap to skip</span></button>'; return; }
   if (wm.view === 'quit') { wmEl.innerHTML = wmQuitHTML(); return; }
   if (wm.view === 'finish') { wmEl.innerHTML = (motionOf() === 'full' ? '' : '<div class="wm-stripe" id="wmStripe" aria-hidden="true"></div>') + (wm.plan.kind === 'lift' ? wmLiftFinishHTML() : wmStagesFinishHTML()); wmCountUp(); return; }
   // every screen keeps its own place: back from a rest, an exercise with "How to" open is where it was left
-  const scr = wm.view + ':' + wm.plan.kind + ':' + (wm.plan.kind === 'lift' ? wm.i + ':' + ((wmSlots()[wm.i] || {}).key || '') : wm.si), body = wmEl.querySelector('.wm-body'); wm.tops = wm.tops || {};
-  if (body && wmEl.dataset.scr) wm.tops[wmEl.dataset.scr] = body.scrollTop;
+  const scr = wm.view + ':' + wm.plan.kind + ':' + (wm.plan.kind === 'lift' ? wm.i + ':' + ((wmSlots()[wm.i] || {}).key || '') : wm.si);
   wmEl.innerHTML = wm.plan.kind === 'lift' ? (wm.view === 'rest' ? wmRestHTML() : wmLiftHTML()) : wmStageHTML();
   wmEl.dataset.scr = scr; const b2 = wmEl.querySelector('.wm-body'), top = wmEl.querySelector('#wmHow') || wm.view !== 'main' ? wm.tops[scr] || 0 : 0; if (b2 && top) b2.scrollTop = top;
   figKick();

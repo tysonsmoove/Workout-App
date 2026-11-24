@@ -5,7 +5,7 @@ function renderOv() {
   const root = $('#ov'), o = state.ov, act = document.activeElement, was = root.dataset.type || '';
   // remember which control had focus so a redraw of the same overlay hands it back
   const keep = act && root.contains(act) ? (act.id ? '#' + act.id : ['data-a', 'data-d', 'data-v', 'data-ovf'].map(k => act.getAttribute(k) != null ? '[' + k + '="' + act.getAttribute(k) + '"]' : '').join('')) : '';
-  if (!o || !OV[o.type]) { state.ov = null; root.hidden = true; root.innerHTML = ''; delete root.dataset.type; document.body.style.overflow = ''; if (was === 'lift') liftClosed(); return; }
+  if (!o || !OV[o.type]) { state.ov = null; root.hidden = true; root.innerHTML = ''; delete root.dataset.type; if (!state.guide) document.body.style.overflow = ''; if (was === 'lift') liftClosed(); return; }
   const def = OV[o.type], same = was === o.type;
   // a redraw of the same sheet keeps its scroll position and its open sections
   const sc = same ? root.querySelector('[data-scroll]') || root.firstElementChild : null, top = sc ? sc.scrollTop : 0, open = {};
@@ -15,7 +15,7 @@ function renderOv() {
   if (same) { root.querySelectorAll('details[data-dk]').forEach(d => { if (open[d.dataset.dk]) d.open = true; }); const s2 = root.querySelector('[data-scroll]') || root.firstElementChild; if (s2 && top) s2.scrollTop = top; }
   document.body.style.overflow = 'hidden';
   if (def.after) def.after(o);
-  if (!root.contains(document.activeElement)) { const f = (same && keep && root.querySelector(keep)) || root.querySelector('.primary:not(:disabled), .xbtn, button'); if (f) f.focus({ preventScroll: true }); }
+  if (!state.guide && !root.contains(document.activeElement)) { const f = (same && keep && root.querySelector(keep)) || root.querySelector('.primary:not(:disabled), .xbtn, button'); if (f) f.focus({ preventScroll: true }); }
   if (was === 'lift' && o.type !== 'lift') liftClosed();
 }
 function openOv(o) { state.ov = o; if (OV[o.type] && !OV[o.type].center) $('#toast').hidden = true; renderOv(); } // a sheet replaces any message still showing

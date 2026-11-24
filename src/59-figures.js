@@ -15,11 +15,11 @@ const fqRack = () => EQ.post(70, 18) + EQ.post(140, 18) + EQ.bar([70, 18], [140,
 const fqBarFront = (J, y) => EQ.bar([J.cx - 62, y], [J.cx + 62, y], 2) + fgBox(J.cx - 52, y - 12.4, 3, 24.8, 1.2, 'fgw fgfill') + fgBox(J.cx + 49, y - 12.4, 3, 24.8, 1.2, 'fgw fgfill');
 const fqStand = { at: [100, fqF - 4], lean: 0, thigh: 2, shin: -2 };
 const fqSquatFront = { view: 'front', tempo: 'down', labels: ['Lower', 'Drive up'],
-  keys: [{ hip: 53, kneeY: 28, kneeX: 9, stance: 10.5, e: [5, 13], w: [9, -1] }, { hip: 23.5, torso: 24, kneeY: 26.5, kneeX: 14, stance: 10.5, e: [5, 13], w: [9, -1] }],
+  keys: [{ hip: 53, torso: 28, kneeY: 28, kneeX: 9, stance: 10.5, e: [5, 13], w: [9, -1] }, { hip: 23.5, torso: 24, kneeY: 26.5, kneeX: 14, stance: 10.5, e: [5, 13], w: [9, -1] }],
   eq: J => ({ back: fqBarFront(J, J.S[1] - 1) }),
   marks: [{ j: 'K', t: 'knees track out over your toes' }, { j: 'A', t: 'feet about shoulder width, toes slightly out', dy: 6 }] };
 const fqLungeFront = { view: 'front', tempo: 'down', labels: ['Lower', 'Push back up'],
-  keys: [{ hip: 50, kneeY: 27, kneeX: 7.5, stance: 7.5, kneeY2: 27, e: [3, 16], w: [4, 31] }, { hip: 31, kneeY: 27.5, kneeX: 8, stance: 7.5, kneeX2: 7.5, kneeY2: 7, stance2: 8, ankleY2: 5, e: [3, 16], w: [4, 31] }],
+  keys: [{ hip: 50, kneeY: 27, kneeX: 7.5, stance: 7.5, kneeX2: 7.5, kneeY2: 27, stance2: 7.5, ankleY2: 4, e: [3, 16], w: [4, 31] }, { hip: 31, kneeY: 27.5, kneeX: 8, stance: 7.5, kneeX2: 7.5, kneeY2: 7, stance2: 8, ankleY2: 5, e: [3, 16], w: [4, 31] }],
   eq: J => ({ front: EQ.db(fqUp(J.W, 0, 3.5)) + EQ.db(fqUp(J.W2, 0, 3.5)) }),
   marks: [{ j: 'K', t: 'front knee stays over the middle of the foot' }, { j: J => [J.cx, J.A[1] + 1.5], t: 'feet on two tracks, hip width apart' }] };
 // a seated person from the front: thighs come toward the viewer, so the knees sit just under the hips
@@ -37,7 +37,7 @@ const FIG = {
     keys: [{ at: [104, 132], lean: 4, thigh: 2, shin: -1, ua: 24, fa: 152 }, { at: [104, 132], lean: 24, thigh: 97, shin: -27, ua: 32, fa: 150 }],
     eq: J => ({ front: EQ.kb(fqUp(J.W, 1, -5)) }),
     marks: [{ j: 'H', t: 'hips at or below knee height' }, { j: 'E', t: 'elbows drop inside your knees' }],
-    front: Object.assign({}, fqSquatFront, { keys: [{ hip: 53, kneeY: 28, kneeX: 9, stance: 10.5, e: [2, 14], w: [-6, 5] }, { hip: 23.5, torso: 26, kneeY: 26.5, kneeX: 14, stance: 10.5, e: [2, 14], w: [-6, 5] }], eq: J => ({ front: EQ.kb([J.cx, J.W[1] - 5]) }) }) },
+    front: Object.assign({}, fqSquatFront, { keys: [{ hip: 53, torso: 28, kneeY: 28, kneeX: 9, stance: 10.5, e: [2, 14], w: [-6, 5] }, { hip: 23.5, torso: 26, kneeY: 26.5, kneeX: 14, stance: 10.5, e: [2, 14], w: [-6, 5] }], eq: J => ({ front: EQ.kb([J.cx, J.W[1] - 5]) }) }) },
   legpress: { tempo: 'down', labels: ['Lower', 'Press'],
     keys: [{ anchor: 'hip', at: [70, 112], lean: -28, footAt: [115.3, 104], ft: 190, hand: [76, 117] }, { anchor: 'hip', at: [70, 112], lean: -28, footAt: [102.5, 106.3], ft: 190, hand: [76, 117] }],
     eq: (J, p) => ({ back: fqBackPad(J, p.lean, 40, 5) + EQ.pad([64, 118.5], 22, 90, 4.4) + EQ.bar([84, fqF], [150, fqF - 12], 2.6) + EQ.post(150, fqF - 60) + EQ.stack(162, 60),
@@ -180,7 +180,7 @@ const FIG = {
     marks: [{ j: 'K', t: 'knees come to your chest' }, { j: 'M', t: 'lean back a little, chest open' }] },
   /* --- stretches --- */
   sx_chest: { tempo: 'hold',
-    keys: [Object.assign({}, fqStand, { ua: -8, fa: -14 }), Object.assign({}, fqStand, { lean: -5, neck: -4, ua: -32, fa: -38 })],
+    keys: [Object.assign({}, fqStand, { neck: 0, ua: -8, fa: -14 }), Object.assign({}, fqStand, { lean: -5, neck: -4, ua: -32, fa: -38 })],
     marks: [{ j: 'S', t: 'chest lifts, shoulders roll back' }] },
   sx_shoulder: { front: { view: 'front', tempo: 'hold',
     keys: [{ hip: 53, e: [1, 16], w: [2, 31], e2: [1, 16], w2: [2, 31] }, { hip: 53, e: [-13, 3], w: [-27, 4], e2: [1, 15], w2: [-9, 6] }],
@@ -206,7 +206,7 @@ const FIG = {
     eq: () => ({ back: EQ.mat(50, 150) }),
     marks: [{ j: 'H', t: 'lower back relaxes into the floor', dx: -7 }] },
   sx_child: { tempo: 'hold',
-    keys: [{ anchor: 'hip', at: [78, 119], lean: 8, thigh: 60, shin: -89, ft: -90, hand: [97, 116] }, { anchor: 'hip', at: [78, 119], lean: 104, neck: -8, thigh: 60, shin: -89, ft: -90, hand: [138, 131] }],
+    keys: [{ anchor: 'hip', at: [78, 119], lean: 8, neck: 0, thigh: 60, shin: -89, ft: -90, hand: [97, 116] }, { anchor: 'hip', at: [78, 119], lean: 104, neck: -8, thigh: 60, shin: -89, ft: -90, hand: [138, 131] }],
     eq: () => ({ back: EQ.mat(50, 152) }),
     marks: [{ j: 'H', t: 'hips sink back toward your heels' }, { j: 'M', t: 'let your back round and relax' }] }
 };
